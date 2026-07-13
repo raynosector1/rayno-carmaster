@@ -51,13 +51,7 @@
   .kakao{background:var(--kakao); color:#191600;}
   .ghost{background:#fff; color:var(--ink); border:1px solid #E5E5E5;}
   .orange{background:var(--orange); color:#fff;}
-  button:disabled{opacity:.4; cursor:not-allowed;}
 
-  pre{
-    background:var(--ink); color:#E5E5E5; border-radius:12px;
-    padding:14px; font-size:11px; line-height:1.6;
-    overflow-x:auto; margin-top:12px; white-space:pre-wrap; word-break:break-all;
-  }
   .err{color:#DC2626; font-size:13px; margin-top:8px; line-height:1.5;}
 </style>
 </head>
@@ -68,19 +62,16 @@
   <h1>카마스터 멤버십</h1>
   <p class="sub">연결 테스트 페이지 (개발용)</p>
 
-  <!-- 1. Supabase 연결 -->
   <div class="card">
     <h2><span class="dot" id="d1"></span>1. Supabase 연결</h2>
     <div id="test1"><span class="sub">확인 중…</span></div>
   </div>
 
-  <!-- 2. 카카오 로그인 -->
   <div class="card">
     <h2><span class="dot" id="d2"></span>2. 카카오 로그인</h2>
     <div id="test2"><span class="sub">확인 중…</span></div>
   </div>
 
-  <!-- 3. DB 쓰기 (RLS) -->
   <div class="card">
     <h2><span class="dot" id="d3"></span>3. DB 읽기·쓰기 (RLS)</h2>
     <div id="test3"><span class="sub">로그인이 필요합니다.</span></div>
@@ -102,7 +93,7 @@ const rows = obj => Object.entries(obj)
   .map(([k,v]) => `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`)
   .join('');
 
-// ── TEST 1: Supabase 연결 (reward_rules 읽기 — 누구나 읽을 수 있게 RLS 열어둠)
+// ── TEST 1: Supabase 연결
 async function test1(){
   const { data, error } = await sb.from('reward_rules').select('min_count,item_name').order('min_count');
   if (error){
@@ -129,7 +120,11 @@ async function test2(){
     $('btnLogin').onclick = async () => {
       const { error } = await sb.auth.signInWithOAuth({
         provider: 'kakao',
-        options: { redirectTo: window.location.href.split('#')[0] }
+        options: {
+          redirectTo: window.location.href.split('#')[0],
+          // ★이메일(account_email) 제외 — 비즈니스 앱 전환 전에는 권한 없음★
+          scopes: 'profile_nickname profile_image'
+        }
       });
       if (error) alert('로그인 오류: ' + error.message);
     };
@@ -150,12 +145,11 @@ async function test2(){
   return session;
 }
 
-// ── TEST 3: carmasters 읽기/쓰기 (RLS + 보안 트리거 확인)
+// ── TEST 3: carmasters 읽기/쓰기 + 보안 트리거
 async function test3(session){
   if (!session){ setDot('d3', false); return; }
 
-  // 내 카마스터 행 조회
-  let { data:me, error } = await sb.from('carmasters')
+  const { data:me, error } = await sb.from('carmasters')
     .select('*').eq('user_id', session.user.id).maybeSingle();
 
   if (error){
@@ -193,7 +187,6 @@ async function test3(session){
     `<button class="ghost" id="btnHack">🔒 보안 테스트 — status를 verified로 강제 변경 시도</button>
      <div id="hackResult"></div>`;
 
-  // ★핵심 보안 테스트★ 클라이언트가 스스로 verified 로 못 바꾸는지 확인
   $('btnHack').onclick = async () => {
     const { error } = await sb.from('carmasters')
       .update({ status: 'verified' }).eq('user_id', session.user.id);
@@ -203,7 +196,6 @@ async function test3(session){
   };
 }
 
-// ── 실행
 (async () => {
   await test1();
   const session = await test2();
