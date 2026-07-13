@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>레이노 카마스터 멤버십</title>
+<title>로그인 · 레이노 카마스터 멤버십</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /* ===== RAYNO 카마스터 멤버십 · 공통 CSS (모든 파일 동일) ===== */
@@ -137,7 +137,6 @@ input::placeholder{color:#B4B4B8;}
 .gift .t{font-size:13.5px;line-height:1.6;color:#3A3A3E;font-weight:500;}
 .notes{font-size:11.5px;line-height:1.85;color:#A0A0A4;text-align:left;width:100%;}
 
-/* ===== 마이페이지 ===== */
 .my-head{background:#fff;padding:14px 22px 20px;}
 .my-top{display:flex;align-items:center;justify-content:space-between;}
 .my-top .logo{height:14px;width:auto;object-fit:contain;}
@@ -175,7 +174,6 @@ input::placeholder{color:#B4B4B8;}
 .menu-badge{background:rgba(255,107,0,.10);color:var(--orange);font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;}
 .menu-row .chev{color:#C4C4C8;font-size:18px;}
 
-/* ===== 바텀시트 ===== */
 .overlay{position:fixed;inset:0;background:rgba(17,17,17,.5);z-index:40;display:none;}
 .overlay.on{display:block;}
 .sheet{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:430px;background:#fff;border-radius:24px 24px 0 0;z-index:50;box-shadow:0 -12px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;max-height:82dvh;transition:transform .28s ease;}
@@ -194,77 +192,55 @@ input::placeholder{color:#B4B4B8;}
 </head>
 <body>
 <div class="app">
-
-  <!-- ===== 메인 ===== -->
-  <section class="screen active" id="screenMain">
-    <div class="hero">
-      <img class="logo" src="assets/rayno-logo-white.png" alt="RAYNO">
-      <h1>레이노 카마스터<br>멤버십</h1>
-      <div class="en">CARMASTER MEMBERSHIP</div>
-    </div>
-    <div class="scroll pad" style="padding-top:32px;">
-      <p class="lead">언제나 든든한 러닝메이트, RAYNO</p>
-      <p class="body" style="margin-top:14px;">레이노와 함께하는 카마스터님을 위해 준비한 특별 리워드. 지금 멤버십에 가입하고 레이노에서만 누리는 혜택을 확인해보세요.</p>
-    </div>
-    <div class="cta no-line">
-      <div class="row">
-        <button class="btn btn-outline" id="btnBenefit" style="flex:1;">혜택 보기</button>
-        <button class="btn btn-primary" id="btnSignup1" style="flex:1.35;">가입하기</button>
+  <section class="screen active">
+    <div class="scroll" style="display:flex;flex-direction:column;justify-content:center;padding:0 28px;">
+      <div style="text-align:center;margin-bottom:36px;">
+        <img src="assets/rayno-logo-dark.png" alt="RAYNO" style="height:24px;width:auto;object-fit:contain;margin:0 auto;">
+        <div style="margin-top:12px;font-size:11px;font-weight:800;letter-spacing:2.5px;color:var(--orange);">CARMASTER MEMBERSHIP</div>
       </div>
-      <p class="note" style="margin-top:14px;">※ 본 혜택은 레이노 카마스터 멤버십 대상으로 제공됩니다.</p>
+      <div class="field">
+        <input class="input" id="loginId" placeholder="아이디" autocomplete="username">
+        <input class="input" id="password" type="password" placeholder="비밀번호" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" style="margin-top:14px;">로그인</button>
+      <p class="msg-err" id="loginErr" style="display:none;text-align:center;margin-top:12px;">아이디 또는 비밀번호를 확인해 주세요.</p>
+      <div style="margin-top:16px;display:flex;justify-content:center;gap:10px;font-size:13px;color:var(--muted);">
+        <a href="#" style="color:var(--muted);">아이디 찾기</a><span style="color:#DDD;">|</span><a href="#" style="color:var(--muted);">비밀번호 찾기</a>
+      </div>
+    </div>
+    <div class="cta no-line" style="text-align:center;font-size:13.5px;color:var(--muted);">
+      아직 회원이 아니신가요? <a href="signup.html" style="font-weight:700;">가입하기</a>
     </div>
   </section>
-
-  <!-- ===== 혜택 안내 ===== -->
-  <section class="screen" id="screenBenefit">
-    <div class="topbar">
-      <button class="back" id="benefitBack" aria-label="뒤로">‹</button>
-      <img class="logo" src="assets/rayno-logo-dark.png" alt="RAYNO">
-    </div>
-    <div class="scroll pad" style="padding-top:14px;">
-      <span class="pill">웰컴 기프트</span>
-      <p class="body" style="margin-top:18px;font-size:15px;line-height:1.75;color:#3A3A3E;font-weight:500;">언제나 현장을 누비는 카마스터님의 발걸음을 응원합니다. 가입 완료 시, 든든한 주유 혜택을 <b style="color:var(--ink);font-weight:800;">100% 선물</b>로 드립니다.</p>
-      <div class="voucher" style="margin-top:22px;">
-        <div class="vbar"></div><div class="vglow"></div>
-        <div class="vtop"><span class="mono">WELCOME GIFT</span><span class="pct">100%</span></div>
-        <div class="vlabel">주유상품권</div>
-        <div class="vamount">5,000<span> 원</span></div>
-        <div class="vfoot"><img src="assets/rayno-logo-white.png" alt="RAYNO"><span>가입 완료 시 증정</span></div>
-      </div>
-      <div class="teaser" style="margin-top:14px;">
-        <div class="tb">NEXT</div>
-        <div>
-          <div class="tsub">가입 후 시공을 쌓으면</div>
-          <div class="tmain">시공 10건 달성 시<br><span>유리막 코팅 무료 쿠폰</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="cta no-line">
-      <button class="btn btn-primary" id="btnSignup2">가입하기</button>
-      <button class="btn btn-ghost" id="benefitPrev" style="margin-top:8px;">이전</button>
-    </div>
-  </section>
-
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 /* ─────────────────────────────────────────────
-   RAYNO 카마스터 멤버십 · index.html
-   메인 ↔ 혜택 안내 (페이지 이동 없이 JS 전환)
+   RAYNO 카마스터 멤버십 · login.html (아이디/비밀번호)
    ───────────────────────────────────────────── */
-const S = { view: 'main' };
+const S = { loginId:'', pw:'' };
+const $ = id => document.getElementById(id);
+let toastT; function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1800);}
 
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0, 0);
+/* ── 백엔드 연동 예정 (지금은 샘플) ── */
+async function login(id, pw) {
+  /* → { ok } */
+  // TODO: return await (await fetch('/api/login', {method:'POST', body:JSON.stringify({id,pw})})).json();
+  return { ok: !!(id && pw) };
 }
 
-document.getElementById('btnBenefit').addEventListener('click', () => { S.view='benefit'; showScreen('screenBenefit'); });
-document.getElementById('benefitBack').addEventListener('click', () => { S.view='main'; showScreen('screenMain'); });
-document.getElementById('benefitPrev').addEventListener('click', () => { S.view='main'; showScreen('screenMain'); });
-document.getElementById('btnSignup1').addEventListener('click', () => location.href = 'signup.html');
-document.getElementById('btnSignup2').addEventListener('click', () => location.href = 'signup.html');
+$('loginId').addEventListener('input', e=>{ S.loginId=e.target.value.trim(); $('loginErr').style.display='none'; });
+$('password').addEventListener('input', e=>{ S.pw=e.target.value; $('loginErr').style.display='none'; });
+$('password').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+$('loginBtn').addEventListener('click', doLogin);
+async function doLogin(){
+  if(!S.loginId || !S.pw){ toast('아이디와 비밀번호를 입력해 주세요.'); return; }
+  const res = await login(S.loginId, S.pw);
+  if(res && res.ok){ location.href='my.html'; }
+  else { $('loginErr').style.display='block'; }
+}
 </script>
 </body>
 </html>

@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>가입 신청 · 레이노 카마스터 멤버십</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/* ===== RAYNO 카마스터 멤버십 · 공통 CSS (모든 파일 동일) ===== */
+:root{
+  --orange:#FF6B00; --orange-d:#E05F00; --ink:#111111; --muted:#8A8A8E;
+  --line:#E5E5E7; --surface:#F5F5F5; --surface2:#F7F7F8; --ok:#2E7D46; --err:#C0403A;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;}
+body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-.2px;color:var(--ink);background:#e9e9ec;}
+img{display:block;}
+a{color:var(--orange);text-decoration:none;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+input{font-family:inherit;}
+input::placeholder{color:#B4B4B8;}
+
+.app{max-width:430px;margin:0 auto;min-height:100dvh;background:#fff;position:relative;overflow:hidden;}
+@media(min-width:480px){.app{box-shadow:0 20px 60px rgba(0,0,0,.14);}}
+
+.screen{display:none;flex-direction:column;min-height:100dvh;}
+.screen.active{display:flex;}
+.scroll{flex:1;}
+.pad{padding:0 24px;}
+
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 22px 4px;}
+.back{font-size:24px;color:var(--ink);line-height:1;}
+.topbar .logo{height:13px;width:auto;object-fit:contain;}
+
+.hero{background:var(--orange);color:#fff;text-align:center;padding:66px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.hero .logo{height:30px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,.12));}
+.hero h1{margin-top:24px;font-size:31px;font-weight:800;letter-spacing:-.6px;line-height:1.28;}
+.hero .en{margin-top:16px;font-size:11px;font-weight:800;letter-spacing:2.5px;color:rgba(255,255,255,.9);}
+
+.lead{font-size:18px;font-weight:700;letter-spacing:-.3px;}
+.body{font-size:15px;line-height:1.72;color:#5A5A5E;}
+.h-title{font-size:26px;font-weight:800;letter-spacing:-.4px;}
+.h-sub{font-size:13px;line-height:1.55;color:var(--muted);}
+
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,107,0,.10);color:var(--orange);font-size:12.5px;font-weight:800;padding:7px 13px;border-radius:999px;letter-spacing:.3px;}
+
+.btn{width:100%;padding:17px 0;border-radius:14px;font-size:16px;font-weight:800;text-align:center;}
+.btn-primary{background:var(--orange);color:#fff;}
+.btn-primary:disabled{background:#E5E5E7;color:#B0B0B4;cursor:not-allowed;}
+.btn-outline{background:#fff;color:var(--ink);border:1.5px solid var(--ink);font-weight:700;}
+.btn-ghost{background:none;color:var(--muted);font-weight:600;padding:13px 0;}
+.btn-dark{background:var(--ink);color:#fff;}
+.btn-line{background:#fff;color:var(--ink);border:1.5px solid var(--line);font-weight:700;}
+.btn-sm{padding:0 16px;border-radius:12px;font-size:13px;font-weight:700;}
+.row{display:flex;gap:10px;}
+
+.cta{position:sticky;bottom:0;background:#fff;padding:16px 20px 28px;border-top:1px solid #F2F2F2;}
+.cta.no-line{border-top:none;}
+.note{font-size:11.5px;line-height:1.5;color:#A0A0A4;text-align:center;}
+.err-note{font-size:11.5px;color:var(--err);text-align:center;margin-top:10px;}
+
+.steps{display:flex;gap:6px;}
+.steps .seg{flex:1;height:5px;border-radius:3px;background:var(--line);}
+.steps .seg.on{background:var(--orange);}
+.steplabels{display:flex;margin-top:8px;font-size:11px;font-weight:700;text-align:center;}
+.steplabels span{flex:1;color:#B0B0B4;}
+.steplabels span.on{color:var(--orange);}
+
+.section-title{font-size:13px;font-weight:800;margin:0 0 10px;}
+.field{display:flex;flex-direction:column;gap:10px;}
+.input,.select{width:100%;padding:15px 16px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;color:var(--ink);background:#fff;outline:none;}
+.input:focus,.select:focus{border-color:var(--ink);}
+.input.error{border-color:var(--err);}
+.select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1l5 5 5-5' stroke='%238A8A8E' stroke-width='2' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 16px center;padding-right:38px;}
+.select:disabled{background:var(--surface2);color:#C4C4C8;border-color:#EDEDED;cursor:not-allowed;}
+.select.placeholder{color:#A0A0A4;}
+.hint{font-size:11.5px;line-height:1.5;color:#B0B0B4;padding-left:2px;}
+.field-row{display:flex;gap:8px;}
+.field-row .input{flex:1;}
+.field-row .btn-sm{flex-shrink:0;}
+.msg-ok{font-size:11.5px;color:var(--ok);font-weight:600;padding-left:2px;}
+.msg-err{font-size:11.5px;color:var(--err);font-weight:600;padding-left:2px;}
+.code-box{display:flex;gap:8px;}
+.code-inp{flex:1;padding:15px 16px;border:1.5px solid var(--orange);border-radius:12px;display:flex;justify-content:space-between;align-items:center;}
+.code-inp input{border:none;outline:none;font-size:15px;color:var(--ink);width:70%;background:none;}
+.code-inp .timer{font-size:13px;font-weight:700;color:var(--orange);}
+.verified{padding:15px 16px;border:1.5px solid var(--ok);background:rgba(46,125,70,.06);border-radius:12px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:var(--ok);}
+.dot-ok{width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+.agree{border:1.5px solid #EEE;border-radius:14px;overflow:hidden;}
+.agree .all{padding:15px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #F0F0F0;}
+.agree .all .t{font-size:15px;font-weight:800;}
+.agree .items{padding:4px 16px 8px;}
+.agree .item{padding:11px 0;display:flex;align-items:center;gap:12px;}
+.agree .item .t{font-size:14px;color:var(--ink);font-weight:500;}
+.agree .item.opt .t{color:var(--muted);}
+.agree .req{color:var(--orange);font-weight:700;}
+.agree .more{margin-left:auto;font-size:12.5px;color:var(--muted);}
+.chk{width:22px;height:22px;border-radius:6px;border:2px solid #D0D0D4;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;background:#fff;}
+.chk.sm{width:20px;height:20px;font-size:12px;}
+.chk.on{background:var(--ink);border-color:var(--ink);}
+.chk .mk{display:none;}
+.chk.on .mk{display:block;}
+
+.voucher{background:var(--ink);border-radius:20px;padding:26px 24px;color:#fff;position:relative;overflow:hidden;box-shadow:0 14px 30px rgba(17,17,17,.28);}
+.voucher .vbar{position:absolute;top:0;left:0;right:0;height:6px;background:var(--orange);}
+.voucher .vglow{position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(255,107,0,.14);}
+.voucher .vtop{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.voucher .mono{font-family:'SF Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:3px;color:var(--orange);}
+.voucher .pct{font-size:11px;font-weight:800;color:var(--ink);background:var(--orange);padding:2px 7px;border-radius:5px;}
+.voucher .vlabel{font-size:19px;font-weight:700;margin-top:24px;}
+.voucher .vamount{font-size:44px;font-weight:800;margin-top:2px;letter-spacing:-1px;}
+.voucher .vamount span{font-size:22px;font-weight:600;}
+.voucher .vfoot{margin-top:22px;border-top:1px dashed rgba(255,255,255,.22);padding-top:14px;display:flex;justify-content:space-between;align-items:center;}
+.voucher .vfoot img{height:11px;width:auto;object-fit:contain;opacity:.85;}
+.voucher .vfoot span{font-size:12px;font-weight:600;color:#9A9A9E;}
+
+.teaser{border:1.5px dashed #E0E0E4;border-radius:16px;padding:16px 18px;display:flex;align-items:center;gap:14px;}
+.teaser .tb{width:44px;height:44px;border-radius:12px;background:rgba(255,107,0,.10);color:var(--orange);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;letter-spacing:.5px;}
+.teaser .tsub{font-size:11.5px;font-weight:700;color:var(--muted);}
+.teaser .tmain{font-size:14.5px;font-weight:700;margin-top:3px;line-height:1.4;}
+.teaser .tmain span{color:var(--orange);}
+
+.spinner{width:52px;height:52px;border:4px solid #F0F0F0;border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 40px;}
+
+.done{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 24px 0;}
+.done .logo{height:15px;width:auto;object-fit:contain;margin-bottom:22px;opacity:.9;}
+.check{width:72px;height:72px;border-radius:50%;background:var(--orange);color:#fff;font-size:36px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(255,107,0,.35);}
+.done-name{margin-top:22px;font-size:34px;font-weight:800;letter-spacing:-.4px;line-height:1.28;}
+.banner{width:100%;background:var(--orange);color:#fff;border-radius:16px;padding:20px 18px;box-shadow:0 12px 28px rgba(255,107,0,.28);text-align:center;}
+.banner .b1{font-size:19px;font-weight:800;line-height:1.45;}
+.banner .b2{margin-top:8px;font-size:12.5px;line-height:1.5;color:rgba(255,255,255,.85);}
+.gift{width:100%;background:var(--surface);border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:13px;text-align:left;}
+.gift .g{width:38px;height:38px;border-radius:10px;background:var(--ink);color:var(--orange);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.gift .t{font-size:13.5px;line-height:1.6;color:#3A3A3E;font-weight:500;}
+.notes{font-size:11.5px;line-height:1.85;color:#A0A0A4;text-align:left;width:100%;}
+
+.my-head{background:#fff;padding:14px 22px 20px;}
+.my-top{display:flex;align-items:center;justify-content:space-between;}
+.my-top .logo{height:14px;width:auto;object-fit:contain;}
+.my-top .menu{width:32px;height:32px;border-radius:50%;background:#F2F2F2;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);}
+.profile{margin-top:18px;display:flex;align-items:center;gap:13px;}
+.avatar{width:50px;height:50px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;flex-shrink:0;}
+.profile .nm{font-size:19px;font-weight:800;}
+.profile .of{font-size:13px;color:var(--muted);margin-top:2px;}
+.card{background:#fff;border-radius:16px;}
+.stats{padding:18px 12px;display:flex;}
+.stats .st{flex:1;text-align:center;}
+.stats .lbl{font-size:12.5px;color:var(--muted);font-weight:600;}
+.stats .val{font-size:30px;font-weight:800;margin-top:4px;}
+.stats .val span{font-size:15px;font-weight:600;color:var(--muted);}
+.stats .div{width:1px;background:#EFEFEF;}
+.prog{padding:22px 20px;}
+.prog .top{display:flex;align-items:center;gap:8px;}
+.prog .ic{width:26px;height:26px;border-radius:8px;background:rgba(255,107,0,.10);color:var(--orange);font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.prog .cap{font-size:13px;font-weight:700;color:var(--muted);}
+.prog .big{display:flex;align-items:baseline;gap:6px;margin-top:12px;}
+.prog .big b{font-size:56px;font-weight:800;color:var(--orange);line-height:.9;letter-spacing:-2px;}
+.prog .big em{font-size:21px;font-weight:800;font-style:normal;}
+.prog .goal{margin-top:8px;font-size:14px;color:#3A3A3E;font-weight:600;}
+.ptrack{margin-top:18px;height:12px;background:#EDEDED;border-radius:6px;overflow:hidden;}
+.pfill{height:100%;background:var(--orange);border-radius:6px;width:0;transition:width .6s;}
+.plabel{margin-top:9px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:700;}
+.plabel .cur{color:var(--orange);}
+.codecard{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;}
+.codecard .lbl{font-size:12px;color:var(--muted);font-weight:600;}
+.codecard .code{font-size:18px;font-weight:800;letter-spacing:1px;margin-top:3px;}
+.menu-row{padding:17px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F2F2F2;}
+.menu-row:last-child{border-bottom:none;}
+.menu-row .t{font-size:15px;font-weight:600;}
+.menu-row .r{display:flex;align-items:center;gap:8px;}
+.menu-badge{background:rgba(255,107,0,.10);color:var(--orange);font-size:12px;font-weight:800;padding:3px 9px;border-radius:6px;}
+.menu-row .chev{color:#C4C4C8;font-size:18px;}
+
+.overlay{position:fixed;inset:0;background:rgba(17,17,17,.5);z-index:40;display:none;}
+.overlay.on{display:block;}
+.sheet{position:fixed;left:50%;transform:translateX(-50%) translateY(100%);bottom:0;width:100%;max-width:430px;background:#fff;border-radius:24px 24px 0 0;z-index:50;box-shadow:0 -12px 40px rgba(0,0,0,.18);display:flex;flex-direction:column;max-height:82dvh;transition:transform .28s ease;}
+.sheet.on{transform:translateX(-50%) translateY(0);}
+.sheet .grab{width:44px;height:5px;border-radius:3px;background:#E0E0E4;margin:12px auto 4px;}
+.sheet .head{padding:10px 24px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F0F0F0;}
+.sheet .head .t{font-size:17px;font-weight:800;}
+.sheet .x{width:30px;height:30px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);}
+.sheet .bd{padding:20px 24px;overflow:auto;font-size:13.5px;line-height:1.85;color:#4A4A4E;}
+.sheet .bd b{color:var(--ink);}
+.sheet .ft{padding:14px 20px 22px;border-top:1px solid #F0F0F0;}
+
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:12px 20px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:60;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== STEP 1 · 소속·개인정보 ===== -->
+  <section class="screen active" id="step1">
+    <div class="topbar">
+      <button class="back" id="back1" aria-label="뒤로">‹</button>
+      <img class="logo" src="assets/rayno-logo-dark.png" alt="RAYNO">
+    </div>
+    <div class="scroll pad" style="padding-top:8px;">
+      <div style="text-align:center;">
+        <h1 class="h-title">가입 신청</h1>
+        <p class="h-sub" style="margin-top:8px;">레이노 카마스터 멤버십 혜택을 받으시려면<br>정확한 정보를 입력해 주세요.</p>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="steps"><div class="seg on"></div><div class="seg"></div><div class="seg"></div></div>
+        <div class="steplabels"><span class="on">1 소속·정보</span><span>2 본인인증</span><span>3 계정·약관</span></div>
+      </div>
+
+      <div style="margin-top:22px;">
+        <div class="section-title">소속 정보</div>
+        <div class="field">
+          <select class="select placeholder" id="brand"><option value="" selected disabled>소속 선택</option></select>
+          <input class="input" id="brandEtc" placeholder="소속 직접 입력 (최대 20자)" maxlength="20" style="display:none;">
+          <select class="select placeholder" id="region" disabled><option value="" selected disabled>지역 선택 (시·도)</option></select>
+          <select class="select placeholder" id="office" disabled><option value="" selected disabled>영업소 선택</option></select>
+          <input class="input" id="officeEtc" placeholder="영업소 직접 입력 (최대 20자)" maxlength="20" style="display:none;">
+          <p class="hint">앞 단계를 먼저 선택하면 다음 항목이 활성화됩니다.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:22px;">
+        <div class="section-title">개인 정보</div>
+        <div class="field">
+          <input class="input" id="name" placeholder="이름을 입력해 주세요">
+          <input class="input" id="birth" inputmode="numeric" maxlength="8" placeholder="생년월일 8자리 (예: 19900101)">
+          <p class="hint">* 생년월일 8자리를 숫자로 입력해 주세요.</p>
+        </div>
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+    <div class="cta">
+      <button class="btn btn-primary" id="next" disabled>다음</button>
+    </div>
+  </section>
+
+  <!-- ===== STEP 2 · 본인인증 ===== -->
+  <section class="screen" id="step2">
+    <div class="topbar">
+      <button class="back" id="back2" aria-label="뒤로">‹</button>
+      <img class="logo" src="assets/rayno-logo-dark.png" alt="RAYNO">
+    </div>
+    <div class="scroll pad" style="padding-top:8px;">
+      <div style="text-align:center;">
+        <h1 class="h-title">가입 신청</h1>
+        <p class="h-sub" style="margin-top:8px;">본인 확인은 필수입니다.<br>휴대폰으로 인증을 진행해 주세요.</p>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="steps"><div class="seg on"></div><div class="seg on"></div><div class="seg"></div></div>
+        <div class="steplabels"><span>1 소속·정보</span><span class="on">2 본인인증</span><span>3 계정·약관</span></div>
+      </div>
+
+      <div style="margin-top:22px;">
+        <div class="section-title">통신사</div>
+        <select class="select" id="carrier">
+          <option value="SKT" selected>SKT</option>
+          <option value="KT">KT</option>
+          <option value="LG U+">LG U+</option>
+          <option value="알뜰폰">알뜰폰</option>
+        </select>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="section-title">휴대폰번호</div>
+        <div class="field-row">
+          <input class="input" id="phone" inputmode="numeric" placeholder="숫자만 입력">
+          <button class="btn btn-dark btn-sm" id="sendCode">인증번호 발송</button>
+        </div>
+      </div>
+
+      <div id="codeWrap" style="margin-top:20px;display:none;">
+        <div class="section-title">인증번호</div>
+        <div class="code-box">
+          <div class="code-inp">
+            <input id="code" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리">
+            <span class="timer" id="timer">03:00</span>
+          </div>
+          <button class="btn btn-outline btn-sm" id="verify">확인</button>
+        </div>
+        <p class="hint" style="margin-top:12px;">발송된 인증번호를 입력 후 [확인]을 눌러주세요.</p>
+      </div>
+
+      <div id="verifiedWrap" style="margin-top:20px;display:none;">
+        <div class="section-title">인증 결과</div>
+        <div class="verified"><span class="dot-ok">✓</span><span id="verifiedText">본인인증이 완료되었습니다</span></div>
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+    <div class="cta">
+      <div class="row">
+        <button class="btn btn-outline" id="prev2" style="flex:.7;">이전</button>
+        <button class="btn btn-primary" id="next2" style="flex:1.5;" disabled>다음</button>
+      </div>
+      <p class="err-note" id="err2">본인인증을 완료해 주세요.</p>
+    </div>
+  </section>
+
+  <!-- ===== STEP 3 · 계정·약관 ===== -->
+  <section class="screen" id="step3">
+    <div class="topbar">
+      <button class="back" id="back3" aria-label="뒤로">‹</button>
+      <img class="logo" src="assets/rayno-logo-dark.png" alt="RAYNO">
+    </div>
+    <div class="scroll pad" style="padding-top:8px;">
+      <div style="text-align:center;">
+        <h1 class="h-title">가입 신청</h1>
+        <p class="h-sub" style="margin-top:8px;">로그인에 사용할 계정을 만들고<br>약관에 동의해 주세요.</p>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="steps"><div class="seg on"></div><div class="seg on"></div><div class="seg on"></div></div>
+        <div class="steplabels"><span>1 소속·정보</span><span>2 본인인증</span><span class="on">3 계정·약관</span></div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="section-title">계정 정보</div>
+        <div class="field" style="gap:6px;">
+          <div class="field-row">
+            <input class="input" id="loginId" placeholder="아이디" autocomplete="off">
+            <button class="btn btn-outline btn-sm" id="checkId">중복확인</button>
+          </div>
+          <p id="idMsg" class="hint" style="display:none;"></p>
+          <input class="input" id="password" type="password" placeholder="비밀번호" style="margin-top:4px;" autocomplete="new-password">
+          <input class="input" id="password2" type="password" placeholder="비밀번호 확인" autocomplete="new-password">
+          <p id="pwMsg" class="msg-err" style="display:none;">비밀번호가 일치하지 않습니다.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <div class="agree">
+          <div class="all" id="agreeAll">
+            <span class="chk" id="chkAll"><span class="mk">✓</span></span>
+            <span class="t">전체 동의</span>
+          </div>
+          <div class="items">
+            <div class="item" data-req="1" data-key="agree1">
+              <span class="chk sm agree-chk"><span class="mk">✓</span></span>
+              <span class="t">개인정보 수집·이용 동의 <b class="req">(필수)</b></span>
+              <button class="more" data-doc="collect">전문 ›</button>
+            </div>
+            <div class="item" data-req="1" data-key="agree2">
+              <span class="chk sm agree-chk"><span class="mk">✓</span></span>
+              <span class="t">개인정보 취급 위탁 동의 <b class="req">(필수)</b></span>
+              <button class="more" data-doc="entrust">전문 ›</button>
+            </div>
+            <div class="item opt" data-req="0" data-key="agree3">
+              <span class="chk sm agree-chk"><span class="mk">✓</span></span>
+              <span class="t">광고성 정보 수신 동의 (선택)</span>
+              <button class="more" data-doc="marketing">전문 ›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height:18px;"></div>
+    </div>
+    <div class="cta">
+      <div class="row">
+        <button class="btn btn-outline" id="prev3" style="flex:.7;">이전</button>
+        <button class="btn btn-primary" id="submit" style="flex:1.5;" disabled>가입 완료</button>
+      </div>
+      <p class="err-note" id="err3">아이디 중복확인, 비밀번호, 필수 약관을 확인해 주세요.</p>
+    </div>
+  </section>
+
+  <!-- ===== 처리중 ===== -->
+  <section class="screen" id="processing">
+    <div class="center">
+      <div class="spinner"></div>
+      <div style="margin-top:28px;font-size:18px;font-weight:800;">가입을 처리하고 있습니다</div>
+      <div style="margin-top:10px;font-size:14px;color:var(--muted);line-height:1.65;">입력하신 정보를 확인하고<br>멤버십 가입을 완료하고 있어요.</div>
+    </div>
+  </section>
+
+  <!-- ===== 가입 완료 ===== -->
+  <section class="screen" id="done">
+    <div class="done scroll">
+      <img class="logo" src="assets/rayno-logo-dark.png" alt="RAYNO">
+      <div class="check">✓</div>
+      <h2 style="margin-top:22px;font-size:23px;font-weight:800;letter-spacing:-.2px;">가입이 완료되었습니다!</h2>
+      <p style="margin-top:9px;font-size:14.5px;line-height:1.55;color:var(--muted);">레이노 카마스터 멤버십에 오신 걸 환영합니다.</p>
+      <div class="done-name" id="doneName">홍길동 <span style="font-weight:700;">카마스터님</span></div>
+      <div class="banner" style="margin-top:22px;">
+        <div class="b1">시공점 직원에게<br>가입 완료를 알려주세요</div>
+        <div class="b2">직원이 이 화면을 확인 후 보증서를 연계합니다.</div>
+      </div>
+      <div class="gift" style="margin-top:14px;">
+        <div class="g">GIFT</div>
+        <div class="t"><b style="color:var(--ink);font-weight:800;">주유상품권 5,000원</b>이 2주 이내 문자/카카오톡으로 발송됩니다.</div>
+      </div>
+      <div style="margin-top:16px;width:100%;">
+        <p class="notes">※ 상품권 사용 문의는 발급사로 연락 부탁드립니다.<br>※ 본 혜택은 당사 사정에 의해 예고 없이 변경·취소될 수 있습니다.<br>※ 문의: 대표번호 1588-8695</p>
+      </div>
+      <div style="height:16px;"></div>
+    </div>
+    <div class="cta no-line">
+      <button class="btn btn-outline" id="finish">완료</button>
+    </div>
+  </section>
+
+</div>
+
+<!-- 약관 전문 바텀시트 -->
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet">
+  <div class="grab"></div>
+  <div class="head"><span class="t" id="sheetTitle">약관 전문</span><button class="x" id="sheetClose">✕</button></div>
+  <div class="bd" id="sheetBody"></div>
+  <div class="ft"><button class="btn btn-dark" id="sheetAgree">동의하고 닫기</button></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   RAYNO 카마스터 멤버십 · signup.html
+   가입 3단계 → 처리중 → 완료 (페이지 이동 없이 JS 전환)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── 전역 상태 ── */
+const S = {
+  step: 1,
+  brand: '', region: '', office: '', brandEtc: '', officeEtc: '',
+  name: '', birth: '',
+  carrier: 'SKT', phone: '', codeSent: false, verified: false, token: null, display: '',
+  loginId: '', idChecked: false, pw: '', pw2: '',
+  agree1: false, agree2: false, agree3: false,
+  result: null
+};
+
+/* ── 백엔드 연동 예정 (지금은 샘플 데이터 반환 · 실제 API로 교체하세요) ── */
+async function loadOffices() {
+  /* 소속·지역·영업소 목록.  형태: [{ name, regions:[{ name, offices:[문자열…] }] }] */
+  // TODO: return await (await fetch('/api/offices')).json();
+  return [
+    { name:'현대', regions:[
+      { name:'서울특별시', offices:['강남지점','서초지점','송파지점'] },
+      { name:'경기도', offices:['광교대리점','분당지점','수원지점'] } ] },
+    { name:'기아', regions:[
+      { name:'경기도', offices:['분당지점','성남지점'] },
+      { name:'인천광역시', offices:['부평지점'] } ] },
+    { name:'제네시스', regions:[
+      { name:'서울특별시', offices:['강남 하우스'] } ] },
+    { name:'KG모빌리티', regions:[] },
+    { name:'르노코리아', regions:[] },
+    { name:'한국지엠(쉐보레)', regions:[] }
+  ];
+}
+async function checkLoginId(id) {
+  /* → { ok, message } */
+  // TODO: return await (await fetch('/api/check-id?id='+encodeURIComponent(id))).json();
+  const taken = ['admin','rayno','test'];
+  return taken.includes(id.toLowerCase())
+    ? { ok:false, message:'이미 사용 중인 아이디입니다.' }
+    : { ok:true, message:'사용 가능한 아이디입니다.' };
+}
+async function verifyIdentity(data) {
+  /* → { ok, token, display }  (data: {carrier, phone, code}) */
+  // TODO: return await (await fetch('/api/verify', {method:'POST', body:JSON.stringify(data)})).json();
+  return { ok:true, token:'verify_'+Date.now(), display:'홍길동 · 1990.01.01 · '+maskPhone(data.phone) };
+}
+async function submitSignup(data) {
+  /* → { ok, carmaster:{ name, code } } */
+  // TODO: return await (await fetch('/api/signup', {method:'POST', body:JSON.stringify(data)})).json();
+  return { ok:true, carmaster:{ name:data.name || '홍길동', code:'CM-'+Math.floor(1000+Math.random()*9000) } };
+}
+
+/* 17개 시도 (지역 고정 목록) */
+const SIDO = ['서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시','세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도','경상북도','경상남도','제주특별자치도'];
+const ETC = '기타 (직접 입력)';
+let OFFICE_DATA = [];
+
+/* ── 약관 전문 ── */
+const DOCS = {
+  collect: { title:'개인정보 수집·이용 동의', html:'<b>1. 수집·이용 목적</b><br>레이노 카마스터 멤버십 가입, 리워드 지급, 시공 품질보증서 연계 및 본인 확인.<br><br><b>2. 수집 항목</b><br>성명, 생년월일, 휴대전화번호, 아이디, 소속·지역·영업소 정보.<br><br><b>3. 보유·이용 기간</b><br>멤버십 탈퇴 시 또는 목적 달성 시까지 보유하며, 관계 법령에 따라 일정 기간 보관 후 파기합니다.<br><br><b>4. 동의 거부 권리</b><br>동의를 거부할 권리가 있으나, 필수 항목 미동의 시 가입이 제한됩니다.' },
+  entrust: { title:'개인정보 취급 위탁 동의', html:'<b>1. 위탁 목적</b><br>리워드(상품권·쿠폰) 발송 및 고객 문의 응대를 위한 업무 위탁.<br><br><b>2. 수탁 업체</b><br>상품권 발급사, 문자·알림톡 발송 대행사.<br><br><b>3. 위탁 항목</b><br>성명, 휴대전화번호.<br><br><b>4. 보유·이용 기간</b><br>위탁 목적 달성 시까지.' },
+  marketing: { title:'광고성 정보 수신 동의 (선택)', html:'<b>1. 목적</b><br>신규 혜택, 이벤트, 프로모션 등 광고성 정보 안내.<br><br><b>2. 수신 방법</b><br>문자(SMS/MMS), 카카오 알림톡.<br><br><b>3. 안내</b><br>본 항목은 선택 사항이며, 동의하지 않아도 멤버십 가입 및 혜택 이용에 제한이 없습니다. 동의 후에도 언제든 수신을 거부할 수 있습니다.' }
+};
+
+/* ── 유틸 ── */
+const $ = id => document.getElementById(id);
+function maskPhone(p){ const d=(p||'').replace(/\D/g,''); return d.length>=8 ? '010-****-'+d.slice(-4) : p; }
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+let toastT;
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),1800); }
+
+/* ═══════ STEP 1 : 소속·개인정보 ═══════ */
+async function initStep1(){
+  OFFICE_DATA = await loadOffices();
+  const brand = $('brand');
+  OFFICE_DATA.forEach(b => brand.add(new Option(b.name, b.name)));
+  brand.add(new Option(ETC, ETC));
+}
+function fillRegion(){
+  const region = $('region');
+  region.innerHTML = '<option value="" selected disabled>지역 선택 (시·도)</option>';
+  SIDO.forEach(r => region.add(new Option(r, r)));
+  region.disabled = false; region.classList.add('placeholder');
+}
+function fillOffice(){
+  const office = $('office');
+  office.innerHTML = '<option value="" selected disabled>영업소 선택</option>';
+  const b = OFFICE_DATA.find(x => x.name === S.brand);
+  const list = (b && b.regions.find(r => r.name === S.region)?.offices) || [];
+  list.forEach(o => office.add(new Option(o, o)));
+  office.add(new Option(ETC, ETC));
+  office.disabled = false; office.classList.add('placeholder');
+}
+function resetSelect(el, ph){ el.innerHTML='<option value="" selected disabled>'+ph+'</option>'; el.disabled=true; el.classList.add('placeholder'); }
+
+$('brand').addEventListener('change', e=>{
+  S.brand = e.target.value; e.target.classList.remove('placeholder');
+  $('brandEtc').style.display = (S.brand===ETC) ? 'block' : 'none';
+  if(S.brand!==ETC) { S.brandEtc=''; $('brandEtc').value=''; }
+  S.region=''; S.office=''; S.officeEtc=''; $('officeEtc').style.display='none'; $('officeEtc').value='';
+  fillRegion();
+  resetSelect($('office'),'영업소 선택');
+  validate1();
+});
+$('region').addEventListener('change', e=>{
+  S.region = e.target.value; e.target.classList.remove('placeholder');
+  S.office=''; S.officeEtc=''; $('officeEtc').style.display='none'; $('officeEtc').value='';
+  fillOffice();
+  validate1();
+});
+$('office').addEventListener('change', e=>{
+  S.office = e.target.value; e.target.classList.remove('placeholder');
+  $('officeEtc').style.display = (S.office===ETC) ? 'block' : 'none';
+  if(S.office!==ETC){ S.officeEtc=''; $('officeEtc').value=''; }
+  validate1();
+});
+$('brandEtc').addEventListener('input', e=>{ S.brandEtc=e.target.value.trim(); validate1(); });
+$('officeEtc').addEventListener('input', e=>{ S.officeEtc=e.target.value.trim(); validate1(); });
+$('name').addEventListener('input', e=>{ S.name=e.target.value.trim(); validate1(); });
+$('birth').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); S.birth=e.target.value; validate1(); });
+
+function validate1(){
+  const brandOk = S.brand && (S.brand!==ETC || S.brandEtc.length>0);
+  const officeOk = S.office && (S.office!==ETC || S.officeEtc.length>0);
+  const ok = brandOk && S.region && officeOk && S.name.length>0 && S.birth.length===8;
+  $('next').disabled = !ok;
+}
+$('back1').addEventListener('click', ()=> location.href='index.html');
+$('next').addEventListener('click', ()=>{ S.step=2; showScreen('step2'); });
+
+/* ═══════ STEP 2 : 본인인증 ═══════ */
+let timerInt;
+$('carrier').addEventListener('change', e=> S.carrier=e.target.value);
+$('phone').addEventListener('input', e=>{ e.target.value=e.target.value.replace(/\D/g,''); S.phone=e.target.value; });
+
+$('sendCode').addEventListener('click', ()=>{
+  if(S.phone.replace(/\D/g,'').length < 10){ toast('휴대폰번호를 정확히 입력해 주세요.'); return; }
+  S.codeSent = true;
+  $('codeWrap').style.display='block';
+  $('sendCode').textContent='재발송';
+  startTimer(180);
+  toast('인증번호를 발송했습니다.');
+});
+function startTimer(sec){
+  clearInterval(timerInt);
+  const t=$('timer');
+  const tick=()=>{ const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); t.textContent=m+':'+s; if(sec<=0){clearInterval(timerInt); t.textContent='00:00';} sec--; };
+  tick(); timerInt=setInterval(tick,1000);
+}
+$('verify').addEventListener('click', async ()=>{
+  const code = $('code').value.trim();
+  if(code.length<4){ toast('인증번호를 입력해 주세요.'); return; }
+  const res = await verifyIdentity({ carrier:S.carrier, phone:S.phone, code });
+  if(res && res.ok){
+    clearInterval(timerInt);
+    S.verified=true; S.token=res.token; S.display=res.display||'';
+    $('codeWrap').style.display='none';
+    $('verifiedWrap').style.display='block';
+    if(S.display) $('verifiedText').textContent = S.display + ' · 인증완료';
+    $('next2').disabled=false;
+    $('err2').style.display='none';
+    toast('본인인증이 완료되었습니다.');
+  } else {
+    toast((res && res.message) || '인증에 실패했습니다.');
+  }
+});
+$('back2').addEventListener('click', ()=>{ S.step=1; showScreen('step1'); });
+$('prev2').addEventListener('click', ()=>{ S.step=1; showScreen('step1'); });
+$('next2').addEventListener('click', ()=>{ if(!S.verified) return; S.step=3; showScreen('step3'); });
+
+/* ═══════ STEP 3 : 계정·약관 ═══════ */
+$('loginId').addEventListener('input', e=>{ S.loginId=e.target.value.trim(); S.idChecked=false; $('idMsg').style.display='none'; validate3(); });
+$('checkId').addEventListener('click', async ()=>{
+  if(!S.loginId){ toast('아이디를 입력해 주세요.'); return; }
+  const res = await checkLoginId(S.loginId);
+  const msg=$('idMsg'); msg.style.display='block';
+  if(res && res.ok){ S.idChecked=true; msg.className='msg-ok'; msg.textContent='✓ '+(res.message||'사용 가능한 아이디입니다.'); $('loginId').classList.remove('error'); }
+  else { S.idChecked=false; msg.className='msg-err'; msg.textContent=(res && res.message)||'사용할 수 없는 아이디입니다.'; $('loginId').classList.add('error'); }
+  validate3();
+});
+$('password').addEventListener('input', e=>{ S.pw=e.target.value; checkPw(); validate3(); });
+$('password2').addEventListener('input', e=>{ S.pw2=e.target.value; checkPw(); validate3(); });
+function checkPw(){
+  const m=$('pwMsg');
+  if(S.pw2.length>0 && S.pw!==S.pw2){ m.style.display='block'; $('password2').classList.add('error'); }
+  else { m.style.display='none'; $('password2').classList.remove('error'); }
+}
+
+/* 약관 체크 */
+const items = Array.from(document.querySelectorAll('.agree .item'));
+function renderChecks(){
+  items.forEach(it=>{ const on=S[it.dataset.key]; it.querySelector('.agree-chk').classList.toggle('on', on); });
+  const allOn = items.every(it=>S[it.dataset.key]);
+  $('chkAll').classList.toggle('on', allOn);
+  validate3();
+}
+items.forEach(it=>{
+  it.querySelector('.agree-chk').addEventListener('click', ()=>{ S[it.dataset.key]=!S[it.dataset.key]; renderChecks(); });
+});
+$('agreeAll').addEventListener('click', e=>{
+  if(e.target.closest('.more')) return;
+  const target = !items.every(it=>S[it.dataset.key]);
+  items.forEach(it=> S[it.dataset.key]=target);
+  renderChecks();
+});
+function validate3(){
+  const pwOk = S.pw.length>=6 && S.pw===S.pw2;
+  const ok = S.idChecked && pwOk && S.agree1 && S.agree2;   // 선택(agree3)은 필수 아님
+  $('submit').disabled = !ok;
+  $('err3').style.display = ok ? 'none' : 'block';
+}
+$('back3').addEventListener('click', ()=>{ S.step=2; showScreen('step2'); });
+$('prev3').addEventListener('click', ()=>{ S.step=2; showScreen('step2'); });
+
+$('submit').addEventListener('click', async ()=>{
+  showScreen('processing');
+  const payload = {
+    brand: S.brand===ETC ? S.brandEtc : S.brand,
+    region: S.region,
+    office: S.office===ETC ? S.officeEtc : S.office,
+    name: S.name, birth: S.birth,
+    carrier: S.carrier, phone: S.phone, verifyToken: S.token,
+    loginId: S.loginId, password: S.pw,
+    agreeMarketing: S.agree3
+  };
+  const res = await submitSignup(payload);
+  await new Promise(r=>setTimeout(r, 1200)); // 처리중 연출
+  if(res && res.ok){
+    S.result = res;
+    const nm = (res.carmaster && res.carmaster.name) || S.name || '홍길동';
+    $('doneName').innerHTML = nm + ' <span style="font-weight:700;">카마스터님</span>';
+    showScreen('done');
+  } else {
+    toast('가입에 실패했습니다. 다시 시도해 주세요.');
+    showScreen('step3');
+  }
+});
+$('finish').addEventListener('click', ()=>{ window.open('https://www.rayno.co.kr','_blank'); });
+
+/* ═══════ 바텀시트 ═══════ */
+function openSheet(key){
+  const d=DOCS[key]; if(!d) return;
+  $('sheetTitle').textContent=d.title; $('sheetBody').innerHTML=d.html;
+  $('sheet').dataset.key = (key==='collect'?'agree1':key==='entrust'?'agree2':'agree3');
+  $('overlay').classList.add('on'); $('sheet').classList.add('on');
+}
+function closeSheet(){ $('overlay').classList.remove('on'); $('sheet').classList.remove('on'); }
+document.querySelectorAll('.more').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); openSheet(b.dataset.doc); }));
+$('sheetClose').addEventListener('click', closeSheet);
+$('overlay').addEventListener('click', closeSheet);
+$('sheetAgree').addEventListener('click', ()=>{ const k=$('sheet').dataset.key; if(k){ S[k]=true; renderChecks(); } closeSheet(); });
+
+/* ── init ── */
+initStep1();
+</script>
+</body>
+</html>
