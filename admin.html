@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAYNO 관리자 콘솔</title>
+<title>[v10] RAYNO 관리자 콘솔</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /* ===== RAYNO 관리자 콘솔 · 데스크톱 (1280px+) ===== */
@@ -149,6 +149,26 @@ input::placeholder{color:#B4B4B8;}
 </style>
 </head>
 <body>
+
+<!-- ═══ 로그인 ═══ -->
+<div id="loginView" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;background:#F5F5F7;">
+  <div style="width:100%;max-width:380px;background:#fff;border-radius:20px;padding:36px 32px;box-shadow:0 8px 30px rgba(0,0,0,.08);">
+    <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:var(--orange);">RAYNO</div>
+    <h1 style="font-size:22px;font-weight:800;margin-top:6px;">카마스터 관리자</h1>
+    <p style="font-size:13px;color:var(--muted);margin-top:6px;">관리자 계정으로 로그인해 주세요.</p>
+    <div style="margin-top:16px;">
+      <div class="flabel">이메일</div>
+      <input class="finp" id="admEmail" type="email" autocomplete="username" placeholder="admin@raynofilm.co.kr">
+    </div>
+    <div style="margin-top:12px;">
+      <div class="flabel">비밀번호</div>
+      <input class="finp" id="admPw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    </div>
+    <button class="btn btn-primary" id="admLogin" style="width:100%;margin-top:18px;padding:14px;">로그인</button>
+    <p id="admErr" style="display:none;color:var(--err);font-size:12.5px;margin-top:10px;"></p>
+  </div>
+</div>
+
 <div class="layout">
   <!-- 사이드바 -->
   <aside class="sidebar">
@@ -256,11 +276,11 @@ input::placeholder{color:#B4B4B8;}
           <div class="link-l">
             <div class="step-h"><span class="n">1</span>카마스터 조회</div>
             <div style="margin-top:14px;display:flex;gap:8px;">
-              <input class="finp" id="wSearch" value="CM-4821" style="flex:1;">
+              <input class="finp" id="wSearch" placeholder="이름 · 코드 · 휴대폰 뒷 4자리" style="flex:1;">
               <button class="btn btn-dark" id="wSearchBtn" style="flex-shrink:0;">조회</button>
             </div>
             <div style="margin-top:8px;font-size:12px;color:var(--muted);">코드 · 이름 · 휴대폰번호로 검색할 수 있습니다.</div>
-            <div style="margin-top:16px;font-size:12px;font-weight:700;color:var(--muted);" id="wResultCount">검색 결과 2건</div>
+            <div style="margin-top:16px;font-size:12px;font-weight:700;color:var(--muted);" id="wResultCount">카마스터를 검색해 주세요</div>
             <div id="wResults" style="margin-top:10px;display:flex;flex-direction:column;gap:10px;"></div>
           </div>
           <div class="link-r">
@@ -272,12 +292,12 @@ input::placeholder{color:#B4B4B8;}
                 <span style="font-size:11px;font-weight:800;color:var(--orange);">연계 대상</span>
               </div>
               <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div><div class="flabel">보증서 번호</div><div class="freadonly">WR-2026-018842 (자동)</div></div>
-                <div><div class="flabel">시공점</div><input class="finp" value="레이노 광교점"></div>
-                <div><div class="flabel">차량 모델</div><input class="finp" id="wModel" value="그랜저 GN7"></div>
-                <div><div class="flabel">차대번호(VIN)</div><input class="finp" id="wVin" value="KMHXX00XXXX000000"></div>
-                <div><div class="flabel">시공일</div><input class="finp" value="2026.07.13"></div>
-                <div><div class="flabel">필름 제품</div><input class="finp" value="RAYNO 나노 세라믹"></div>
+                <div><div class="flabel">보증서 번호 <b style="color:var(--orange)">*</b></div><input class="finp" id="wNo" placeholder="보증서 시리얼 번호"></div>
+                <div><div class="flabel">시공점</div><input class="finp" id="wDealer" placeholder="시공점명"></div>
+                <div><div class="flabel">차량 모델</div><input class="finp" id="wModel" placeholder="예: 그랜저 GN7"></div>
+                <div><div class="flabel">차대번호(VIN)</div><input class="finp" id="wVin" placeholder="차대번호"></div>
+                <div><div class="flabel">시공일 <b style="color:var(--orange)">*</b></div><input class="finp" id="wDate" type="date"></div>
+                <div><div class="flabel">필름 제품</div><input class="finp" id="wProduct" placeholder="예: RAYNO 나노 세라믹"></div>
               </div>
               <div style="margin-top:24px;display:flex;justify-content:flex-end;gap:12px;">
                 <button class="btn btn-soft" style="padding:15px 24px;font-size:15px;">취소</button>
@@ -351,6 +371,7 @@ input::placeholder{color:#B4B4B8;}
     </div>
   </div>
 </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -362,68 +383,197 @@ const S = { view:'dashboard', rewardTab:'pending', selectedReward:null, warranty
 const $ = id => document.getElementById(id);
 let toastT; function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1900);}
 
-/* ── 백엔드 연동 예정 (지금은 샘플 · 실제 API로 교체하세요) ── */
+/* ══════════ Supabase 연동 ══════════ */
+const SB_URL  = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
+
+let TOKEN = sessionStorage.getItem('adm_token');
+let ME    = sessionStorage.getItem('adm_email') || '';
+
+async function api(path, opt = {}){
+  const r = await fetch(SB_URL + '/rest/v1/' + path, {
+    ...opt,
+    headers: { apikey: SB_ANON, Authorization: 'Bearer ' + TOKEN,
+               'Content-Type':'application/json', ...(opt.headers || {}) }
+  });
+  if (r.status === 401){ admLogout(); throw new Error('세션 만료'); }
+  if (!r.ok) throw new Error(await r.text());
+  return r.status === 204 ? null : r.json();
+}
+
+/* ── 로그인 ── */
+function admLogout(){
+  sessionStorage.removeItem('adm_token'); sessionStorage.removeItem('adm_email');
+  location.reload();
+}
+async function admDoLogin(){
+  const email = $('admEmail').value.trim(), pw = $('admPw').value;
+  if(!email || !pw){ toast('이메일과 비밀번호를 입력해 주세요.'); return; }
+  const btn = $('admLogin'); btn.disabled = true; btn.textContent = '확인 중…';
+
+  const r = await fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+    method:'POST', headers:{ apikey: SB_ANON, 'Content-Type':'application/json' },
+    body: JSON.stringify({ email, password: pw })
+  });
+  const d = await r.json();
+  btn.disabled = false; btn.textContent = '로그인';
+
+  const err = $('admErr');
+  if(!r.ok || !d.access_token){ err.textContent='로그인에 실패했습니다.'; err.style.display='block'; return; }
+
+  TOKEN = d.access_token; ME = email;
+  try {
+    const a = await api('admins?select=user_id');
+    if(!a || !a.length) throw new Error();
+  } catch(e){
+    TOKEN = null;
+    err.textContent = '관리자 권한이 없는 계정입니다.'; err.style.display='block'; return;
+  }
+  sessionStorage.setItem('adm_token', TOKEN);
+  sessionStorage.setItem('adm_email', ME);
+  admEnter();
+}
+function admEnter(){
+  $('loginView').style.display = 'none';
+  $('admApp').style.display = 'block';
+  boot();
+}
+
+/* ── 유틸 ── */
+const fmtPhone = p => p ? p.replace(/(\d{3})(\d{3,4})(\d{4})/,'$1-$2-$3') : '-';
+const maskPhone = p => p ? p.replace(/(\d{3})\d+(\d{4})/,'$1-****-$2') : '-';
+const fmtDate  = d => d ? d.slice(0,10).replace(/-/g,'.') : '-';
+const ago = ts => {
+  const m = Math.floor((Date.now() - new Date(ts)) / 60000);
+  if (m < 1)    return '방금 전';
+  if (m < 60)   return m + '분 전';
+  if (m < 1440) return Math.floor(m/60) + '시간 전';
+  return Math.floor(m/1440) + '일 전';
+};
+const STATUS = { verified:'활성', pending:'인증대기', withdrawn:'정지' };
+
+let MEMBERS = [], REWARDS = [];
+
+async function refresh(){
+  const [ms, st, rw] = await Promise.all([
+    api('admin_carmasters?select=*'),
+    api('my_stats?select=carmaster_id,code,total_count'),
+    api('rewards?select=id,carmaster_id,type,item_name,status,created_at,sent_at&order=created_at.desc'),
+  ]);
+  const cnt = Object.fromEntries(st.map(x => [x.code, x.total_count]));
+  MEMBERS = ms.map(m => ({ ...m, total: cnt[m.code] ?? 0 }));
+  const byId = Object.fromEntries(MEMBERS.map(m => [m.id, m]));
+  REWARDS = rw.map(r => ({ ...r, m: byId[r.carmaster_id] || {} }));
+}
+
+/* ── 대시보드 ── */
 async function loadDashboard(){
-  // TODO: return await (await fetch('/api/admin/dashboard')).json();
   return {
-    recent:[
-      {name:'이재훈', office:'현대 · 광교대리점', ago:'방금 전'},
-      {name:'박서연', office:'기아 · 분당지점', ago:'14분 전'},
-      {name:'최민석', office:'제네시스 · 강남', ago:'1시간 전'},
-      {name:'홍길동', office:'현대 · 광교대리점', ago:'2시간 전'}
-    ],
-    pending:[
-      {name:'홍길동', reward:'주유상품권', reason:'가입 웰컴 · CM-4821'},
-      {name:'김도현', reward:'유리막 쿠폰', reason:'10건 달성 · CM-3910'},
-      {name:'이수정', reward:'주유상품권', reason:'가입 웰컴 · CM-4102'}
-    ]
+    recent: MEMBERS.slice(0,5).map(m => ({
+      name: m.name, office: `${m.brand} · ${m.office}`, ago: ago(m.created_at)
+    })),
+    pending: REWARDS.filter(r => r.status === 'pending').slice(0,5).map(r => ({
+      id: r.id, name: r.m.name, reward: r.item_name,
+      reason: (r.type === 'welcome' ? '가입 웰컴' : '누적 시공') + ' · ' + (r.m.code || '')
+    }))
   };
 }
-async function loadMembers(filters){
-  // TODO: return await (await fetch('/api/admin/members?'+new URLSearchParams(filters))).json();
-  return [
-    {code:'CM-4821',name:'홍길동',office:'현대 · 광교대리점',phone:'010-****-6754',join:'2026.07.13',total:17,status:'활성'},
-    {code:'CM-4102',name:'이수정',office:'기아 · 분당지점',phone:'010-****-2211',join:'2026.07.11',total:8,status:'활성'},
-    {code:'CM-3910',name:'김도현',office:'제네시스 · 강남',phone:'010-****-8890',join:'2026.06.28',total:10,status:'활성'},
-    {code:'CM-3877',name:'박서연',office:'기아 · 분당지점',phone:'010-****-1042',join:'2026.06.22',total:5,status:'인증대기'},
-    {code:'CM-3654',name:'최민석',office:'현대 · 수원지점',phone:'010-****-5521',join:'2026.06.15',total:22,status:'활성'},
-    {code:'CM-3521',name:'정하늘',office:'르노코리아 · 인천',phone:'010-****-7789',join:'2026.06.03',total:3,status:'정지'},
-    {code:'CM-3402',name:'이재훈',office:'현대 · 광교대리점',phone:'010-****-3311',join:'2026.05.29',total:14,status:'활성'}
-  ];
+
+/* ── 회원 ── */
+async function loadMembers(){
+  return MEMBERS.map(m => ({
+    code: m.code, name: m.name,
+    office: `${m.brand} · ${m.office}`,
+    phone: maskPhone(m.phone),
+    join: fmtDate(m.created_at),
+    total: m.total,
+    status: STATUS[m.status] || m.status
+  }));
 }
 async function getMember(code){
-  // TODO: return await (await fetch('/api/admin/members/'+code)).json();
-  const m = (await loadMembers({})).find(x=>x.code===code) || {};
-  return Object.assign({birth:'1990.01.01', phoneFull:'010-1234-6754', reward:1}, m);
+  const m = MEMBERS.find(x => x.code === code) || {};
+  return {
+    code: m.code, name: m.name, office: `${m.brand} · ${m.office}`,
+    phone: maskPhone(m.phone), phoneFull: fmtPhone(m.phone),
+    birth: fmtDate(m.birth_date), join: fmtDate(m.created_at),
+    total: m.total ?? 0,
+    reward: REWARDS.filter(r => r.carmaster_id === m.id && r.status === 'sent').length,
+    status: STATUS[m.status] || m.status
+  };
 }
+
+/* ── 보증서 연계 ── */
 async function searchCarmaster(q){
-  // TODO: return await (await fetch('/api/admin/carmaster/search?q='+encodeURIComponent(q))).json();
-  return [
-    {code:'CM-4821',name:'홍길동',office:'현대 · 광교대리점',phone:'010-1234-6754',status:'활성',verified:true},
-    {code:'CM-2210',name:'홍길순',office:'기아 · 성남지점',phone:'010-2222-1188',status:'활성',verified:true}
-  ];
+  q = (q || '').trim().toLowerCase();
+  if (!q) return [];
+  return MEMBERS.filter(m =>
+    [m.code, m.name, m.login_id, m.phone].some(v => (v||'').toLowerCase().includes(q))
+  ).map(m => ({
+    id: m.id, code: m.code, name: m.name,
+    office: `${m.brand} · ${m.office}`,
+    phone: fmtPhone(m.phone),
+    status: STATUS[m.status] || m.status,
+    verified: m.status === 'verified'
+  }));
 }
-async function linkWarranty(data){
-  // TODO: return await (await fetch('/api/admin/warranty/link',{method:'POST',body:JSON.stringify(data)})).json();
-  return { ok:true };
+async function linkWarranty(){
+  const c  = S.warrantyPick;
+  const no = ($('wNo').value || '').trim();
+  const dt = $('wDate').value;
+  if (!c)  return { ok:false, message:'카마스터를 선택해 주세요.' };
+  if (!no) return { ok:false, message:'보증서 번호를 입력해 주세요.' };
+  if (!dt) return { ok:false, message:'시공일을 입력해 주세요.' };
+  try {
+    await api('warranty_matches', {
+      method:'POST', headers:{ Prefer:'return=minimal' },
+      body: JSON.stringify({
+        warranty_no: no, link_type: 'linked', carmaster_id: c.id,
+        installed_at: dt,
+        dealer_name: $('wDealer').value.trim() || null,
+        car_model:   $('wModel').value.trim()  || null,
+        vin:         $('wVin').value.trim()    || null,
+        product:     $('wProduct').value.trim()|| null,
+      })
+    });
+    await refresh();
+    return { ok:true };
+  } catch(e){
+    return { ok:false, message: /duplicate|unique/i.test(e.message)
+      ? '이미 등록된 보증서 번호입니다.' : '연계에 실패했습니다.' };
+  }
 }
+
+/* ── 리워드 ── */
 async function loadRewards(tab){
-  // TODO: return await (await fetch('/api/admin/rewards?tab='+tab)).json();
-  if(tab==='done') return [
-    {id:'r0',name:'강도윤',code:'CM-3301',reward:'주유상품권 5,000원',reason:'가입 웰컴',date:'07.02',done:true},
-    {id:'r1',name:'문서아',code:'CM-3288',reward:'유리막 코팅 무료 쿠폰',reason:'누적 10건',date:'06.28',done:true}
-  ];
-  return [
-    {id:'p0',name:'홍길동',code:'CM-4821',reward:'주유상품권 5,000원',reason:'가입 웰컴',date:'07.13'},
-    {id:'p1',name:'김도현',code:'CM-3910',reward:'유리막 코팅 무료 쿠폰',reason:'누적 10건 달성',date:'07.12'},
-    {id:'p2',name:'이수정',code:'CM-4102',reward:'주유상품권 5,000원',reason:'가입 웰컴',date:'07.11'},
-    {id:'p3',name:'최민석',code:'CM-3654',reward:'유리막 코팅 무료 쿠폰',reason:'누적 20건 달성',date:'07.09'},
-    {id:'p4',name:'정하늘',code:'CM-3521',reward:'주유상품권 5,000원',reason:'가입 웰컴',date:'07.08'}
-  ];
+  return REWARDS
+    .filter(r => tab === 'done' ? r.status === 'sent' : r.status === 'pending')
+    .map(r => ({
+      id: r.id, name: r.m.name, code: r.m.code,
+      reward: r.item_name,
+      reason: r.type === 'welcome' ? '가입 웰컴' : '누적 시공 달성',
+      date: fmtDate(r.sent_at || r.created_at).slice(5),
+      done: r.status === 'sent'
+    }));
 }
 async function approveRewards(ids){
-  // TODO: return await (await fetch('/api/admin/rewards/approve',{method:'POST',body:JSON.stringify({ids})})).json();
-  return { ok:true, count:ids.length };
+  await api(`rewards?id=in.(${ids.join(',')})`, {
+    method:'PATCH', headers:{ Prefer:'return=minimal' },
+    body: JSON.stringify({ status:'sent', sent_at:new Date().toISOString(), sent_by: ME })
+  });
+  await refresh();
+  return { ok:true, count: ids.length };
+}
+
+/* ── CSV (엑셀 한글 깨짐 방지: BOM) ── */
+function downloadCSV(head, rows, filename){
+  if (!rows.length){ toast('내보낼 데이터가 없습니다.'); return; }
+  const esc = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const csv = [head.map(esc).join(','), ...rows.map(r => r.map(esc).join(','))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' }));
+  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast(`${rows.length}건을 내보냈습니다.`);
 }
 
 /* ── 내비 전환 ── */
@@ -453,7 +603,13 @@ async function renderDashboard(){
     `<div style="display:flex;justify-content:space-between;align-items:center;">
        <div><div style="font-size:13.5px;font-weight:700;">${p.name} · ${p.reward}</div><div style="font-size:11.5px;color:var(--muted);margin-top:1px;">${p.reason}</div></div>
        <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;">승인</button></div>`).join('');
-  $('pendingList').querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{ b.textContent='완료'; b.style.background='#E5E5E7'; b.style.color='#B0B0B4'; toast('승인 처리했습니다.'); }));
+  $('pendingList').querySelectorAll('button').forEach((b,i)=> b.addEventListener('click', async ()=>{
+    b.disabled=true; b.textContent='처리 중…';
+    await approveRewards([d.pending[i].id]);
+    b.textContent='완료'; b.style.background='#E5E5E7'; b.style.color='#B0B0B4';
+    toast('승인·발송 처리했습니다.');
+    renderRewards();
+  }));
 }
 
 /* ── 회원 목록 ── */
@@ -468,7 +624,12 @@ async function renderMembers(){
        <span>${badge(m.status)}</span><span class="linklike" data-code="${m.code}">상세</span></div>`).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(el=> el.addEventListener('click', ()=> openMember(el.dataset.code)));
 }
-$('exportMembers').addEventListener('click', ()=> toast('엑셀 파일을 생성합니다. (연동 예정)'));
+$('exportMembers').addEventListener('click', ()=> downloadCSV(
+  ['카마스터코드','이름','아이디','연락처','생년월일','소속','지역','영업소','상태','누적시공','마케팅동의','가입일'],
+  MEMBERS.map(m=>[m.code,m.name,m.login_id,fmtPhone(m.phone),fmtDate(m.birth_date),
+                  m.brand,m.region,m.office,STATUS[m.status]||m.status,m.total,
+                  m.agree_marketing?'동의':'미동의',fmtDate(m.created_at)]),
+  '카마스터_회원목록'));
 
 /* ── 회원 상세 드로어 ── */
 async function openMember(code){
@@ -519,10 +680,12 @@ function applyPick(){
 $('wSearchBtn').addEventListener('click', renderWarranty);
 $('wSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') renderWarranty(); });
 $('wConfirm').addEventListener('click', async ()=>{
-  if(!S.warrantyPick){ toast('연계할 카마스터를 선택해 주세요.'); return; }
-  const res = await linkWarranty({ carmaster:S.warrantyPick.code, model:$('wModel').value, vin:$('wVin').value });
-  if(res && res.ok) toast(S.warrantyPick.name+' 카마스터 보증서 연계가 완료되었습니다.');
-  else toast('연계에 실패했습니다.');
+  const res = await linkWarranty();
+  if(res.ok){
+    toast(S.warrantyPick.name+' 카마스터 보증서 연계가 완료되었습니다.');
+    ['wNo','wDealer','wModel','wVin','wProduct'].forEach(id=> $(id).value='');
+    renderMembers();
+  } else toast(res.message || '연계에 실패했습니다.');
 });
 
 /* ── 리워드 지급 ── */
@@ -567,13 +730,27 @@ $('bulkApprove').addEventListener('click', async ()=>{
   checked.forEach(r=>{ r.style.transition='.2s'; r.style.opacity='0'; setTimeout(()=>{ r.remove(); refreshPendingCount(); updateSel(); },200); });
   toast(checked.length+'건 승인·발송했습니다.');
 });
-$('exportRewards').addEventListener('click', ()=> toast('엑셀 파일을 생성합니다. (연동 예정)'));
+$('exportRewards').addEventListener('click', ()=> downloadCSV(
+  ['카마스터코드','이름','연락처','리워드','사유','상태','신청일','발송일'],
+  REWARDS.map(r=>[r.m.code,r.m.name,fmtPhone(r.m.phone),r.item_name,
+                  r.type==='welcome'?'가입 웰컴':'누적 시공',
+                  r.status==='sent'?'발송완료':'발송대기',
+                  fmtDate(r.created_at),fmtDate(r.sent_at)]),
+  '리워드_지급대상'));
 
 /* ── init ── */
-renderDashboard();
-renderMembers();
-renderWarranty();
-renderRewards();
+async function boot(){
+  try {
+    await refresh();
+    await renderDashboard();
+    await renderMembers();
+    await renderRewards();
+    $('wDate').value = new Date().toISOString().slice(0,10);
+  } catch(e){ toast('데이터를 불러오지 못했습니다: ' + e.message); }
+}
+$('admLogin').addEventListener('click', admDoLogin);
+$('admPw').addEventListener('keydown', e => { if(e.key==='Enter') admDoLogin(); });
+if (TOKEN) admEnter();
 </script>
 </body>
 </html>
