@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>[v11] RAYNO 관리자 콘솔</title>
+<title>[v12] RAYNO 관리자 콘솔</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /* ===== RAYNO 관리자 콘솔 · 데스크톱 (1280px+) ===== */
@@ -454,16 +454,31 @@ const STATUS = { verified:'활성', pending:'인증대기', withdrawn:'정지' }
 
 let MEMBERS = [], REWARDS = [];
 
+function showErr(msg){
+  let el = document.getElementById('admFatal');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'admFatal';
+    el.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:999;background:#C0403A;color:#fff;'
+      + 'padding:14px 20px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '⚠ ' + msg;
+}
+
 async function refresh(){
-  const [ms, st, rw] = await Promise.all([
-    api('admin_carmasters?select=*'),
-    api('my_stats?select=carmaster_id,code,total_count'),
-    api('rewards?select=id,carmaster_id,type,item_name,status,created_at,sent_at&order=created_at.desc'),
-  ]);
-  const cnt = Object.fromEntries(st.map(x => [x.code, x.total_count]));
-  MEMBERS = ms.map(m => ({ ...m, total: cnt[m.code] ?? 0 }));
+  const q = async (label, path) => {
+    try { return await api(path); }
+    catch(e){ throw new Error(`[${label}] 조회 실패\n${e.message}`); }
+  };
+  const ms = await q('admin_carmasters', 'admin_carmasters?select=*');
+  const st = await q('my_stats',         'my_stats?select=carmaster_id,code,total_count');
+  const rw = await q('rewards',          'rewards?select=id,carmaster_id,type,item_name,status,created_at,sent_at&order=created_at.desc');
+
+  const cnt = Object.fromEntries((st||[]).map(x => [x.code, x.total_count]));
+  MEMBERS = (ms||[]).map(m => ({ ...m, total: cnt[m.code] ?? 0 }));
   const byId = Object.fromEntries(MEMBERS.map(m => [m.id, m]));
-  REWARDS = rw.map(r => ({ ...r, m: byId[r.carmaster_id] || {} }));
+  REWARDS = (rw||[]).map(r => ({ ...r, m: byId[r.carmaster_id] || {} }));
 }
 
 /* ── 대시보드 ── */
@@ -478,7 +493,9 @@ async function renderDashboard(){
   const pend  = REWARDS.filter(r => r.status === 'pending').length;
   const sent  = REWARDS.filter(r => r.status === 'sent').length;
 
-  const wrAll  = await api('warranty_matches?select=installed_at,link_type,status');
+  let wrAll = [];
+  try { wrAll = await api('warranty_matches?select=installed_at,link_type,status'); }
+  catch(e){ showErr('[warranty_matches] 조회 실패 — 컬럼 추가 SQL을 실행했는지 확인하세요.\n' + e.message); }
   const wrThis = wrAll.filter(w => ym(w.installed_at) === thisM && w.status === 'valid');
   const wrLink = wrThis.filter(w => w.link_type === 'linked').length;
 
@@ -682,7 +699,7 @@ async function boot(){
     await renderMembers();
     await renderRewards();
     $('wDate').value = new Date().toISOString().slice(0,10);
-  } catch(e){ console.error(e); alert('데이터 로딩 실패:\n' + e.message); }
+  } catch(e){ console.error(e); showErr(e.message); }
 }
 $('admLogin').addEventListener('click', admDoLogin);
 $('admPw').addEventListener('keydown', e => { if(e.key==='Enter') admDoLogin(); });
