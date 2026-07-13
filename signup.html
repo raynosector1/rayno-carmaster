@@ -452,21 +452,15 @@ async function rest(path, token){
 
 /* ══════════ 백엔드 연동 ══════════ */
 
-/* 영업점 마스터 → [{name, regions:[{name, offices:[…]}]}] 로 변환 */
+/* 영업점 마스터 (RPC — 1000행 제한 우회) */
 async function loadOffices(){
-  const rows = await rest('offices?select=brand,region,name&active=eq.true&limit=5000');
-  const m = new Map();
-  rows.forEach(({brand, region, name}) => {
-    if (!m.has(brand)) m.set(brand, new Map());
-    const rm = m.get(brand);
-    if (!rm.has(region)) rm.set(region, []);
-    rm.get(region).push(name);
+  const r = await fetch(SB_URL + '/rest/v1/rpc/offices_tree', {
+    method:'POST',
+    headers:{ apikey: SB_ANON, 'Content-Type':'application/json' },
+    body:'{}'
   });
-  return [...m].map(([b, rm]) => ({
-    name: b,
-    regions: [...rm].map(([r, offs]) => ({ name: r, offices: offs.sort() }))
-                    .sort((a,b) => a.name.localeCompare(b.name,'ko'))
-  }));
+  if (!r.ok) { console.error('영업점 로딩 실패', await r.text()); return []; }
+  return r.json();
 }
 
 /* 아이디 중복확인 */
