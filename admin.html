@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAYNO 카마스터 관리자 [v10]</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --orange:#FF6B00; --ink:#111; --muted:#8A8A8E; --line:#E5E5E7;
+  --bg:#F5F5F7; --ok:#2E7D46; --err:#C0403A; --warn:#B45309;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Pretendard,-apple-system,sans-serif;background:var(--bg);color:var(--ink);letter-spacing:-.2px;}
+button{font-family:inherit;cursor:pointer;border:none;background:none;}
+input,select{font-family:inherit;}
+
+/* ── 로그인 ── */
+.login{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.login .box{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:36px 32px;box-shadow:0 8px 30px rgba(0,0,0,.08);}
+.login .brand{font-size:12px;font-weight:800;letter-spacing:2px;color:var(--orange);}
+.login h1{font-size:22px;font-weight:800;margin-top:6px;}
+.login p{font-size:13px;color:var(--muted);margin-top:6px;}
+.login .f{margin-top:14px;}
+.login label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+
+.inp{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;outline:none;background:#fff;}
+.inp:focus{border-color:var(--ink);}
+
+.btn{padding:13px 18px;border-radius:10px;font-size:14px;font-weight:700;white-space:nowrap;}
+.btn.p{background:var(--orange);color:#fff;}
+.btn.d{background:var(--ink);color:#fff;}
+.btn.o{background:#fff;color:var(--ink);border:1.5px solid var(--line);}
+.btn.full{width:100%;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn.sm{padding:7px 12px;font-size:12.5px;border-radius:8px;}
+
+/* ── 레이아웃 ── */
+.app{display:none;}
+.app.on{display:block;}
+.top{background:var(--ink);color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+.top .l{display:flex;align-items:center;gap:12px;}
+.top .logo{font-size:14px;font-weight:800;letter-spacing:1.5px;}
+.top .logo b{color:var(--orange);}
+.top .tag{font-size:11px;font-weight:700;background:rgba(255,255,255,.12);padding:4px 8px;border-radius:6px;}
+.top .r{display:flex;align-items:center;gap:14px;font-size:13px;}
+.top .me{color:#B0B0B4;}
+.top .out{color:#fff;font-size:12.5px;text-decoration:underline;}
+
+.wrap{max-width:1240px;margin:0 auto;padding:24px;}
+
+/* ── KPI ── */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.kpi{background:#fff;border-radius:14px;padding:18px 20px;}
+.kpi .k{font-size:12.5px;color:var(--muted);font-weight:700;}
+.kpi .v{font-size:30px;font-weight:800;margin-top:6px;}
+.kpi .v span{font-size:15px;font-weight:600;color:var(--muted);}
+.kpi.hot .v{color:var(--orange);}
+
+/* ── 툴바 ── */
+.bar{background:#fff;border-radius:14px;padding:16px;margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.bar .grow{flex:1;min-width:200px;}
+.bar select{padding:12px 32px 12px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;background:#fff;
+  appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%238A8A8E' stroke-width='2' fill='none'/></svg>");
+  background-repeat:no-repeat;background-position:right 12px center;}
+
+/* ── 테이블 ── */
+.card{background:#fff;border-radius:14px;margin-top:16px;overflow:hidden;}
+.card .hd{padding:16px 20px;border-bottom:1px solid #F0F0F0;display:flex;justify-content:space-between;align-items:center;}
+.card .hd .t{font-size:15px;font-weight:800;}
+.card .hd .c{font-size:12.5px;color:var(--muted);font-weight:700;}
+.scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13.5px;white-space:nowrap;}
+th{background:#FAFAFB;color:var(--muted);font-size:12px;font-weight:800;text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);}
+td{padding:12px 14px;border-bottom:1px solid #F4F4F5;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#FAFAFB;}
+.code{font-weight:800;color:var(--orange);}
+.sub{color:var(--muted);font-size:12px;}
+.badge{display:inline-block;font-size:11.5px;font-weight:800;padding:3px 8px;border-radius:6px;}
+.b-pending{background:rgba(180,83,9,.10);color:var(--warn);}
+.b-sent{background:rgba(46,125,70,.10);color:var(--ok);}
+.b-none{background:#F0F0F0;color:var(--muted);}
+.empty{padding:48px;text-align:center;color:var(--muted);font-size:14px;}
+
+.chk{width:18px;height:18px;cursor:pointer;accent-color:var(--orange);}
+
+.toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
+  font-size:13.5px;font-weight:600;padding:13px 22px;border-radius:10px;opacity:0;pointer-events:none;transition:.25s;z-index:90;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+.err{color:var(--err);font-size:12.5px;margin-top:10px;display:none;}
+
+@media(max-width:900px){ .kpis{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+
+<!-- ═══ 로그인 ═══ -->
+<div class="login" id="loginView">
+  <div class="box">
+    <div class="brand">RAYNO</div>
+    <h1>카마스터 관리자</h1>
+    <p>관리자 계정으로 로그인해 주세요.</p>
+    <div class="f">
+      <label>이메일</label>
+      <input class="inp" id="email" type="email" autocomplete="username" placeholder="admin@raynofilm.co.kr">
+    </div>
+    <div class="f">
+      <label>비밀번호</label>
+      <input class="inp" id="pw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    </div>
+    <button class="btn p full" id="loginBtn" style="margin-top:18px;">로그인</button>
+    <p class="err" id="loginErr">로그인에 실패했습니다. 계정을 확인해 주세요.</p>
+  </div>
+</div>
+
+<!-- ═══ 관리자 ═══ -->
+<div class="app" id="app">
+  <div class="top">
+    <div class="l">
+      <span class="logo">RAY<b>NO</b></span>
+      <span class="tag">카마스터 관리자</span>
+    </div>
+    <div class="r">
+      <span class="me" id="me"></span>
+      <button class="out" id="logout">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="kpis">
+      <div class="kpi"><div class="k">전체 가입자</div><div class="v"><span id="kTotal">0</span><span> 명</span></div></div>
+      <div class="kpi"><div class="k">오늘 가입</div><div class="v"><span id="kToday">0</span><span> 명</span></div></div>
+      <div class="kpi hot"><div class="k">상품권 발송 대기</div><div class="v"><span id="kPending">0</span><span> 건</span></div></div>
+      <div class="kpi"><div class="k">발송 완료</div><div class="v"><span id="kSent">0</span><span> 건</span></div></div>
+    </div>
+
+    <div class="bar">
+      <input class="inp grow" id="q" placeholder="이름 · 아이디 · 코드 · 소속 · 영업소 · 연락처 검색">
+      <select id="fReward">
+        <option value="">상품권 전체</option>
+        <option value="pending">발송 대기</option>
+        <option value="sent">발송 완료</option>
+      </select>
+      <select id="fBrand"><option value="">소속 전체</option></select>
+      <button class="btn o" id="csvAll">전체 CSV</button>
+      <button class="btn d" id="csvPending">발송 대상 CSV</button>
+      <button class="btn p" id="markSent" disabled>선택 발송완료</button>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <span class="t">카마스터 목록</span>
+        <span class="c" id="cnt">0건</span>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;"><input type="checkbox" class="chk" id="chkAll"></th>
+              <th>코드</th><th>이름</th><th>아이디</th><th>연락처</th>
+              <th>소속 / 영업소</th><th>상품권</th><th>마케팅</th><th>가입일</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty" style="display:none;">조건에 맞는 카마스터가 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ══════════ Supabase ══════════ */
+const SB_URL  = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
+
+const $ = id => document.getElementById(id);
+let TOKEN = sessionStorage.getItem('adm_token') || null;
+let ME = sessionStorage.getItem('adm_email') || '';
+let ROWS = [];
+
+let tT; function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('on'),2000); }
+
+async function api(path, opt={}){
+  const r = await fetch(SB_URL + '/rest/v1/' + path, {
+    ...opt,
+    headers: { apikey: SB_ANON, Authorization:'Bearer '+TOKEN, 'Content-Type':'application/json', ...(opt.headers||{}) }
+  });
+  if (r.status === 401){ logout(); throw new Error('세션이 만료되었습니다.'); }
+  if (!r.ok) throw new Error(await r.text());
+  return r.status === 204 ? null : r.json();
+}
+
+/* ══════════ 로그인 ══════════ */
+$('loginBtn').addEventListener('click', doLogin);
+$('pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin(){
+  const email = $('email').value.trim(), pw = $('pw').value;
+  if(!email || !pw){ toast('이메일과 비밀번호를 입력해 주세요.'); return; }
+  $('loginBtn').disabled = true; $('loginBtn').textContent = '확인 중…';
+
+  const r = await fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+    method:'POST', headers:{ apikey: SB_ANON, 'Content-Type':'application/json' },
+    body: JSON.stringify({ email, password: pw })
+  });
+  const d = await r.json();
+
+  $('loginBtn').disabled = false; $('loginBtn').textContent = '로그인';
+  if(!r.ok || !d.access_token){ $('loginErr').style.display='block'; return; }
+
+  TOKEN = d.access_token; ME = email;
+
+  // ★관리자 권한 확인 — admins 테이블에 없으면 거부★
+  try {
+    const a = await api('admins?select=user_id');
+    if (!a || !a.length) throw new Error('권한 없음');
+  } catch(e) {
+    TOKEN = null;
+    $('loginErr').textContent = '관리자 권한이 없는 계정입니다.';
+    $('loginErr').style.display = 'block';
+    return;
+  }
+
+  sessionStorage.setItem('adm_token', TOKEN);
+  sessionStorage.setItem('adm_email', ME);
+  enter();
+}
+
+function logout(){
+  sessionStorage.removeItem('adm_token'); sessionStorage.removeItem('adm_email');
+  TOKEN = null; location.reload();
+}
+$('logout').addEventListener('click', logout);
+
+/* ══════════ 진입 ══════════ */
+async function enter(){
+  $('loginView').style.display = 'none';
+  $('app').classList.add('on');
+  $('me').textContent = ME;
+  await load();
+}
+
+async function load(){
+  ROWS = await api('admin_carmasters?select=*');
+
+  const today = new Date().toISOString().slice(0,10);
+  $('kTotal').textContent   = ROWS.length;
+  $('kToday').textContent   = ROWS.filter(r => (r.created_at||'').slice(0,10) === today).length;
+  $('kPending').textContent = ROWS.filter(r => r.reward_status === 'pending').length;
+  $('kSent').textContent    = ROWS.filter(r => r.reward_status === 'sent').length;
+
+  const brands = [...new Set(ROWS.map(r => r.brand).filter(Boolean))].sort();
+  $('fBrand').innerHTML = '<option value="">소속 전체</option>' +
+    brands.map(b => `<option value="${b}">${b}</option>`).join('');
+
+  render();
+}
+
+/* ══════════ 목록 ══════════ */
+function filtered(){
+  const q = $('q').value.trim().toLowerCase();
+  const fr = $('fReward').value, fb = $('fBrand').value;
+  return ROWS.filter(r => {
+    if (fr && r.reward_status !== fr) return false;
+    if (fb && r.brand !== fb) return false;
+    if (!q) return true;
+    return [r.code, r.name, r.login_id, r.brand, r.office, r.region, r.phone]
+      .some(v => (v||'').toLowerCase().includes(q));
+  });
+}
+
+function fmtPhone(p){ return p ? p.replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3') : '-'; }
+function fmtDate(d){ return d ? d.slice(0,10).replace(/-/g,'.') : '-'; }
+
+function render(){
+  const list = filtered();
+  $('cnt').textContent = list.length + '건';
+  $('empty').style.display = list.length ? 'none' : 'block';
+
+  $('tbody').innerHTML = list.map(r => {
+    const rw = r.reward_status === 'sent'
+      ? '<span class="badge b-sent">발송완료</span>'
+      : r.reward_status === 'pending'
+        ? '<span class="badge b-pending">발송대기</span>'
+        : '<span class="badge b-none">-</span>';
+    const sel = r.reward_status === 'pending'
+      ? `<input type="checkbox" class="chk row" data-rid="${r.reward_id}">` : '';
+    return `<tr>
+      <td>${sel}</td>
+      <td class="code">${r.code||'-'}</td>
+      <td><b>${r.name||'-'}</b></td>
+      <td class="sub">${r.login_id||'-'}</td>
+      <td>${fmtPhone(r.phone)}</td>
+      <td>${r.brand||'-'}<div class="sub">${r.region||''} ${r.office||''}</div></td>
+      <td>${rw}${r.reward_sent_at ? `<div class="sub">${fmtDate(r.reward_sent_at)}</div>` : ''}</td>
+      <td class="sub">${r.agree_marketing ? '동의' : '-'}</td>
+      <td class="sub">${fmtDate(r.created_at)}</td>
+    </tr>`;
+  }).join('');
+
+  document.querySelectorAll('.chk.row').forEach(c => c.addEventListener('change', syncSel));
+  $('chkAll').checked = false;
+  syncSel();
+}
+
+function syncSel(){
+  const n = document.querySelectorAll('.chk.row:checked').length;
+  $('markSent').disabled = n === 0;
+  $('markSent').textContent = n ? `선택 ${n}건 발송완료` : '선택 발송완료';
+}
+
+$('chkAll').addEventListener('change', e => {
+  document.querySelectorAll('.chk.row').forEach(c => c.checked = e.target.checked);
+  syncSel();
+});
+['q','fReward','fBrand'].forEach(id => $(id).addEventListener('input', render));
+
+/* ══════════ 발송완료 처리 ══════════ */
+$('markSent').addEventListener('click', async () => {
+  const ids = [...document.querySelectorAll('.chk.row:checked')].map(c => c.dataset.rid);
+  if (!ids.length) return;
+  if (!confirm(`${ids.length}건을 '발송완료'로 처리합니다.\n되돌릴 수 없습니다. 진행할까요?`)) return;
+
+  $('markSent').disabled = true; $('markSent').textContent = '처리 중…';
+  try {
+    await api(`rewards?id=in.(${ids.join(',')})`, {
+      method:'PATCH',
+      headers:{ Prefer:'return=minimal' },
+      body: JSON.stringify({ status:'sent', sent_at: new Date().toISOString(), sent_by: ME })
+    });
+    toast(`${ids.length}건 발송완료 처리했습니다.`);
+    await load();
+  } catch(e) {
+    toast('처리 실패: ' + e.message);
+    $('markSent').disabled = false;
+  }
+});
+
+/* ══════════ CSV ══════════ */
+function csv(rows, filename){
+  if (!rows.length){ toast('내보낼 데이터가 없습니다.'); return; }
+  const H = ['카마스터코드','이름','아이디','연락처','생년월일','소속','지역','영업소','상품권상태','상품권','발송일','마케팅동의','가입일'];
+  const esc = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const body = rows.map(r => [
+    r.code, r.name, r.login_id, fmtPhone(r.phone), r.birth_date,
+    r.brand, r.region, r.office,
+    r.reward_status === 'sent' ? '발송완료' : r.reward_status === 'pending' ? '발송대기' : '-',
+    r.reward_item || '-', fmtDate(r.reward_sent_at),
+    r.agree_marketing ? '동의' : '미동의', fmtDate(r.created_at)
+  ].map(esc).join(','));
+
+  // BOM — 엑셀에서 한글이 깨지지 않게
+  const blob = new Blob(['\uFEFF' + [H.map(esc).join(','), ...body].join('\r\n')],
+                        { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(`${rows.length}건을 내보냈습니다.`);
+}
+
+$('csvAll').addEventListener('click', () => csv(filtered(), '카마스터_전체'));
+$('csvPending').addEventListener('click', () =>
+  csv(ROWS.filter(r => r.reward_status === 'pending'), '상품권_발송대상'));
+
+/* ══════════ 시작 ══════════ */
+if (TOKEN) enter().catch(logout);
+</script>
+</body>
+</html>
