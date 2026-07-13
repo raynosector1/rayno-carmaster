@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAYNO 카마스터 — 연결 테스트</title>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  :root{
+    --ink:#111111;
+    --orange:#FF6B00;
+    --gray:#8A8A8E;
+    --bg:#F5F5F5;
+    --kakao:#FEE500;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:Pretendard,-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink);
+    min-height:100vh; display:flex; justify-content:center;
+    padding:24px 16px;
+  }
+  .wrap{width:100%; max-width:420px;}
+
+  .brand{font-size:13px; letter-spacing:.18em; font-weight:700; color:var(--orange);}
+  h1{font-size:22px; margin-top:6px; letter-spacing:-.02em;}
+  .sub{font-size:13px; color:var(--gray); margin-top:6px;}
+
+  .card{
+    background:#fff; border-radius:16px; padding:20px;
+    margin-top:16px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  .card h2{font-size:14px; margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--gray);flex:none;}
+  .dot.ok{background:#16A34A;} .dot.no{background:#DC2626;}
+
+  .row{
+    display:flex; justify-content:space-between; gap:12px;
+    font-size:13px; padding:8px 0; border-bottom:1px solid #F0F0F0;
+  }
+  .row:last-child{border:0;}
+  .row .k{color:var(--gray); flex:none;}
+  .row .v{text-align:right; word-break:break-all; font-weight:500;}
+
+  button{
+    width:100%; border:0; border-radius:12px; padding:16px;
+    font-family:inherit; font-size:15px; font-weight:700; cursor:pointer;
+    margin-top:12px;
+  }
+  .kakao{background:var(--kakao); color:#191600;}
+  .ghost{background:#fff; color:var(--ink); border:1px solid #E5E5E5;}
+  .orange{background:var(--orange); color:#fff;}
+  button:disabled{opacity:.4; cursor:not-allowed;}
+
+  pre{
+    background:var(--ink); color:#E5E5E5; border-radius:12px;
+    padding:14px; font-size:11px; line-height:1.6;
+    overflow-x:auto; margin-top:12px; white-space:pre-wrap; word-break:break-all;
+  }
+  .err{color:#DC2626; font-size:13px; margin-top:8px; line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">RAYNO</div>
+  <h1>카마스터 멤버십</h1>
+  <p class="sub">연결 테스트 페이지 (개발용)</p>
+
+  <!-- 1. Supabase 연결 -->
+  <div class="card">
+    <h2><span class="dot" id="d1"></span>1. Supabase 연결</h2>
+    <div id="test1"><span class="sub">확인 중…</span></div>
+  </div>
+
+  <!-- 2. 카카오 로그인 -->
+  <div class="card">
+    <h2><span class="dot" id="d2"></span>2. 카카오 로그인</h2>
+    <div id="test2"><span class="sub">확인 중…</span></div>
+  </div>
+
+  <!-- 3. DB 쓰기 (RLS) -->
+  <div class="card">
+    <h2><span class="dot" id="d3"></span>3. DB 읽기·쓰기 (RLS)</h2>
+    <div id="test3"><span class="sub">로그인이 필요합니다.</span></div>
+  </div>
+
+</div>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const SUPABASE_URL  = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
+
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const $  = id => document.getElementById(id);
+const setDot = (id, ok) => $(id).className = 'dot ' + (ok ? 'ok' : 'no');
+const rows = obj => Object.entries(obj)
+  .map(([k,v]) => `<div class="row"><span class="k">${k}</span><span class="v">${v}</span></div>`)
+  .join('');
+
+// ── TEST 1: Supabase 연결 (reward_rules 읽기 — 누구나 읽을 수 있게 RLS 열어둠)
+async function test1(){
+  const { data, error } = await sb.from('reward_rules').select('min_count,item_name').order('min_count');
+  if (error){
+    setDot('d1', false);
+    $('test1').innerHTML = `<div class="err">❌ ${error.message}</div>`;
+    return false;
+  }
+  setDot('d1', true);
+  $('test1').innerHTML =
+    `<div class="sub" style="margin-bottom:8px">✅ 연결 성공 · reward_rules ${data.length}건</div>` +
+    rows(Object.fromEntries(data.map(r => [`${r.min_count}건`, r.item_name])));
+  return true;
+}
+
+// ── TEST 2: 카카오 로그인
+async function test2(){
+  const { data:{ session } } = await sb.auth.getSession();
+
+  if (!session){
+    setDot('d2', false);
+    $('test2').innerHTML =
+      `<div class="sub">로그인되지 않았습니다.</div>
+       <button class="kakao" id="btnLogin">카카오로 1초 로그인</button>`;
+    $('btnLogin').onclick = async () => {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: { redirectTo: window.location.href.split('#')[0] }
+      });
+      if (error) alert('로그인 오류: ' + error.message);
+    };
+    return null;
+  }
+
+  const u = session.user;
+  setDot('d2', true);
+  $('test2').innerHTML =
+    `<div class="sub" style="margin-bottom:8px">✅ 로그인 성공</div>` +
+    rows({
+      'User ID'  : u.id,
+      'Provider' : u.app_metadata?.provider ?? '-',
+      '닉네임'    : u.user_metadata?.name ?? u.user_metadata?.full_name ?? '-',
+    }) +
+    `<button class="ghost" id="btnOut">로그아웃</button>`;
+  $('btnOut').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+  return session;
+}
+
+// ── TEST 3: carmasters 읽기/쓰기 (RLS + 보안 트리거 확인)
+async function test3(session){
+  if (!session){ setDot('d3', false); return; }
+
+  // 내 카마스터 행 조회
+  let { data:me, error } = await sb.from('carmasters')
+    .select('*').eq('user_id', session.user.id).maybeSingle();
+
+  if (error){
+    setDot('d3', false);
+    $('test3').innerHTML = `<div class="err">❌ 조회 실패: ${error.message}</div>`;
+    return;
+  }
+
+  if (!me){
+    setDot('d3', false);
+    $('test3').innerHTML =
+      `<div class="sub">아직 카마스터로 가입되지 않았습니다.</div>
+       <button class="orange" id="btnJoin">테스트 가입 (더미 데이터)</button>`;
+    $('btnJoin').onclick = async () => {
+      const { error } = await sb.from('carmasters').insert({
+        user_id: session.user.id,
+        brand: '현대', region: '경기도', office: '광교대리점',
+        agree_privacy: true, agree_outsourcing: true, agree_marketing: false
+      });
+      if (error) alert('가입 실패: ' + error.message);
+      else location.reload();
+    };
+    return;
+  }
+
+  setDot('d3', true);
+  $('test3').innerHTML =
+    `<div class="sub" style="margin-bottom:8px">✅ 카마스터 행 확인</div>` +
+    rows({
+      '카마스터 코드': me.code,
+      '상태'        : me.status,
+      '소속'        : `${me.brand} · ${me.office}`,
+      '본인인증'     : me.verified_at ? '완료' : '미완료',
+    }) +
+    `<button class="ghost" id="btnHack">🔒 보안 테스트 — status를 verified로 강제 변경 시도</button>
+     <div id="hackResult"></div>`;
+
+  // ★핵심 보안 테스트★ 클라이언트가 스스로 verified 로 못 바꾸는지 확인
+  $('btnHack').onclick = async () => {
+    const { error } = await sb.from('carmasters')
+      .update({ status: 'verified' }).eq('user_id', session.user.id);
+    $('hackResult').innerHTML = error
+      ? `<div class="sub" style="color:#16A34A;margin-top:8px">✅ 차단됨 (정상)<br><span style="color:var(--gray)">${error.message}</span></div>`
+      : `<div class="err">❌ 위험! 변경이 통과했습니다. 트리거를 확인하세요.</div>`;
+  };
+}
+
+// ── 실행
+(async () => {
+  await test1();
+  const session = await test2();
+  await test3(session);
+})();
+</script>
+</body>
+</html>
