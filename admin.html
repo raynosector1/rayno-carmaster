@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>[v16] RAYNO 관리자 콘솔</title>
+<title>[v17] RAYNO 관리자 콘솔</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /* ===== RAYNO 관리자 콘솔 · 데스크톱 (1280px+) ===== */
@@ -243,7 +243,7 @@ input::placeholder{color:#B4B4B8;}
             <div id="recentList"></div>
           </div>
           <div class="card" style="padding:22px 24px;flex:1;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="section-h">승인 대기 리워드</div><span class="badge b-warn">23</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="section-h">승인 대기 리워드</div><span class="badge b-warn" id="dashPend">0</span></div>
             <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;"></div>
           </div>
         </div>
@@ -267,7 +267,7 @@ input::placeholder{color:#B4B4B8;}
         </div>
         <div class="pager">
           <span style="font-size:13px;color:var(--muted);">총 <b style="color:var(--ink);" id="mCount">0</b>명</span>
-          <div class="pg"><span class="p on">1</span><span class="p">2</span><span class="p">3</span><span class="p">›</span></div>
+          <div class="pg" id="pg"></div>
         </div>
       </section>
 
@@ -288,7 +288,7 @@ input::placeholder{color:#B4B4B8;}
             <div class="step-h"><span class="n">2</span>보증서 정보 · 연계</div>
             <div class="card" style="margin-top:14px;padding:24px;">
               <div id="wSelected" style="background:var(--ink2);border-radius:12px;padding:16px 20px;color:#fff;display:flex;align-items:center;gap:14px;">
-                <div style="width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;" id="wAv">홍</div>
+                <div style="width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;" id="wAv">-</div>
                 <div style="flex:1;"><div style="font-size:16px;font-weight:800;"><span id="wName">-</span> <span style="font-size:12px;font-weight:600;color:#9A9A9E;">카마스터</span></div><div style="font-size:12px;color:#9A9A9E;margin-top:2px;" id="wMeta">카마스터를 검색해 주세요</div></div>
                 <span style="font-size:11px;font-weight:800;color:var(--orange);">연계 대상</span>
               </div>
@@ -592,8 +592,9 @@ $('globalSearch').addEventListener('keydown', e=>{ if(e.key==='Enter'){ toast('�
 async function renderDashboard(){
   const now = new Date();
   const ym  = d => (d||'').slice(0,7);
-  const thisM = now.toISOString().slice(0,7);
-  const prevM = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0,7);
+  const _ym = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  const thisM = _ym(now);
+  const prevM = _ym(new Date(now.getFullYear(), now.getMonth()-1, 1));
 
   const mThis = MEMBERS.filter(m => ym(m.created_at) === thisM).length;
   const mPrev = MEMBERS.filter(m => ym(m.created_at) === prevM).length;
@@ -619,9 +620,10 @@ async function renderDashboard(){
   $('kWrD').textContent    = `연계 완료 ${wrLink}건`;
 
   /* 월별 가입 추이 (최근 8개월) */
+  const ymKey = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
   const months = [...Array(8)].map((_,i) => {
     const d = new Date(now.getFullYear(), now.getMonth()-7+i, 1);
-    return { key: d.toISOString().slice(0,7), label: (d.getMonth()+1)+'월' };
+    return { key: ymKey(d), label: (d.getMonth()+1)+'월' };
   });
   const counts = months.map(x => MEMBERS.filter(m => ym(m.created_at) === x.key).length);
   const max = Math.max(...counts, 1);
@@ -655,6 +657,7 @@ async function renderDashboard(){
   /* 승인 대기 리워드 */
   const pl = REWARDS.filter(r => r.status === 'pending').slice(0,5);
   $('pendingCount') && ($('pendingCount').textContent = pend);
+  $('dashPend')    && ($('dashPend').textContent    = pend);
   $('pendingList').innerHTML = pl.map(r => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;" data-rid="${r.id}">
       <div><div style="font-size:13.5px;font-weight:700;">${r.m.name} · ${r.item_name}</div>
@@ -754,6 +757,12 @@ $('wConfirm').addEventListener('click', async ()=>{
 async function renderRewards(){
   const rows = await loadRewards(S.rewardTab);
   const done = S.rewardTab==='done';
+  const bulk = document.querySelector('.bulk');
+  if (bulk) bulk.style.display = done ? 'none' : '';
+  const pendCnt = REWARDS.filter(r=>r.status==='pending').length;
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.dataset.tab==='pending') t.innerHTML = '지급 대기 <b>'+pendCnt+'</b>';
+  });
   $('rewardsRows').innerHTML = rows.map(r=>
     `<div class="tr td" style="grid-template-columns:40px 1fr 130px 200px 160px 110px 110px;" data-id="${r.id}">
        <span>${done?'':'<span class="rchk" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span>'}</span>
