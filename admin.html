@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>[v13] RAYNO 관리자 콘솔</title>
+<title>[v15] RAYNO 관리자 콘솔</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /* ===== RAYNO 관리자 콘솔 · 데스크톱 (1280px+) ===== */
@@ -228,7 +228,7 @@ input::placeholder{color:#B4B4B8;}
           <div class="card" style="padding:22px 24px;flex:1;">
             <div class="section-h">리워드 지급 현황</div>
             <div style="display:flex;align-items:center;gap:20px;margin-top:22px;">
-              <div class="donut" id="donut"><div class="in"><span style="font-size:20px;font-weight:800;">1,043</span><span style="font-size:10px;color:var(--muted);font-weight:600;">총 건수</span></div></div>
+              <div class="donut" id="donut"><div class="in"><span style="font-size:20px;font-weight:800;">0</span><span style="font-size:10px;color:var(--muted);font-weight:600;">총 건수</span></div></div>
               <div class="legend" id="legend">
                 <div class="li"><span class="sw" style="background:var(--orange);"></span>지급완료 <b>62%</b></div>
                 <div class="li"><span class="sw" style="background:#FFC49E;"></span>지급대기 <b>22%</b></div>
@@ -266,7 +266,7 @@ input::placeholder{color:#B4B4B8;}
           <div id="membersRows"></div>
         </div>
         <div class="pager">
-          <span style="font-size:13px;color:var(--muted);">총 <b style="color:var(--ink);">1,284</b>명 · 1–7 표시</span>
+          <span style="font-size:13px;color:var(--muted);">총 <b style="color:var(--ink);" id="mCount">0</b>명</span>
           <div class="pg"><span class="p on">1</span><span class="p">2</span><span class="p">3</span><span class="p">›</span></div>
         </div>
       </section>
@@ -289,7 +289,7 @@ input::placeholder{color:#B4B4B8;}
             <div class="card" style="margin-top:14px;padding:24px;">
               <div id="wSelected" style="background:var(--ink2);border-radius:12px;padding:16px 20px;color:#fff;display:flex;align-items:center;gap:14px;">
                 <div style="width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;" id="wAv">홍</div>
-                <div style="flex:1;"><div style="font-size:16px;font-weight:800;"><span id="wName">홍길동</span> <span style="font-size:12px;font-weight:600;color:#9A9A9E;">카마스터</span></div><div style="font-size:12px;color:#9A9A9E;margin-top:2px;" id="wMeta">CM-4821 · 현대 · 광교대리점</div></div>
+                <div style="flex:1;"><div style="font-size:16px;font-weight:800;"><span id="wName">-</span> <span style="font-size:12px;font-weight:600;color:#9A9A9E;">카마스터</span></div><div style="font-size:12px;color:#9A9A9E;margin-top:2px;" id="wMeta">카마스터를 검색해 주세요</div></div>
                 <span style="font-size:11px;font-weight:800;color:var(--orange);">연계 대상</span>
               </div>
               <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
@@ -353,7 +353,7 @@ input::placeholder{color:#B4B4B8;}
   <div class="db">
     <div style="display:flex;align-items:center;gap:16px;">
       <div style="width:60px;height:60px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;" id="dAv">홍</div>
-      <div><div style="font-size:20px;font-weight:800;" id="dName">홍길동</div><div style="font-size:13px;color:var(--muted);margin-top:2px;" id="dCodeStatus">CM-4821 · <span style="color:var(--ok);font-weight:700;">활성</span></div></div>
+      <div><div style="font-size:20px;font-weight:800;" id="dName">-</div><div style="font-size:13px;color:var(--muted);margin-top:2px;" id="dCodeStatus">-</div></div>
     </div>
     <div class="info-list" style="margin-top:22px;">
       <div class="r"><span class="k">소속·영업소</span><span class="v" id="dOffice">현대 · 광교대리점</span></div>
@@ -482,6 +482,96 @@ async function refresh(){
   REWARDS = (rw||[]).map(r => ({ ...r, m: byId[r.carmaster_id] || {} }));
 }
 
+
+/* ══════════ 데이터 어댑터 ══════════ */
+async function loadMembers(){
+  return MEMBERS.map(m => ({
+    code: m.code, name: m.name,
+    office: `${m.brand} · ${m.office}`,
+    phone: maskPhone(m.phone),
+    join: fmtDate(m.created_at),
+    total: m.total,
+    status: STATUS[m.status] || m.status
+  }));
+}
+async function getMember(code){
+  const m = MEMBERS.find(x => x.code === code) || {};
+  return {
+    code: m.code, name: m.name, office: `${m.brand} · ${m.office}`,
+    phone: maskPhone(m.phone), phoneFull: fmtPhone(m.phone),
+    birth: fmtDate(m.birth_date), join: fmtDate(m.created_at),
+    total: m.total ?? 0,
+    reward: REWARDS.filter(r => r.carmaster_id === m.id && r.status === 'sent').length,
+    status: STATUS[m.status] || m.status
+  };
+}
+async function searchCarmaster(q){
+  q = (q || '').trim().toLowerCase();
+  if (!q) return [];
+  return MEMBERS.filter(m =>
+    [m.code, m.name, m.login_id, m.phone].some(v => (v||'').toLowerCase().includes(q))
+  ).map(m => ({
+    id: m.id, code: m.code, name: m.name,
+    office: `${m.brand} · ${m.office}`,
+    phone: fmtPhone(m.phone),
+    status: STATUS[m.status] || m.status,
+    verified: m.status === 'verified'
+  }));
+}
+async function linkWarranty(){
+  const c  = S.warrantyPick;
+  const no = ($('wNo').value || '').trim();
+  const dt = $('wDate').value;
+  if (!c)  return { ok:false, message:'카마스터를 선택해 주세요.' };
+  if (!no) return { ok:false, message:'보증서 번호를 입력해 주세요.' };
+  if (!dt) return { ok:false, message:'시공일을 입력해 주세요.' };
+  try {
+    await api('warranty_matches', {
+      method:'POST', headers:{ Prefer:'return=minimal' },
+      body: JSON.stringify({
+        warranty_no: no, link_type:'linked', carmaster_id: c.id, installed_at: dt,
+        dealer_name: $('wDealer').value.trim() || null,
+        car_model:   $('wModel').value.trim()  || null,
+        vin:         $('wVin').value.trim()    || null,
+        product:     $('wProduct').value.trim()|| null,
+      })
+    });
+    await refresh();
+    return { ok:true };
+  } catch(e){
+    return { ok:false, message: /duplicate|unique/i.test(e.message)
+      ? '이미 등록된 보증서 번호입니다.' : '연계 실패: ' + e.message };
+  }
+}
+async function loadRewards(tab){
+  return REWARDS
+    .filter(r => tab === 'done' ? r.status === 'sent' : r.status === 'pending')
+    .map(r => ({
+      id: r.id, name: r.m.name, code: r.m.code, reward: r.item_name,
+      reason: r.type === 'welcome' ? '가입 웰컴' : '누적 시공 달성',
+      date: fmtDate(r.sent_at || r.created_at).slice(5),
+      done: r.status === 'sent'
+    }));
+}
+async function approveRewards(ids){
+  await api(`rewards?id=in.(${ids.join(',')})`, {
+    method:'PATCH', headers:{ Prefer:'return=minimal' },
+    body: JSON.stringify({ status:'sent', sent_at:new Date().toISOString(), sent_by: ME })
+  });
+  await refresh();
+  return { ok:true, count: ids.length };
+}
+function downloadCSV(head, rows, filename){
+  if (!rows.length){ toast('내보낼 데이터가 없습니다.'); return; }
+  const esc = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const csv = [head.map(esc).join(','), ...rows.map(r => r.map(esc).join(','))].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' }));
+  a.download = `${filename}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast(`${rows.length}건을 내보냈습니다.`);
+}
+
 /* ── 대시보드 ── */
 async function renderDashboard(){
   const now = new Date();
@@ -519,11 +609,12 @@ async function renderDashboard(){
   });
   const counts = months.map(x => MEMBERS.filter(m => ym(m.created_at) === x.key).length);
   const max = Math.max(...counts, 1);
+  const H = 150;  // 최대 막대 높이(px)
   $('chart').innerHTML = months.map((x,i) => `
     <div class="col">
-      <div class="bar" style="height:${Math.max(counts[i]/max*100, 3)}%;${i===7?'background:var(--orange);':''}"
+      <div class="bar" style="height:${Math.max(Math.round(counts[i]/max*H), 4)}px;${i===7?'background:var(--orange);':''}"
            title="${counts[i]}명"></div>
-      <div class="lb"${i===7?' style="font-weight:800;color:var(--ink);"':''}>${x.label}</div>
+      <div class="lb" style="font-size:11.5px;color:${i===7?'var(--ink)':'var(--muted)'};font-weight:${i===7?800:600};">${x.label}</div>
     </div>`).join('');
 
   /* 리워드 도넛 */
@@ -569,6 +660,7 @@ async function renderDashboard(){
 /* ── 회원 목록 ── */
 async function renderMembers(){
   const rows = await loadMembers({});
+  if ($('mCount')) $('mCount').textContent = rows.length;
   const badge = s => s==='활성' ? '<span class="badge b-ok">활성</span>' : s==='인증대기' ? '<span class="badge b-warn">인증대기</span>' : '<span class="badge b-off">정지</span>';
   $('membersRows').innerHTML = rows.map(m=>
     `<div class="tr td" style="grid-template-columns:130px 90px 1fr 150px 110px 90px 90px 70px;">
