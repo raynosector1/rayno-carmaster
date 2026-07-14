@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>가입 신청 · 레이노 카마스터 멤버십</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:'Pretendard',-apple-system,sans-serif;letter-spacing:-.3px;color:#111;background:#fff}
+a{color:#FF5A00;text-decoration:none}a:hover{color:#E0500A}
+img{display:block}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 22px}
+.top{display:flex;align-items:center;gap:12px;padding:16px 0 4px}
+.back{width:38px;height:38px;border-radius:50%;background:#F2F2F4;border:none;font-size:19px;color:#111}
+.ttl{font-size:20px;font-weight:800}
+.h1{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.18}
+.h1.big{font-size:34px}
+.sub{font-size:15px;line-height:1.6;color:#8A8A8E;margin-top:10px}
+.muted{color:#8A8A8E}
+.grow{flex:1}
+.lbl{font-size:14px;font-weight:800;margin:18px 0 8px}
+.inp,.sel{width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:16px;font-size:16px;color:#111;font-family:inherit;background:#fff;outline:none}
+.inp:focus,.sel:focus{border-color:#111}
+.inp:disabled,.sel:disabled{background:#F5F5F6;color:#B4B4B8;border-color:#EDEDED}
+.inp::placeholder{color:#B4B4B8}
+select.sel{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+select.sel:disabled{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23C4C4C8%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.row{display:flex;gap:8px}.row .inp{flex:1}
+.pwwrap{position:relative}.pwwrap .inp{padding-right:50px}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:8px;line-height:0}
+.btn{width:100%;padding:18px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;font-family:inherit}
+.btn:disabled{background:#EAEAEC;color:#B4B4B8;cursor:default}
+.btn-line{background:#fff;color:#111;border:1.5px solid #111}
+.btn-sm{flex-shrink:0;width:auto;padding:0 16px;font-size:13px;border-radius:14px;background:#111;color:#fff;border:none;font-weight:700}
+.btn-sm.done{background:#111}
+.foot{padding:14px 0 26px}
+.center{text-align:center}
+.link{color:#111;font-weight:800;text-decoration:underline}
+.prog{display:flex;gap:8px;margin-top:18px}.seg{flex:1;height:4px;border-radius:2px;background:#EAEAEC}.seg.on{background:#111}
+.step{font-size:12px;font-weight:700;color:#8A8A8E;margin-top:8px}
+.screen{display:none;flex-direction:column;flex:1}.screen.on{display:flex}
+.accent{color:#FF5A00}
+.note{font-size:11.5px;line-height:1.7;color:#A8A8AC;margin-top:16px}
+.chk-circle{width:76px;height:76px;border-radius:50%;background:#FF5A00;display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;font-weight:800;margin:0 auto}
+.result{background:#F5F5F6;border-radius:16px;padding:18px 20px;margin-top:20px}
+.voucher{margin-top:18px}.voucher img{width:72%;margin:0 auto;filter:drop-shadow(0 12px 26px rgba(0,0,0,.16))}
+.bcard{background:#F5F5F6;border-radius:18px;padding:18px 20px;margin-top:22px}
+.bitem{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid #EFEFF1}
+.ic{width:32px;height:32px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.ic.soon{border-radius:9px;background:#FF5A00;font-size:9px;letter-spacing:.3px}
+.tag{font-size:10px;font-weight:800;color:#FF5A00;background:rgba(255,90,0,.12);padding:2px 7px;border-radius:999px;margin-left:6px}
+.agree{border:1.5px solid #EDEDEF;border-radius:16px;overflow:hidden;margin-top:20px}
+.agree .all{padding:15px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #F2F2F4;font-weight:800;font-size:15px}
+.agree .it{padding:11px 16px;display:flex;align-items:center;gap:12px;font-size:14px}
+.agree .it .ex{margin-left:auto;color:#B0B0B4;font-size:12px}
+.agree input{width:20px;height:20px;accent-color:#111;flex-shrink:0}
+.agree .all input{width:22px;height:22px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:999px;z-index:99;opacity:0;transition:.25s;white-space:nowrap;pointer-events:none}.toast.on{opacity:1}
+.spin{width:56px;height:56px;border:4px solid #F1F1F3;border-top-color:#FF5A00;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto}@keyframes sp{to{transform:rotate(360deg)}}
+.collage{position:relative;flex:1;min-height:320px;margin:0 -22px;overflow:hidden;background:#EDEDF0}
+.collage .grid{position:absolute;top:-40px;left:-20px;right:-20px;transform:rotate(-9deg);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.collage .col{display:flex;flex-direction:column;gap:10px}.collage .col.mid{padding-top:0}.collage .col.side{padding-top:36px}
+.collage .cell{border-radius:16px;overflow:hidden}.collage .cell img{width:100%;height:100%;object-fit:cover}
+.collage .fade{position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(180deg,rgba(237,237,240,0),#fff)}
+.navbar{position:sticky;bottom:0;margin:0 -22px;background:#fff;border-top:1px solid #EEE;display:flex;justify-content:space-around;padding:10px 0 22px}
+.navbar button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#B0B0B4;padding:6px 14px;border-radius:12px}
+.navbar button.on{color:#FF5A00}
+.homecard{background:#F5F5F6;border-radius:20px;padding:18px 20px;margin-top:20px}
+.bar{height:10px;background:#E4E4E7;border-radius:5px;overflow:hidden;margin-top:12px}.bar>div{height:100%;background:#FF5A00;border-radius:5px}
+.tiles{display:flex;gap:12px;margin-top:12px}.tile{flex:1;border:1.5px solid #EDEDEF;border-radius:16px;padding:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="step1" class="screen on">
+<div class="top"><button class="back" id="back">‹</button><span class="ttl">가입 신청</span></div><div class="prog"><div class="seg" id="asg1"></div><div class="seg" id="asg2"></div><div class="seg" id="asg3"></div></div><div class="step" id="astep"></div>  <div class="lbl">소속 정보</div>
+  <select id="brand" class="sel"><option value="" disabled selected>소속 선택</option></select>
+  <input id="brandEtc" class="inp" placeholder="소속 직접 입력 (최대 20자)" maxlength="20" style="display:none;margin-top:10px">
+  <select id="region" class="sel" style="margin-top:10px" disabled><option value="" disabled selected>지역 선택 (시·도)</option></select>
+  <select id="office" class="sel" style="margin-top:10px" disabled><option value="" disabled selected>영업소 선택</option></select>
+  <input id="officeEtc" class="inp" placeholder="영업소 직접 입력 (최대 20자)" maxlength="20" style="display:none;margin-top:10px">
+  <div class="lbl">개인 정보</div>
+  <input id="name" class="inp" placeholder="이름을 입력해 주세요">
+  <input id="birth" class="inp" type="tel" inputmode="numeric" maxlength="8" placeholder="생년월일 8자리 (예: 19900101)" style="margin-top:10px">
+  <div class="grow"></div>
+  <div class="foot"><button id="next1" class="btn" disabled>다음</button></div>
+</div>
+<div id="step2" class="screen">
+<div class="top"><button class="back" id="back2">‹</button><span class="ttl">가입 신청</span></div><div class="prog"><div class="seg" id="bsg1"></div><div class="seg" id="bsg2"></div><div class="seg" id="bsg3"></div></div><div class="step" id="bstep"></div>  <h2 class="h1" style="font-size:22px;margin-top:20px;line-height:1.35">본인 확인은 <span class="accent">필수</span>예요<br>휴대폰으로 인증해 주세요</h2>
+  <label class="lbl" for="telco">통신사</label><select id="telco" class="sel"><option value="" disabled selected>통신사 선택</option><option>SKT</option><option>KT</option><option>LG U+</option><option>알뜰폰</option></select>
+  <label class="lbl" for="phone">휴대폰번호</label><div class="row"><input id="phone" class="inp" type="tel" inputmode="numeric" placeholder="숫자만 입력"><button id="reqCode" class="btn-sm">인증요청</button></div>
+  <div id="codeWrap" style="display:none"><label class="lbl" for="code">인증번호</label><div class="row"><input id="code" class="inp" type="tel" inputmode="numeric" maxlength="6" placeholder="6자리"><button id="confirmCode" class="btn-sm btn-line" style="color:#111">확인</button></div></div>
+  <div class="grow"></div>
+  <div class="foot"><button id="next2" class="btn" disabled>다음</button></div>
+</div>
+<div id="step3" class="screen">
+<div class="top"><button class="back" id="back3">‹</button><span class="ttl">가입 신청</span></div><div class="prog"><div class="seg" id="csg1"></div><div class="seg" id="csg2"></div><div class="seg" id="csg3"></div></div><div class="step" id="cstep"></div>  <label class="lbl" for="loginId">아이디</label><div class="row"><input id="loginId" class="inp" placeholder="아이디" autocomplete="username"><button id="dupCheck" class="btn-sm btn-line" style="color:#111">중복확인</button></div>
+  <label class="lbl" for="password">비밀번호</label><div class="pwwrap"><input id="password" class="inp" type="password" placeholder="8자 이상" autocomplete="new-password"><button class="eye" type="button" data-eye><svg data-off viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg data-on style="display:none" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF5A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3 L21 21"></path></svg></button></div>
+  <label class="lbl" for="password2">비밀번호 확인</label><input id="password2" class="inp" type="password" placeholder="비밀번호 확인" autocomplete="new-password">
+  <div class="agree"><label class="all"><input type="checkbox" id="agreeAll">전체 동의</label><div><label class="it"><input type="checkbox" id="agree1">개인정보 수집·이용 <b class="accent">(필수)</b><a class="ex" data-terms="개인정보 수집·이용 동의">전문</a></label><label class="it"><input type="checkbox" id="agree2">개인정보 취급 위탁 <b class="accent">(필수)</b><a class="ex" data-terms="개인정보 취급 위탁 동의">전문</a></label><label class="it"><input type="checkbox" id="agree3"><span class="muted">광고성 정보 수신 (선택)</span><a class="ex" data-terms="광고성 정보 수신 동의">전문</a></label></div></div>
+  <div class="grow"></div>
+  <div class="foot"><button id="submit" class="btn" disabled>가입 완료</button></div>
+</div>
+<div id="loading" class="screen"><div class="grow" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div class="spin"></div><div style="margin-top:26px;font-size:19px;font-weight:800">가입을 처리하고 있어요</div><div class="sub">입력하신 정보를 확인하고<br>멤버십 가입을 완료하고 있어요.</div></div></div>
+<div id="done" class="screen"><div style="padding-top:34px" class="center"><div class="chk-circle">✓</div><h1 class="h1 big" style="margin-top:22px">가입이 완료되었습니다!</h1><p class="sub">레이노 카마스터 멤버십에<br>오신 걸 환영합니다.</p><div class="result"><p style="font-size:15px;line-height:1.62"><b id="doneName">홍길동 카마스터님</b> 앞으로 2주 이내로 <b class="accent">주유상품권</b>이 문자/카카오톡으로 발송됩니다.</p></div><div class="voucher"><img src="assets/sk-voucher.png" alt="SK 주유/아이파킹 전기충전권 5,000원"></div><p class="note" style="text-align:left">※ 상품권 사용 관련 문의는 발급사로 연락 부탁드립니다.<br>※ 본 혜택은 당사 사정에 의해 예고 없이 변경 또는 취소될 수 있습니다.<br>※ 문의: 대표번호 1588-8695</p></div><div class="grow"></div><div class="foot"><button id="goMy" class="btn">완료</button></div></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var $=function(i){return document.getElementById(i)};
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove("on")},1700)}
+document.addEventListener("click",function(e){var b=e.target.closest("[data-eye]");if(!b)return;var inp=b.parentElement.querySelector("input");var show=inp.type==="password";inp.type=show?"text":"password";b.querySelector("[data-on]").style.display=show?"block":"none";b.querySelector("[data-off]").style.display=show?"none":"block"});
+const S={agreements:{}};
+async function loadOffices(){}
+async function checkLoginId(id){}
+async function verifyIdentity(data){}
+async function submitSignup(data){}
+const FALLBACK={brands:["현대자동차","기아","제네시스","KG모빌리티","르노코리아","한국GM","기타 (직접 입력)"],regions:["서울","부산","대구","인천","광주","대전","울산","세종","경기","강원","충북","충남","전북","전남","경북","경남","제주"],offices:["강남대리점","서초대리점","분당지점","수원지점","인천지점","기타 (직접 입력)"]};
+function fill(sel,arr){arr.forEach(function(o){var op=document.createElement("option");op.textContent=o;op.value=o;sel.appendChild(op)})}
+var DATA=FALLBACK;
+(async function(){var d=await loadOffices();DATA=(d&&d.brands)?d:FALLBACK;fill($("brand"),DATA.brands);fill($("region"),DATA.regions);fill($("office"),DATA.offices)})();
+function goStep(n){document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("on")});$("step"+n).classList.add("on");var t=["","소속·정보","본인인증","계정·약관"][n];var pre=["a","b","c"][n-1];["a","b","c"].forEach(function(p){for(var k=1;k<=3;k++){$(p+"sg"+k).classList.remove("on")}});for(var k=1;k<=n;k++){$(pre+"sg"+k).classList.add("on")}$(pre+"step").textContent="3단계 중 "+n+"단계 · "+t;window.scrollTo(0,0)}
+goStep(1);
+function etcToggle(sel,etc){$(etc).style.display=($(sel).value.indexOf("기타")===0)?"block":"none"}
+$("brand").onchange=function(){etcToggle("brand","brandEtc");$("region").disabled=false;vStep1()};
+$("region").onchange=function(){$("office").disabled=false;vStep1()};
+$("office").onchange=function(){etcToggle("office","officeEtc");vStep1()};
+function okSel(sel,etc){var v=$(sel).value;if(!v)return false;if(v.indexOf("기타")===0)return $(etc).value.trim().length>0;return true}
+function vStep1(){var ok=okSel("brand","brandEtc")&&$("region").value&&okSel("office","officeEtc")&&$("name").value.trim()&&/^\d{8}$/.test($("birth").value.trim());$("next1").disabled=!ok}
+["brandEtc","officeEtc","name","birth"].forEach(function(i){$(i).oninput=vStep1});vStep1();
+$("next1").onclick=function(){S.brand=$("brand").value.indexOf("기타")===0?$("brandEtc").value.trim():$("brand").value;S.region=$("region").value;S.office=$("office").value.indexOf("기타")===0?$("officeEtc").value.trim():$("office").value;S.name=$("name").value.trim();S.birth=$("birth").value.trim();goStep(2)};
+$("back").onclick=function(){location.href="index.html"};
+var verified=false;
+$("reqCode").onclick=function(){if(!/^\d{9,11}$/.test($("phone").value.trim())){toast("휴대폰번호를 입력해 주세요.");return}$("codeWrap").style.display="block";toast("인증번호를 발송했습니다.")};
+$("confirmCode").onclick=async function(){if(($("code").value||"").length!==6){toast("인증번호 6자리를 입력해 주세요.");return}var r=await verifyIdentity({telco:$("telco").value,phone:$("phone").value,code:$("code").value});verified=!r||r.ok!==false;if(verified){$("next2").disabled=false;toast("본인인증이 완료되었습니다.")}else{toast("인증에 실패했습니다.")}};
+$("next2").onclick=function(){S.telco=$("telco").value;S.phone=$("phone").value.trim();goStep(3)};
+$("back2").onclick=function(){goStep(1)};
+var idOk=false;
+$("dupCheck").onclick=async function(){var v=$("loginId").value.trim();if(!v){toast("아이디를 입력해 주세요.");return}var r=await checkLoginId(v);idOk=!r||r.ok!==false;if(idOk){$("dupCheck").textContent="확인완료";$("dupCheck").classList.remove("btn-line");$("dupCheck").style.color="#fff";$("dupCheck").style.background="#111";toast("사용 가능한 아이디입니다.")}else{toast((r&&r.message)||"이미 사용 중인 아이디입니다.")}vStep3()};
+$("loginId").oninput=function(){idOk=false;$("dupCheck").textContent="중복확인";$("dupCheck").classList.add("btn-line");$("dupCheck").style.color="#111";$("dupCheck").style.background="#fff";vStep3()};
+$("agreeAll").onchange=function(){var c=$("agreeAll").checked;["agree1","agree2","agree3"].forEach(function(i){$(i).checked=c});vStep3()};
+["agree1","agree2","agree3"].forEach(function(i){$(i).onchange=function(){$("agreeAll").checked=$("agree1").checked&&$("agree2").checked&&$("agree3").checked;vStep3()}});
+$("password").oninput=vStep3;$("password2").oninput=vStep3;
+function vStep3(){var pw=$("password").value,pw2=$("password2").value;$("submit").disabled=!(idOk&&pw.length>=8&&pw===pw2&&$("agree1").checked&&$("agree2").checked)}
+vStep3();
+$("back3").onclick=function(){goStep(2)};
+document.querySelectorAll("[data-terms]").forEach(function(a){a.onclick=function(e){e.preventDefault();toast(a.getAttribute("data-terms")+" 전문 (연동 예정)")}});
+$("submit").onclick=async function(){S.loginId=$("loginId").value.trim();S.pw=$("password").value;S.agreements={privacy:$("agree1").checked,consign:$("agree2").checked,marketing:$("agree3").checked};document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("on")});$("loading").classList.add("on");window.scrollTo(0,0);await submitSignup(S);$("doneName").textContent=(S.name||"홍길동")+" 카마스터님";setTimeout(function(){document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("on")});$("done").classList.add("on");window.scrollTo(0,0)},1500)};
+$("goMy").onclick=function(){location.href="my.html"};
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마이페이지 · 레이노 카마스터 멤버십</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:'Pretendard',-apple-system,sans-serif;letter-spacing:-.3px;color:#111;background:#fff}
+a{color:#FF5A00;text-decoration:none}a:hover{color:#E0500A}
+img{display:block}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 22px}
+.top{display:flex;align-items:center;gap:12px;padding:16px 0 4px}
+.back{width:38px;height:38px;border-radius:50%;background:#F2F2F4;border:none;font-size:19px;color:#111}
+.ttl{font-size:20px;font-weight:800}
+.h1{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.18}
+.h1.big{font-size:34px}
+.sub{font-size:15px;line-height:1.6;color:#8A8A8E;margin-top:10px}
+.muted{color:#8A8A8E}
+.grow{flex:1}
+.lbl{font-size:14px;font-weight:800;margin:18px 0 8px}
+.inp,.sel{width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:16px;font-size:16px;color:#111;font-family:inherit;background:#fff;outline:none}
+.inp:focus,.sel:focus{border-color:#111}
+.inp:disabled,.sel:disabled{background:#F5F5F6;color:#B4B4B8;border-color:#EDEDED}
+.inp::placeholder{color:#B4B4B8}
+select.sel{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+select.sel:disabled{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23C4C4C8%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.row{display:flex;gap:8px}.row .inp{flex:1}
+.pwwrap{position:relative}.pwwrap .inp{padding-right:50px}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:8px;line-height:0}
+.btn{width:100%;padding:18px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;font-family:inherit}
+.btn:disabled{background:#EAEAEC;color:#B4B4B8;cursor:default}
+.btn-line{background:#fff;color:#111;border:1.5px solid #111}
+.btn-sm{flex-shrink:0;width:auto;padding:0 16px;font-size:13px;border-radius:14px;background:#111;color:#fff;border:none;font-weight:700}
+.btn-sm.done{background:#111}
+.foot{padding:14px 0 26px}
+.center{text-align:center}
+.link{color:#111;font-weight:800;text-decoration:underline}
+.prog{display:flex;gap:8px;margin-top:18px}.seg{flex:1;height:4px;border-radius:2px;background:#EAEAEC}.seg.on{background:#111}
+.step{font-size:12px;font-weight:700;color:#8A8A8E;margin-top:8px}
+.screen{display:none;flex-direction:column;flex:1}.screen.on{display:flex}
+.accent{color:#FF5A00}
+.note{font-size:11.5px;line-height:1.7;color:#A8A8AC;margin-top:16px}
+.chk-circle{width:76px;height:76px;border-radius:50%;background:#FF5A00;display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;font-weight:800;margin:0 auto}
+.result{background:#F5F5F6;border-radius:16px;padding:18px 20px;margin-top:20px}
+.voucher{margin-top:18px}.voucher img{width:72%;margin:0 auto;filter:drop-shadow(0 12px 26px rgba(0,0,0,.16))}
+.bcard{background:#F5F5F6;border-radius:18px;padding:18px 20px;margin-top:22px}
+.bitem{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid #EFEFF1}
+.ic{width:32px;height:32px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.ic.soon{border-radius:9px;background:#FF5A00;font-size:9px;letter-spacing:.3px}
+.tag{font-size:10px;font-weight:800;color:#FF5A00;background:rgba(255,90,0,.12);padding:2px 7px;border-radius:999px;margin-left:6px}
+.agree{border:1.5px solid #EDEDEF;border-radius:16px;overflow:hidden;margin-top:20px}
+.agree .all{padding:15px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #F2F2F4;font-weight:800;font-size:15px}
+.agree .it{padding:11px 16px;display:flex;align-items:center;gap:12px;font-size:14px}
+.agree .it .ex{margin-left:auto;color:#B0B0B4;font-size:12px}
+.agree input{width:20px;height:20px;accent-color:#111;flex-shrink:0}
+.agree .all input{width:22px;height:22px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:999px;z-index:99;opacity:0;transition:.25s;white-space:nowrap;pointer-events:none}.toast.on{opacity:1}
+.spin{width:56px;height:56px;border:4px solid #F1F1F3;border-top-color:#FF5A00;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto}@keyframes sp{to{transform:rotate(360deg)}}
+.collage{position:relative;flex:1;min-height:320px;margin:0 -22px;overflow:hidden;background:#EDEDF0}
+.collage .grid{position:absolute;top:-40px;left:-20px;right:-20px;transform:rotate(-9deg);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.collage .col{display:flex;flex-direction:column;gap:10px}.collage .col.mid{padding-top:0}.collage .col.side{padding-top:36px}
+.collage .cell{border-radius:16px;overflow:hidden}.collage .cell img{width:100%;height:100%;object-fit:cover}
+.collage .fade{position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(180deg,rgba(237,237,240,0),#fff)}
+.navbar{position:sticky;bottom:0;margin:0 -22px;background:#fff;border-top:1px solid #EEE;display:flex;justify-content:space-around;padding:10px 0 22px}
+.navbar button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#B0B0B4;padding:6px 14px;border-radius:12px}
+.navbar button.on{color:#FF5A00}
+.homecard{background:#F5F5F6;border-radius:20px;padding:18px 20px;margin-top:20px}
+.bar{height:10px;background:#E4E4E7;border-radius:5px;overflow:hidden;margin-top:12px}.bar>div{height:100%;background:#FF5A00;border-radius:5px}
+.tiles{display:flex;gap:12px;margin-top:12px}.tile{flex:1;border:1.5px solid #EDEDEF;border-radius:16px;padding:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top" style="justify-content:space-between;padding-top:18px"><img src="assets/rayno-logo-dark.png" alt="RAYNO" style="height:18px"><button class="back" id="logout" title="로그아웃" style="font-size:15px">⎋</button></div>
+  <p class="muted" style="margin-top:16px;font-size:15px;font-weight:700"><span id="uname">홍길동</span> 카마스터님</p>
+  <h1 class="h1" style="margin-top:6px">반가워요,<br><span class="accent">오늘도 든든하게</span></h1>
+  <div class="homecard"><div style="display:flex;justify-content:space-between;align-items:center"><span class="muted" style="font-size:13px;font-weight:700">유리막 코팅 무료 쿠폰까지</span><span style="font-size:12px;font-weight:700"><span id="cur">7</span> / <span id="goal">10</span></span></div><div class="bar"><div id="barfill" style="width:70%"></div></div><div class="muted" style="margin-top:10px;font-size:13px"><b id="left" style="color:#FF5A00">3건</b> 남았어요 · 누적 <span id="total">17</span>건</div></div>
+  <div class="tiles"><div class="tile"><div class="muted" style="font-size:12px;font-weight:700">내 쿠폰</div><div style="font-size:22px;font-weight:800;margin-top:4px"><span id="coupons">1</span>장</div></div><div class="tile"><div class="muted" style="font-size:12px;font-weight:700">이번 달 시공</div><div style="font-size:22px;font-weight:800;margin-top:4px"><span id="month">3</span>건</div></div></div>
+  <div class="tile" style="margin-top:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700">카마스터 코드</div><div class="muted" style="font-size:13px;margin-top:2px">시공점 보증서 연계 시 사용</div></div><div id="code" style="font-size:18px;font-weight:800;letter-spacing:.5px">CM-4821</div></div>
+  <div class="grow" style="min-height:24px"></div>
+  <div class="navbar"><button class="nav on" data-nav="홈"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M4 11 L12 4 L20 11 V20 H4 Z"></path></svg>홈</button><button class="nav" data-nav="쿠폰"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><rect x="4" y="7" width="16" height="10" rx="2"></rect><path d="M12 7 V17"></path></svg>쿠폰</button><button class="nav" data-nav="리워드"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M5 20 V12 M12 20 V6 M19 20 V15"></path></svg>리워드</button><button class="nav" data-nav="내 정보"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 19.5 c1.4-3.6 11.6-3.6 13 0"></path></svg>내 정보</button></div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var $=function(i){return document.getElementById(i)};
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove("on")},1700)}
+async function loadMyStats(){}
+async function logout(){}
+(async function(){var d=await loadMyStats();d=d||{};if(d.code)$("code").textContent=d.code;if(d.total_count!=null){$("total").textContent=d.total_count;}if(d.month_count!=null)$("month").textContent=d.month_count;if(d.coupons!=null)$("coupons").textContent=d.coupons;if(d.reward_goal){var cur=d.reward_current||0,goal=d.reward_goal;$("cur").textContent=cur;$("goal").textContent=goal;$("left").textContent=(goal-cur)+"건";$("barfill").style.width=Math.min(100,Math.round(cur/goal*100))+"%"}})();
+document.querySelectorAll("[data-nav]").forEach(function(b){b.onclick=function(){document.querySelectorAll("[data-nav]").forEach(function(x){x.classList.remove("on")});b.classList.add("on");var n=b.getAttribute("data-nav");if(n!=="홈")toast(n+" · 준비 중인 메뉴입니다")}});
+$("logout").onclick=async function(){await logout();location.href="index.html"};
+</script>
+</body>
+</html>

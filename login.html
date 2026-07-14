@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>로그인 · 레이노 카마스터 멤버십</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{font-family:'Pretendard',-apple-system,sans-serif;letter-spacing:-.3px;color:#111;background:#fff}
+a{color:#FF5A00;text-decoration:none}a:hover{color:#E0500A}
+img{display:block}
+button{font-family:inherit;cursor:pointer}
+.wrap{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;padding:0 22px}
+.top{display:flex;align-items:center;gap:12px;padding:16px 0 4px}
+.back{width:38px;height:38px;border-radius:50%;background:#F2F2F4;border:none;font-size:19px;color:#111}
+.ttl{font-size:20px;font-weight:800}
+.h1{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1.18}
+.h1.big{font-size:34px}
+.sub{font-size:15px;line-height:1.6;color:#8A8A8E;margin-top:10px}
+.muted{color:#8A8A8E}
+.grow{flex:1}
+.lbl{font-size:14px;font-weight:800;margin:18px 0 8px}
+.inp,.sel{width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:16px;font-size:16px;color:#111;font-family:inherit;background:#fff;outline:none}
+.inp:focus,.sel:focus{border-color:#111}
+.inp:disabled,.sel:disabled{background:#F5F5F6;color:#B4B4B8;border-color:#EDEDED}
+.inp::placeholder{color:#B4B4B8}
+select.sel{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+select.sel:disabled{background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23C4C4C8%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+.row{display:flex;gap:8px}.row .inp{flex:1}
+.pwwrap{position:relative}.pwwrap .inp{padding-right:50px}
+.eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;padding:8px;line-height:0}
+.btn{width:100%;padding:18px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;font-family:inherit}
+.btn:disabled{background:#EAEAEC;color:#B4B4B8;cursor:default}
+.btn-line{background:#fff;color:#111;border:1.5px solid #111}
+.btn-sm{flex-shrink:0;width:auto;padding:0 16px;font-size:13px;border-radius:14px;background:#111;color:#fff;border:none;font-weight:700}
+.btn-sm.done{background:#111}
+.foot{padding:14px 0 26px}
+.center{text-align:center}
+.link{color:#111;font-weight:800;text-decoration:underline}
+.prog{display:flex;gap:8px;margin-top:18px}.seg{flex:1;height:4px;border-radius:2px;background:#EAEAEC}.seg.on{background:#111}
+.step{font-size:12px;font-weight:700;color:#8A8A8E;margin-top:8px}
+.screen{display:none;flex-direction:column;flex:1}.screen.on{display:flex}
+.accent{color:#FF5A00}
+.note{font-size:11.5px;line-height:1.7;color:#A8A8AC;margin-top:16px}
+.chk-circle{width:76px;height:76px;border-radius:50%;background:#FF5A00;display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;font-weight:800;margin:0 auto}
+.result{background:#F5F5F6;border-radius:16px;padding:18px 20px;margin-top:20px}
+.voucher{margin-top:18px}.voucher img{width:72%;margin:0 auto;filter:drop-shadow(0 12px 26px rgba(0,0,0,.16))}
+.bcard{background:#F5F5F6;border-radius:18px;padding:18px 20px;margin-top:22px}
+.bitem{display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid #EFEFF1}
+.ic{width:32px;height:32px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0}
+.ic.soon{border-radius:9px;background:#FF5A00;font-size:9px;letter-spacing:.3px}
+.tag{font-size:10px;font-weight:800;color:#FF5A00;background:rgba(255,90,0,.12);padding:2px 7px;border-radius:999px;margin-left:6px}
+.agree{border:1.5px solid #EDEDEF;border-radius:16px;overflow:hidden;margin-top:20px}
+.agree .all{padding:15px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #F2F2F4;font-weight:800;font-size:15px}
+.agree .it{padding:11px 16px;display:flex;align-items:center;gap:12px;font-size:14px}
+.agree .it .ex{margin-left:auto;color:#B0B0B4;font-size:12px}
+.agree input{width:20px;height:20px;accent-color:#111;flex-shrink:0}
+.agree .all input{width:22px;height:22px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#111;color:#fff;font-size:13px;font-weight:600;padding:11px 18px;border-radius:999px;z-index:99;opacity:0;transition:.25s;white-space:nowrap;pointer-events:none}.toast.on{opacity:1}
+.spin{width:56px;height:56px;border:4px solid #F1F1F3;border-top-color:#FF5A00;border-radius:50%;animation:sp .8s linear infinite;margin:0 auto}@keyframes sp{to{transform:rotate(360deg)}}
+.collage{position:relative;flex:1;min-height:320px;margin:0 -22px;overflow:hidden;background:#EDEDF0}
+.collage .grid{position:absolute;top:-40px;left:-20px;right:-20px;transform:rotate(-9deg);display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.collage .col{display:flex;flex-direction:column;gap:10px}.collage .col.mid{padding-top:0}.collage .col.side{padding-top:36px}
+.collage .cell{border-radius:16px;overflow:hidden}.collage .cell img{width:100%;height:100%;object-fit:cover}
+.collage .fade{position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(180deg,rgba(237,237,240,0),#fff)}
+.navbar{position:sticky;bottom:0;margin:0 -22px;background:#fff;border-top:1px solid #EEE;display:flex;justify-content:space-around;padding:10px 0 22px}
+.navbar button{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#B0B0B4;padding:6px 14px;border-radius:12px}
+.navbar button.on{color:#FF5A00}
+.homecard{background:#F5F5F6;border-radius:20px;padding:18px 20px;margin-top:20px}
+.bar{height:10px;background:#E4E4E7;border-radius:5px;overflow:hidden;margin-top:12px}.bar>div{height:100%;background:#FF5A00;border-radius:5px}
+.tiles{display:flex;gap:12px;margin-top:12px}.tile{flex:1;border:1.5px solid #EDEDEF;border-radius:16px;padding:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="s-login" class="screen on">
+  <div style="padding-top:40px"><img src="assets/rayno-logo-dark.png" alt="RAYNO" style="height:20px"></div>
+  <h1 class="h1" style="margin-top:22px">다시 오셨네요,<br><span class="accent">반가워요</span></h1>
+  <label class="lbl" for="loginId">아이디</label><input id="loginId" class="inp" placeholder="아이디" autocomplete="username">
+  <label class="lbl" for="password">비밀번호</label><div class="pwwrap"><input id="password" class="inp" type="password" placeholder="비밀번호" autocomplete="current-password"><button class="eye" type="button" data-eye><svg data-off viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg data-on style="display:none" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF5A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3 L21 21"></path></svg></button></div>
+  <button id="loginBtn" class="btn" style="margin-top:16px" disabled>로그인</button>
+  <p class="center" style="margin-top:16px;font-size:13px;color:#8A8A8E"><a id="toFindId" style="color:#8A8A8E;font-weight:600">아이디 찾기</a> &nbsp;|&nbsp; <a id="toFindPw" style="color:#8A8A8E;font-weight:600">비밀번호 찾기</a></p>
+  <div class="grow"></div>
+  <div class="foot center" style="font-size:14px;color:#8A8A8E;font-weight:600">아직 회원이 아니신가요? <a class="link" href="signup.html">가입하기</a></div>
+</div>
+<div id="s-findid" class="screen">
+  <div class="top"><button class="back" data-to="s-login">‹</button><span class="ttl">아이디 찾기</span></div>
+  <h1 class="h1" style="font-size:22px;margin-top:20px;line-height:1.35">가입 시 인증한 휴대폰으로<br>본인인증해 주세요</h1>
+  <label class="lbl" for="fiTelco">통신사</label><select id="fiTelco" class="sel"><option value="" disabled selected>통신사 선택</option><option>SKT</option><option>KT</option><option>LG U+</option><option>알뜰폰</option></select>
+  <label class="lbl" for="fiPhone">휴대폰번호</label><div class="row"><input id="fiPhone" class="inp" type="tel" placeholder="숫자만 입력" inputmode="numeric"><button id="fiReq" class="btn-sm">인증요청</button></div>
+  <div id="fiCodeWrap" style="display:none"><label class="lbl" for="fiCode">인증번호</label><div class="row"><input id="fiCode" class="inp" type="tel" maxlength="6" placeholder="6자리" inputmode="numeric"><button id="fiConfirm" class="btn-sm btn-line" style="color:#111">확인</button></div></div>
+  <div id="fiResult" class="result center" style="display:none"><div class="muted" style="font-size:13px;font-weight:700">가입된 아이디</div><div id="fiId" style="font-size:24px;font-weight:800;margin-top:8px"></div></div>
+  <div class="grow"></div>
+  <div class="foot"><button id="fiSubmit" class="btn" disabled>아이디 확인하기</button><p class="center" style="margin-top:14px;font-size:14px;color:#8A8A8E;font-weight:600"><a class="link" data-to="s-login">로그인하러 가기</a></p></div>
+</div>
+<div id="s-findpw" class="screen">
+  <div class="top"><button class="back" data-to="s-login">‹</button><span class="ttl">비밀번호 찾기</span></div>
+  <h1 class="h1" style="font-size:22px;margin-top:20px;line-height:1.35">아이디 확인 후<br>본인인증해 주세요</h1>
+  <label class="lbl" for="fpId">아이디</label><input id="fpId" class="inp" placeholder="아이디">
+  <label class="lbl" for="fpTelco">통신사</label><select id="fpTelco" class="sel"><option value="" disabled selected>통신사 선택</option><option>SKT</option><option>KT</option><option>LG U+</option><option>알뜰폰</option></select>
+  <label class="lbl" for="fpPhone">휴대폰번호</label><div class="row"><input id="fpPhone" class="inp" type="tel" placeholder="숫자만 입력" inputmode="numeric"><button id="fpReq" class="btn-sm">인증요청</button></div>
+  <div id="fpCodeWrap" style="display:none"><label class="lbl" for="fpCode">인증번호</label><input id="fpCode" class="inp" type="tel" maxlength="6" placeholder="6자리" inputmode="numeric"></div>
+  <div class="grow"></div>
+  <div class="foot"><button id="fpNext" class="btn" disabled>다음</button></div>
+</div>
+<div id="s-reset" class="screen">
+  <div class="top"><button class="back" data-to="s-findpw">‹</button><span class="ttl">비밀번호 재설정</span></div>
+  <h1 class="h1" style="font-size:22px;margin-top:20px;line-height:1.35">새 비밀번호를<br>설정해 주세요</h1>
+  <label class="lbl" for="rpNew">새 비밀번호</label><div class="pwwrap"><input id="rpNew" class="inp" type="password" placeholder="8자 이상"><button class="eye" type="button" data-eye><svg data-off viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg data-on style="display:none" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF5A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3 L21 21"></path></svg></button></div>
+  <label class="lbl" for="rpNew2">새 비밀번호 확인</label><input id="rpNew2" class="inp" type="password" placeholder="새 비밀번호 확인">
+  <div id="rpDone" class="result center" style="display:none;font-weight:600">✓ 비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.</div>
+  <div class="grow"></div>
+  <div class="foot"><button id="rpSubmit" class="btn" disabled>비밀번호 변경</button><p class="center" style="margin-top:14px"><a class="link" data-to="s-login">로그인</a></p></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var $=function(i){return document.getElementById(i)};
+function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(window._tt);window._tt=setTimeout(function(){t.classList.remove("on")},1700)}
+document.addEventListener("click",function(e){var b=e.target.closest("[data-eye]");if(!b)return;var inp=b.parentElement.querySelector("input");var show=inp.type==="password";inp.type=show?"text":"password";b.querySelector("[data-on]").style.display=show?"block":"none";b.querySelector("[data-off]").style.display=show?"none":"block"});
+const S={};
+async function login(id,pw){}
+async function verifyIdentity(data){}
+async function findId(data){}
+async function resetPw(data){}
+function show(id){document.querySelectorAll(".screen").forEach(function(s){s.classList.remove("on")});$(id).classList.add("on");window.scrollTo(0,0)}
+document.querySelectorAll("[data-to]").forEach(function(el){el.style.cursor="pointer";el.onclick=function(){show(el.getAttribute("data-to"))}});
+$("toFindId").onclick=function(){show("s-findid")};$("toFindPw").onclick=function(){show("s-findpw")};
+function vLogin(){$("loginBtn").disabled=!($("loginId").value.trim()&&$("password").value.trim())}
+$("loginId").oninput=vLogin;$("password").oninput=vLogin;vLogin();
+$("loginBtn").onclick=async function(){var r=await login($("loginId").value.trim(),$("password").value);if(!r||r.ok!==false){location.href="my.html"}else{toast(r.message||"로그인에 실패했습니다.")}};
+var fiVerified=false;
+$("fiReq").onclick=function(){if(!/^\d{9,11}$/.test($("fiPhone").value.trim())){toast("휴대폰번호를 입력해 주세요.");return}$("fiCodeWrap").style.display="block";toast("인증번호를 발송했습니다.")};
+$("fiConfirm").onclick=async function(){if(($("fiCode").value||"").length!==6){toast("인증번호 6자리를 입력해 주세요.");return}var r=await verifyIdentity({telco:$("fiTelco").value,phone:$("fiPhone").value,code:$("fiCode").value});fiVerified=!r||r.ok!==false;if(fiVerified){$("fiSubmit").disabled=false;toast("본인인증이 완료되었습니다.")}};
+$("fiSubmit").onclick=async function(){var r=await findId({telco:$("fiTelco").value,phone:$("fiPhone").value});$("fiId").textContent=(r&&r.loginId)?r.loginId:"ray****96";$("fiResult").style.display="block"};
+function vFp(){$("fpNext").disabled=!($("fpId").value.trim()&&/^\d{9,11}$/.test($("fpPhone").value.trim())&&($("fpCode").value||"").length===6)}
+$("fpReq").onclick=function(){if(!/^\d{9,11}$/.test($("fpPhone").value.trim())){toast("휴대폰번호를 입력해 주세요.");return}$("fpCodeWrap").style.display="block";toast("인증번호를 발송했습니다.")};
+["fpId","fpPhone","fpCode"].forEach(function(i){$(i).oninput=vFp});vFp();
+$("fpNext").onclick=function(){S.loginId=$("fpId").value.trim();show("s-reset")};
+function vRp(){var a=$("rpNew").value,b=$("rpNew2").value;$("rpSubmit").disabled=!(a.length>=8&&a===b)}
+$("rpNew").oninput=vRp;$("rpNew2").oninput=vRp;vRp();
+$("rpSubmit").onclick=async function(){await resetPw({loginId:S.loginId,pw:$("rpNew").value});$("rpDone").style.display="block";$("rpSubmit").disabled=true};
+</script>
+</body>
+</html>
