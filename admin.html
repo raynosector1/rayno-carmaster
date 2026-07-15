@@ -248,9 +248,9 @@ input::placeholder{color:#B4B4B8;}
       <section class="view" id="view-members">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <div class="filters">
-            <div class="filter">소속 전체 <span class="cx">▾</span></div>
-            <div class="filter">지역 전체 <span class="cx">▾</span></div>
-            <div class="filter">상태 전체 <span class="cx">▾</span></div>
+            <select class="filter" id="fltOffice" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">소속 전체</option></select>
+            <select class="filter" id="fltRegion" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">지역 전체</option></select>
+            <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체</option><option value="활성">활성</option><option value="인증대기">인증대기</option><option value="정지">정지</option></select>
           </div>
           <button class="btn btn-line" id="exportMembers">↓ 엑셀 다운로드</button>
         </div>
@@ -414,8 +414,9 @@ input::placeholder{color:#B4B4B8;}
     </div>
     <div style="margin-top:24px;display:flex;gap:10px;">
       <button class="btn btn-soft" style="flex:1;padding:14px 0;font-size:14px;">시공 내역 보기</button>
-      <button class="btn" style="flex:1;padding:14px 0;font-size:14px;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
+      <button class="btn" id="dSuspend" style="flex:1;padding:14px 0;font-size:14px;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
     </div>
+    <button id="dDelete" style="margin-top:10px;width:100%;padding:11px 0;background:none;border:none;font-size:13px;color:#B0B0B4;text-decoration:underline;cursor:pointer;font-family:inherit;">계정 탈퇴 (완전 삭제)</button>
   </div>
 </div>
 <!-- 리워드 생성 드로어 -->
@@ -593,7 +594,7 @@ function _today(){ var d=new Date(); return d.getFullYear()+String(d.getMonth()+
 function _csv(rows){ return '\uFEFF'+rows.map(function(r){ return r.map(function(c){ c=String(c==null?'':c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(','); }).join('\n'); }
 function _download(name, text){ var b=new Blob([text],{type:'text/csv;charset=utf-8'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},1000); }
 function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime())/1000; if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전'; return Math.floor(s/86400)+'일 전'; }
-function _mask(p){ p=(p||'').replace(/\D/g,''); if(p.length<7)return p||'-'; return p.slice(0,3)+'-****-'+p.slice(-4); }
+function _mask(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length===11)return p.slice(0,3)+'-'+p.slice(3,7)+'-'+p.slice(7); if(p.length===10)return p.slice(0,3)+'-'+p.slice(3,6)+'-'+p.slice(6); return p; }
 function _stat(s){ return s==='verified'?'활성':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
@@ -633,7 +634,7 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', phone:_mask(m.phone), join:_date(_ts(m)), total:(wmap[m.id]||0), status:_stat(m.status) }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', brand:m.brand||'', region:m.region||'', phone:_mask(m.phone), join:_date(_ts(m)), total:(wmap[m.id]||0), status:_stat(m.status) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
@@ -725,23 +726,36 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  const cols='130px 90px 1fr 150px 110px 90px 70px';
-  $('membersRows').innerHTML = skelRows(7, cols);
-  await sleep(650);
-  const rows = await loadMembers({});
-  const badge = s => s==='활성' ? '<span class="badge b-ok">활성</span>' : s==='인증대기' ? '<span class="badge b-warn">인증대기</span>' : '<span class="badge b-off">정지</span>';
-  $('membersRows').innerHTML = !rows.length ? EMPTY('등록된 회원이 없습니다') : rows.map(m=>
-    `<div class="tr td" style="grid-template-columns:130px 90px 1fr 150px 110px 90px 90px 70px;">
-       <span style="font-weight:700;">${m.code}</span><span>${m.name}</span>
-       <span style="color:#5A5A5E;">${m.office}</span><span style="color:#5A5A5E;">${m.phone}</span>
-       <span style="color:#8A8A8E;">${m.join}</span><span style="font-weight:700;">${m.total}건</span>
-       <span>${badge(m.status)}</span><span class="linklike" data-code="${m.code}">상세</span></div>`).join('');
-  $('membersRows').querySelectorAll('.linklike').forEach(el=> el.addEventListener('click', ()=> openMember(el.dataset.code)));
+  $('membersRows').innerHTML = skelRows(7, '130px 90px 1fr 150px 110px 90px 90px 70px');
+  await sleep(400);
+  S.allMembers = await loadMembers({});
+  populateMemberFilters(S.allMembers);
+  applyMemberFilters();
 }
+function populateMemberFilters(rows){
+  var fo=$('fltOffice'), fr=$('fltRegion');
+  if(fo && fo.dataset.filled!=='1'){ var bs=Array.from(new Set(rows.map(function(m){return m.brand;}).filter(Boolean))).sort(); fo.innerHTML='<option value="">소속 전체</option>'+bs.map(function(b){return '<option value="'+esc(b)+'">'+esc(b)+'</option>';}).join(''); fo.dataset.filled='1'; }
+  if(fr && fr.dataset.filled!=='1'){ var rs=Array.from(new Set(rows.map(function(m){return m.region;}).filter(Boolean))).sort(); fr.innerHTML='<option value="">지역 전체</option>'+rs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join(''); fr.dataset.filled='1'; }
+}
+function applyMemberFilters(){
+  var fo=($('fltOffice')||{}).value||'', fr=($('fltRegion')||{}).value||'', fs=($('fltStatus')||{}).value||'';
+  var rows=(S.allMembers||[]).filter(function(m){ return (!fo||m.brand===fo)&&(!fr||m.region===fr)&&(!fs||m.status===fs); });
+  var badge=function(st){ return st==='활성'?'<span class="badge b-ok">활성</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':'<span class="badge b-off">정지</span>'; };
+  $('membersRows').innerHTML = !rows.length ? EMPTY('조건에 맞는 회원이 없습니다') : rows.map(function(m){
+    return '<div class="tr td" style="grid-template-columns:130px 90px 1fr 150px 110px 90px 90px 70px;">'+
+      '<span style="font-weight:700;">'+esc(m.code)+'</span><span>'+esc(m.name)+'</span>'+
+      '<span style="color:#5A5A5E;">'+esc(m.office)+'</span><span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
+      '<span style="color:#8A8A8E;">'+m.join+'</span><span style="font-weight:700;">'+m.total+'건</span>'+
+      '<span>'+badge(m.status)+'</span><span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
+  }).join('');
+  $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
+}
+['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', applyMemberFilters); });
 $('exportMembers').addEventListener('click', async ()=>{ try{ var rows=await loadMembers({}); var csv=_csv([['코드','이름','영업소','전화','가입일','누적시공','상태']].concat(rows.map(function(m){return [m.code,m.name,m.office,m.phone,m.join,m.total,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 
 /* ── 회원 상세 드로어 ── */
 async function openMember(code){
+  S.dMemberCode = code;
   const m = await getMember(code);
   $('dAv').textContent = (m.name||'?').charAt(0);
   $('dName').textContent = m.name || '-';
@@ -753,11 +767,40 @@ async function openMember(code){
   $('dJoin').textContent = m.join || '-';
   $('dTotal').textContent = (m.total ?? 0)+'건';
   $('dReward').textContent = (m.reward ?? 0)+'건';
+  S.dMemberStatus = m.status;
+  var sb=$('dSuspend'); if(sb){ if(m.status==='정지'){ sb.textContent='정지 해제'; sb.style.borderColor='var(--ok)'; sb.style.color='var(--ok)'; } else { sb.textContent='계정 정지'; sb.style.borderColor='var(--err)'; sb.style.color='var(--err)'; } }
   $('overlay').classList.add('on'); $('drawer').classList.add('on');
 }
 function closeDrawer(){ $('overlay').classList.remove('on'); $('drawer').classList.remove('on'); }
 $('drawerClose').addEventListener('click', closeDrawer);
 $('overlay').addEventListener('click', closeDrawer);
+async function setMemberStatus(code, status){
+  try{ var r = await fetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+admToken() }, body: JSON.stringify({ action:'set-status', code:code, status:status }) }); return await r.json(); }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
+}
+$('dSuspend').addEventListener('click', async ()=>{
+  var code=S.dMemberCode, name=$('dName').textContent||'회원';
+  if(!code) return;
+  var toSuspend = S.dMemberStatus!=='정지';
+  if(toSuspend && !confirm(name+' 카마스터를 정지하시겠습니까?\n\n정지 시 로그인·리워드 수령이 제한됩니다. (언제든 해제 가능)')) return;
+  var btn=$('dSuspend'); btn.disabled=true; var prev=btn.textContent; btn.textContent='처리 중...';
+  var res=await setMemberStatus(code, toSuspend?'suspended':'verified');
+  btn.disabled=false; btn.textContent=prev;
+  if(res && res.ok){ toast(name+(toSuspend?' 카마스터를 정지했습니다.':' 카마스터 정지를 해제했습니다.')); closeDrawer(); renderMembers(); }
+  else { toast((res&&res.message)||'처리에 실패했습니다.'); }
+});
+async function deleteMember(code){
+  try{ var r = await fetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+admToken() }, body: JSON.stringify({ action:'delete-member', code:code }) }); return await r.json(); }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
+}
+$('dDelete').addEventListener('click', async ()=>{
+  var code = S.dMemberCode, name = $('dName').textContent || '회원';
+  if(!code) return;
+  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n회원 정보 · 리워드 · 쿠폰 · 시공 연계 · 로그인 계정이 모두 삭제되며 되돌릴 수 없습니다.')) return;
+  var btn=$('dDelete'); btn.disabled=true; btn.textContent='처리 중...';
+  var res = await deleteMember(code);
+  btn.disabled=false; btn.textContent='계정 탈퇴 (완전 삭제)';
+  if(res && res.ok){ toast(name+' 카마스터를 탈퇴 처리했습니다.'); closeDrawer(); renderMembers(); renderDashboard(); }
+  else { toast((res&&res.message)||'탈퇴 처리에 실패했습니다.'); }
+});
 
 /* ── 보증서 연계 ── */
 async function renderWarranty(){
