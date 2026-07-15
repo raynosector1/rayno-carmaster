@@ -238,7 +238,7 @@ input::placeholder{color:#B4B4B8;}
             <div id="recentList"></div>
           </div>
           <div class="card" style="padding:22px 24px;flex:1;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="section-h">승인 대기 리워드</div><span class="badge b-warn">23</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="section-h">승인 대기 리워드</div><span class="badge b-warn" id="dashPendingBadge">0</span></div>
             <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;"></div>
           </div>
         </div>
@@ -579,6 +579,19 @@ async function admRest(path){
   if(!r.ok) throw new Error(await r.text());
   const t = await r.text(); return t ? JSON.parse(t) : [];
 }
+async function admWrite(path, method, body){
+  var r = await fetch(SB_URL+'/rest/v1/'+path, { method:method, headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken(), 'Content-Type':'application/json', Prefer:'return=representation' }, body: body?JSON.stringify(body):undefined });
+  var t = await r.text(); var j=null; try{ j=t?JSON.parse(t):null; }catch(e){}
+  if(!r.ok) throw new Error((j&&j.message)||t||('HTTP '+r.status));
+  return j;
+}
+async function admCount(path){
+  try{ var r = await fetch(SB_URL+'/rest/v1/'+path, { headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken(), Prefer:'count=exact', Range:'0-0' } }); var cr=r.headers.get('content-range')||''; var tot=cr.split('/')[1]; return tot?parseInt(tot,10):0; }catch(e){ return 0; }
+}
+async function _cmIdByCode(code){ try{ var r = await admRest('carmasters?select=id&code=eq.'+encodeURIComponent(code)+'&limit=1'); return (r&&r[0])?r[0].id:null; }catch(e){ return null; } }
+function _today(){ var d=new Date(); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
+function _csv(rows){ return '\uFEFF'+rows.map(function(r){ return r.map(function(c){ c=String(c==null?'':c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(','); }).join('\n'); }
+function _download(name, text){ var b=new Blob([text],{type:'text/csv;charset=utf-8'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},1000); }
 function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime())/1000; if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전'; return Math.floor(s/86400)+'일 전'; }
 function _mask(p){ p=(p||'').replace(/\D/g,''); if(p.length<7)return p||'-'; return p.slice(0,3)+'-****-'+p.slice(-4); }
 function _stat(s){ return s==='verified'?'활성':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
@@ -618,14 +631,18 @@ async function loadMembers(filters){
   try{
     var rows = await admRest('carmasters?select=*');
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', phone:_mask(m.phone), join:_date(_ts(m)), total:0, status:_stat(m.status) }; });
+    var wmap = {};
+    try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', phone:_mask(m.phone), join:_date(_ts(m)), total:(wmap[m.id]||0), status:_stat(m.status) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
   try{
     var rows = await admRest('carmasters?select=*&code=eq.'+encodeURIComponent(code));
     var m = rows[0]||{};
-    return { name:m.name, code:m.code, status:_stat(m.status), office:[m.brand,m.office].filter(Boolean).join(' · '), phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'), join:_date(_ts(m)), total:0, reward:0 };
+    var total=0, reward=0;
+    if(m.id){ total = await admCount('warranty_matches?select=id&carmaster_id=eq.'+m.id+'&link_type=eq.linked'); reward = await admCount('rewards?select=id&carmaster_id=eq.'+m.id); }
+    return { name:m.name, code:m.code, status:_stat(m.status), office:[m.brand,m.office].filter(Boolean).join(' · '), phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'), join:_date(_ts(m)), total:total, reward:reward };
   }catch(e){ console.error('getMember',e); return {}; }
 }
 async function searchCarmaster(q){
@@ -636,9 +653,35 @@ async function searchCarmaster(q){
     return rows.map(function(m){ return { code:m.code, name:m.name, office:m.office, phone:_mask(m.phone) }; });
   }catch(e){ console.error('search',e); return []; }
 }
-async function linkWarranty(data){ return { ok:false, message:'보증서 연계는 딜러십 API 연동 후 제공됩니다.' }; }
-async function loadRewards(tab){ return []; }
-async function approveRewards(ids){ return { ok:true, count:ids.length }; }
+async function linkWarranty(data){
+  try{
+    var cmId = await _cmIdByCode(data.carmaster);
+    if(!cmId) return { ok:false, message:'카마스터를 찾을 수 없습니다.' };
+    await admWrite('warranty_matches','POST',{ carmaster_id:cmId, car_model:data.model||null, vin:data.vin||null, product:null, dealer_name:'관리자 수동 연계', link_type:'linked', status:'valid', installed_at:new Date().toISOString() });
+    return { ok:true };
+  }catch(e){ console.error('linkWarranty',e); return { ok:false, message:'연계에 실패했습니다.' }; }
+}
+async function loadRewards(tab){
+  try{
+    var rows = await admRest('rewards?select=*,carmasters(code,name,office)');
+    var filtered = rows.filter(function(r){ return tab==='done' ? _DONE_ST.indexOf(r.status)>=0 : r.status==='pending'; });
+    filtered.sort(function(a,b){ return String(b.created_at||b.sent_at||'').localeCompare(String(a.created_at||a.sent_at||'')); });
+    return filtered.map(function(r){
+      var cm = r.carmasters||{};
+      var reason = r.type==='welcome' ? '가입 축하 웰컴기프트' : (r.type==='milestone' ? '시공 실적 달성' : '리워드');
+      return { id:r.id, name:cm.name||'회원', code:cm.code||'-', reward:r.item_name||'리워드', reason:reason, date:_date(r.created_at||r.sent_at) };
+    });
+  }catch(e){ console.error('loadRewards',e); return []; }
+}
+async function approveRewards(ids){
+  try{
+    for(var i=0;i<ids.length;i++){
+      var res = await fetch(SB_URL+'/rest/v1/rewards?id=eq.'+encodeURIComponent(ids[i]), { method:'PATCH', headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken(), 'Content-Type':'application/json', Prefer:'return=minimal' }, body: JSON.stringify({ status:'sent' }) });
+      if(!res.ok) console.error('approve fail', await res.text());
+    }
+    return { ok:true, count:ids.length };
+  }catch(e){ console.error('approveRewards',e); return { ok:false }; }
+}
 
 /* ── 내비 전환 ── */
 document.querySelectorAll('.nav-item').forEach(btn=>{
@@ -654,7 +697,7 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     window.scrollTo(0,0);
   });
 });
-$('globalSearch').addEventListener('keydown', e=>{ if(e.key==='Enter'){ toast('검색: '+e.target.value+' (연동 예정)'); } });
+$('globalSearch').addEventListener('keydown', async e=>{ if(e.key!=='Enter')return; var q=(e.target.value||'').trim(); if(!q){ toast('검색어를 입력해 주세요.'); return; } var list=await searchCarmaster(q); if(!list.length){ toast('검색 결과가 없습니다.'); return; } toast(list.length+'명 검색됨'); openMember(list[0].code); });
 
 /* ── 대시보드 ── */
 async function renderDashboard(){
@@ -674,7 +717,7 @@ async function renderDashboard(){
   var pend=rw.filter(function(r){ return r.status==='pending'; }).length;
   var done=rw.filter(function(r){ return _DONE_ST.indexOf(r.status)>=0; }).length;
   var auto=rw.filter(function(r){ return _AUTO_ST.indexOf(r.status)>=0; }).length;
-  setTxt('kpiTotal',(d.all||[]).length); setTxt('kpiMonth',monthCount); setTxt('kpiPending',pend); setTxt('kpiInstall',0);
+  setTxt('kpiTotal',(d.all||[]).length); setTxt('kpiMonth',monthCount); setTxt('kpiPending',pend); setTxt('dashPendingBadge',pend); var _inst=0; try{ _inst=await admCount('warranty_matches?select=id&link_type=eq.linked&installed_at=gte.'+ym+'-01'); }catch(e){} setTxt('kpiInstall',_inst);
   setTxt('kpiRewardTotal',rw.length); setTxt('kpiRwDone',done); setTxt('kpiRwPending',pend); setTxt('kpiRwAuto',auto);
   fillDonut(done,pend,auto);
   renderSignupChart(d.all||[]);
@@ -695,7 +738,7 @@ async function renderMembers(){
        <span>${badge(m.status)}</span><span class="linklike" data-code="${m.code}">상세</span></div>`).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(el=> el.addEventListener('click', ()=> openMember(el.dataset.code)));
 }
-$('exportMembers').addEventListener('click', ()=> toast('엑셀 파일을 생성합니다. (연동 예정)'));
+$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=await loadMembers({}); var csv=_csv([['코드','이름','영업소','전화','가입일','누적시공','상태']].concat(rows.map(function(m){return [m.code,m.name,m.office,m.phone,m.join,m.total,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 
 /* ── 회원 상세 드로어 ── */
 async function openMember(code){
@@ -753,8 +796,13 @@ $('wConfirm').addEventListener('click', async ()=>{
 });
 
 async function createReward(data){
-  // TODO: return await (await fetch('/api/admin/rewards',{method:'POST',body:JSON.stringify(data)})).json();
-  return { ok:true, id:'m'+Date.now() };
+  try{
+    var cmId = await _cmIdByCode(data.carmaster);
+    if(!cmId) return { ok:false, message:'카마스터를 찾을 수 없습니다.' };
+    var res = await admWrite('rewards','POST',{ carmaster_id:cmId, type:'manual', item_name:data.reward, status:(data.mode==='now'?'sent':'pending'), reason:data.reason||null });
+    var row = Array.isArray(res)?res[0]:res;
+    return { ok:true, id:(row&&row.id) };
+  }catch(e){ console.error('createReward',e); return { ok:false }; }
 }
 
 /* ── 리워드 지급 ── */
@@ -803,7 +851,7 @@ $('bulkApprove').addEventListener('click', async ()=>{
   checked.forEach(r=>{ r.style.transition='.2s'; r.style.opacity='0'; setTimeout(()=>{ r.remove(); refreshPendingCount(); updateSel(); },200); });
   toast(checked.length+'건 승인·발송했습니다.');
 });
-$('exportRewards').addEventListener('click', ()=> toast('엑셀 파일을 생성합니다. (연동 예정)'));
+$('exportRewards').addEventListener('click', async ()=>{ try{ var rows=await loadRewards(S.rewardTab); var csv=_csv([['카마스터','코드','리워드','산정사유','산정일']].concat(rows.map(function(r){return [r.name,r.code,r.reward,r.reason,r.date];}))); _download('리워드_'+(S.rewardTab==='done'?'지급완료':'지급대기')+'_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 
 /* ── 리워드 생성 드로어 ── */
 function rwValidate(){
@@ -874,12 +922,17 @@ $('rwCreate').addEventListener('click', async ()=>{
 
 /* ── 프로모션 ── */
 async function loadPromotions(){
-  // TODO(backend): return await (await fetch('/api/admin/promotions')).json();
-  return [];
+  try{
+    var rows = await admRest('promotions?select=*&order=created_at.desc');
+    return rows.map(function(p){ return { id:p.id, name:p.name, cond:p.cond||'cumulative', n:p.threshold_n||0, reward:p.reward||'-', period:p.period||'상시', auto:!!p.auto, active:!!p.active, achieved:p.achieved||0 }; });
+  }catch(e){ console.error('loadPromotions',e); return []; }
 }
 async function createPromotion(data){
-  // TODO: return await (await fetch('/api/admin/promotions',{method:'POST',body:JSON.stringify(data)})).json();
-  return { ok:true, id:'pm-'+Date.now() };
+  try{
+    var res = await admWrite('promotions','POST',{ name:data.name, cond:data.cond, threshold_n:data.n||0, reward:data.reward, period:data.period, auto:!!data.auto, active:true });
+    var row = Array.isArray(res)?res[0]:res;
+    return { ok:true, id:(row&&row.id) };
+  }catch(e){ console.error('createPromotion',e); return { ok:false }; }
 }
 function condLabel(p){ return p.cond==='signup' ? '가입 즉시' : p.cond==='monthly' ? '월 시공 '+p.n+'건' : '누적 시공 '+p.n+'건'; }
 async function renderPromos(){
@@ -898,11 +951,9 @@ async function renderPromos(){
        </div>
        <label class="switch"><input type="checkbox" class="pmToggle" ${p.active?'checked':''}><span class="tk"></span></label>
      </div>`).join('');
-  $('promoList').querySelectorAll('.pmToggle').forEach(t=> t.addEventListener('change', ()=>{
-    const id = t.closest('[data-id]').dataset.id;
-    const p = S.promos.find(x=>x.id===id); p.active = t.checked;
-    toast(p.name+(p.active?' 프로모션을 재개했습니다.':' 프로모션을 중지했습니다.'));
-    renderPromos();
+  $('promoList').querySelectorAll('.pmToggle').forEach(t=> t.addEventListener('change', async ()=>{
+    var id = t.closest('[data-id]').dataset.id; var p = S.promos.find(x=>x.id===id);
+    try{ await admWrite('promotions?id=eq.'+id,'PATCH',{ active:t.checked }); if(p)p.active=t.checked; toast((p?p.name:'프로모션')+(t.checked?' 프로모션을 재개했습니다.':' 프로모션을 중지했습니다.')); }catch(e){ toast('변경에 실패했습니다.'); if(p)t.checked=p.active; }
   }));
 }
 
@@ -963,8 +1014,14 @@ $('pmCreate').addEventListener('click', async ()=>{
 
 /* ── 시공 내역 ── */
 async function loadServices(){
-  // TODO(backend): return await (await fetch('/api/admin/services')).json();
-  return [];
+  try{
+    var rows = await admRest('warranty_matches?select=*,carmasters(code,name)&order=installed_at.desc');
+    return rows.map(function(w){
+      var cm=w.carmasters||{};
+      var st = (w.link_type==='linked'||w.status==='valid') ? '연계완료' : ((w.status==='cancelled'||w.link_type==='cancelled') ? '취소' : '연계대기');
+      return { date:_date(w.installed_at||w.created_at), model:w.car_model||'-', shop:w.dealer_name||'-', cm:cm.name||'-', code:cm.code||'-', film:w.product||'-', wr:(w.warranty_no||w.wr_no||'-'), status:st };
+    });
+  }catch(e){ console.error('loadServices',e); return []; }
 }
 async function renderServices(){
   $('servicesRows').innerHTML = skelRows(7, '96px 130px 1fr 150px 140px 150px 90px');
@@ -979,24 +1036,28 @@ async function renderServices(){
        <span style="color:#5A5A5E;">${r.film}</span><span style="color:#8A8A8E;">${r.wr}</span>
        <span>${badge(r.status)}</span></div>`).join('');
 }
-$('exportServices').addEventListener('click', ()=> toast('엑셀 파일을 생성합니다. (연동 예정)'));
+$('exportServices').addEventListener('click', async ()=>{ try{ var rows=await loadServices(); var csv=_csv([['시공일','차량모델','시공점','카마스터','코드','필름','보증서','상태']].concat(rows.map(function(r){return [r.date,r.model,r.shop,r.cm,r.code,r.film,r.wr,r.status];}))); _download('시공내역_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 
 /* ── 공지·설정 ── */
 let NOTICES = []; /* TODO(backend): 공지 목록 로드 */
 const ADMINS = []; /* TODO(backend): 관리자 목록 로드 */
-function renderNotices(){
+async function loadNotices(){ try{ var rows=await admRest('notices?select=*&order=created_at.desc'); return rows.map(function(n){ return { id:n.id, title:n.title, target:n.target||'전체 카마스터', date:_date(n.created_at), on:!!n.published, body:n.body }; }); }catch(e){ console.error('loadNotices',e); return []; } }
+async function renderNotices(){
+  NOTICES = await loadNotices();
   $('noticeList').innerHTML = !NOTICES.length ? EMPTY('등록된 공지가 없습니다') : NOTICES.map(n=>
     `<div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid #F2F2F2;" data-id="${n.id}">
        <div><div style="font-size:14.5px;font-weight:700;">${esc(n.title)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;">${esc(n.target)} · ${n.date}</div></div>
        <div style="display:flex;align-items:center;gap:14px;">${n.on?'<span class="badge b-ok">게시중</span>':'<span class="badge b-off">종료</span>'}<label class="switch"><input type="checkbox" class="ntToggle" ${n.on?'checked':''}><span class="tk"></span></label></div>
      </div>`).join('');
-  $('noticeList').querySelectorAll('.ntToggle').forEach(t=> t.addEventListener('change', ()=>{
-    const n = NOTICES.find(x=>x.id===t.closest('[data-id]').dataset.id); n.on=t.checked;
-    toast(n.title+(n.on?' 공지를 게시했습니다.':' 공지를 종료했습니다.')); renderNotices();
+  $('noticeList').querySelectorAll('.ntToggle').forEach(t=> t.addEventListener('change', async ()=>{
+    var id=t.closest('[data-id]').dataset.id; var n = NOTICES.find(x=>x.id===id);
+    try{ await admWrite('notices?id=eq.'+id,'PATCH',{ published:t.checked }); if(n)n.on=t.checked; toast((n?n.title:'공지')+(t.checked?' 공지를 게시했습니다.':' 공지를 종료했습니다.')); }catch(e){ toast('변경에 실패했습니다.'); if(n)t.checked=n.on; }
   }));
 }
-function renderAdmins(){
-  $('adminList').innerHTML = !ADMINS.length ? EMPTY('등록된 관리자가 없습니다') : ADMINS.map(a=>
+async function renderAdmins(){
+  var list=[];
+  try{ var _r = await admRest('admins?select=name,email'); list = _r.map(function(a){ return { name:a.name||a.email||'관리자', email:a.email||'-', role:'관리자', cls:'b-ok' }; }); }catch(e){ console.error('admins',e); }
+  $('adminList').innerHTML = !list.length ? EMPTY('등록된 관리자가 없습니다') : list.map(a=>
     `<div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #F2F2F2;">
        <div style="width:36px;height:36px;border-radius:50%;background:var(--ink2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;">${a.name.charAt(0)}</div>
        <div style="flex:1;"><div style="font-size:14px;font-weight:700;">${a.name}</div><div style="font-size:12px;color:var(--muted);">${a.email}</div></div>
@@ -1017,12 +1078,13 @@ $('noticeOverlay').addEventListener('click', closeNoticeDrawer);
 $('ntNow').addEventListener('click', ()=>{ ntMode='now'; $('ntNow').classList.add('on'); $('ntSchedule').classList.remove('on'); });
 $('ntSchedule').addEventListener('click', ()=>{ ntMode='schedule'; $('ntSchedule').classList.add('on'); $('ntNow').classList.remove('on'); });
 ['ntTitle','ntBody'].forEach(i=> $(i).addEventListener('input', ntValidate));
-$('ntCreate').addEventListener('click', ()=>{
-  const today = new Date(); const date = today.getFullYear()+'.'+String(today.getMonth()+1).padStart(2,'0')+'.'+String(today.getDate()).padStart(2,'0');
-  NOTICES.unshift({ id:'n'+Date.now(), title:$('ntTitle').value.trim(), target:$('ntTarget').value, date, on:ntMode==='now' });
-  renderNotices();
-  toast(ntMode==='now' ? '공지를 게시했습니다.' : '공지를 예약 등록했습니다.');
-  closeNoticeDrawer();
+$('ntCreate').addEventListener('click', async ()=>{
+  try{
+    await admWrite('notices','POST',{ title:$('ntTitle').value.trim(), body:$('ntBody').value.trim(), target:$('ntTarget').value, published:(ntMode==='now') });
+    await renderNotices();
+    toast(ntMode==='now' ? '공지를 게시했습니다.' : '공지를 예약 등록했습니다.');
+    closeNoticeDrawer();
+  }catch(e){ toast('공지 등록에 실패했습니다.'); }
 });
 
 /* ── init (관리자 로그인 후 실행) ── */
