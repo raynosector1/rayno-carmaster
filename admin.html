@@ -583,6 +583,7 @@ function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime()
 function _mask(p){ p=(p||'').replace(/\D/g,''); if(p.length<7)return p||'-'; return p.slice(0,3)+'-****-'+p.slice(-4); }
 function _stat(s){ return s==='verified'?'활성':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
 
 async function admLogin(email, pw){
   try{
@@ -602,21 +603,22 @@ async function verifyAdmin(){
 
 async function loadDashboard(){
   var recent=[], pending=[];
-  try{ var r = await admRest('carmasters?select=name,office,created_at&order=created_at.desc&limit=6'); recent = r.map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(x.created_at) }; }); }catch(e){ console.error('recent',e); }
-  try{ var p = await admRest('rewards?select=item_name,created_at,carmasters(name)&status=eq.pending&order=created_at.desc&limit=8'); pending = p.map(function(x){ return { name:(x.carmasters&&x.carmasters.name)||'회원', reward:x.item_name||'리워드', reason:'가입 축하 웰컴기프트' }; }); }catch(e){ console.error('pending',e); }
+  try{ var r = await admRest('carmasters?select=*'); r.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); }); recent = r.slice(0,6).map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(_ts(x)) }; }); }catch(e){ console.error('recent',e); }
+  try{ var p = await admRest('rewards?select=item_name,carmasters(name)&status=eq.pending&limit=8'); pending = p.map(function(x){ return { name:(x.carmasters&&x.carmasters.name)||'회원', reward:x.item_name||'리워드', reason:'가입 축하 웰컴기프트' }; }); }catch(e){ console.error('pending',e); }
   return { recent:recent, pending:pending };
 }
 async function loadMembers(filters){
   try{
-    var rows = await admRest('carmasters?select=code,name,office,phone,created_at,status&order=created_at.desc');
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', phone:_mask(m.phone), join:_date(m.created_at), total:0, status:_stat(m.status) }; });
+    var rows = await admRest('carmasters?select=*');
+    rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', phone:_mask(m.phone), join:_date(_ts(m)), total:0, status:_stat(m.status) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
   try{
     var rows = await admRest('carmasters?select=*&code=eq.'+encodeURIComponent(code));
     var m = rows[0]||{};
-    return { name:m.name, code:m.code, status:_stat(m.status), office:[m.brand,m.office].filter(Boolean).join(' · '), phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'), join:_date(m.created_at), total:0, reward:0 };
+    return { name:m.name, code:m.code, status:_stat(m.status), office:[m.brand,m.office].filter(Boolean).join(' · '), phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'), join:_date(_ts(m)), total:0, reward:0 };
   }catch(e){ console.error('getMember',e); return {}; }
 }
 async function searchCarmaster(q){
