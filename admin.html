@@ -547,6 +547,16 @@ input::placeholder{color:#B4B4B8;}
 </div>
 <div class="toast" id="toast"></div>
 
+<div id="admLoginOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:#111418;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:380px;background:#fff;border-radius:20px;padding:36px 30px;box-shadow:0 20px 60px rgba(0,0,0,.4);">
+    <div style="font-size:22px;font-weight:800;color:#111;letter-spacing:-.5px;">RAYNO 관리자 콘솔</div>
+    <div style="margin-top:8px;font-size:13.5px;color:#8A8A8E;">관리자 계정으로 로그인해 주세요.</div>
+    <input id="admEmail" type="email" autocomplete="username" placeholder="관리자 이메일" style="margin-top:22px;width:100%;border:1.5px solid #E7E7E9;border-radius:12px;padding:14px 15px;font-size:15px;color:#111;outline:none;box-sizing:border-box;">
+    <input id="admPw" type="password" autocomplete="current-password" placeholder="비밀번호" style="margin-top:10px;width:100%;border:1.5px solid #E7E7E9;border-radius:12px;padding:14px 15px;font-size:15px;color:#111;outline:none;box-sizing:border-box;">
+    <div id="admLoginErr" style="display:none;margin-top:12px;font-size:13px;font-weight:600;color:#E23B3B;"></div>
+    <button id="admLoginBtn" style="margin-top:18px;width:100%;padding:15px 0;border:none;border-radius:999px;background:#FF5A00;color:#fff;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;">로그인</button>
+  </div>
+</div>
 <script>
 /* ══════════════════════════════════════════════════════════
    RAYNO 관리자 콘솔 · admin.html
@@ -560,35 +570,66 @@ const EMPTY = msg => '<div style="padding:44px 20px;text-align:center;color:#B0B
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function skelRows(n,cols){ const c=cols.split(/\s+/).length; let cells=''; for(let i=0;i<c;i++){ cells+='<span class="skel" style="width:'+(i===0?55:72)+'%;"></span>'; } const row='<div class="tr td" style="grid-template-columns:'+cols+';">'+cells+'</div>'; return row.repeat(n); }
 
-/* ── 백엔드 연동 예정 (지금은 샘플 · 실제 API로 교체하세요) ── */
+/* ══════════ Supabase 관리자 연동 ══════════ */
+const SB_URL = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
+function admToken(){ try{ return sessionStorage.getItem('adm_token')||''; }catch(e){ return ''; } }
+async function admRest(path){
+  const r = await fetch(SB_URL+'/rest/v1/'+path, { headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken() } });
+  if(!r.ok) throw new Error(await r.text());
+  const t = await r.text(); return t ? JSON.parse(t) : [];
+}
+function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime())/1000; if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전'; return Math.floor(s/86400)+'일 전'; }
+function _mask(p){ p=(p||'').replace(/\D/g,''); if(p.length<7)return p||'-'; return p.slice(0,3)+'-****-'+p.slice(-4); }
+function _stat(s){ return s==='verified'?'활성':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
+function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+
+async function admLogin(email, pw){
+  try{
+    var r = await fetch(SB_URL+'/auth/v1/token?grant_type=password', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' }, body: JSON.stringify({ email:email, password:pw }) });
+    var d = await r.json();
+    if(!r.ok || !d.access_token) return { ok:false, message:'이메일 또는 비밀번호를 확인해 주세요.' };
+    var chk = await fetch(SB_URL+'/rest/v1/admins?select=email', { headers:{ apikey:SB_ANON, Authorization:'Bearer '+d.access_token } });
+    var admins = chk.ok ? await chk.json() : [];
+    if(!Array.isArray(admins) || !admins.length){ return { ok:false, message:'관리자 권한이 없는 계정입니다.' }; }
+    try{ sessionStorage.setItem('adm_token', d.access_token); }catch(e){}
+    return { ok:true };
+  }catch(e){ return { ok:false, message:'네트워크 오류가 발생했습니다.' }; }
+}
+async function verifyAdmin(){
+  try{ var r = await fetch(SB_URL+'/rest/v1/admins?select=email', { headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken() } }); if(!r.ok) return false; var a = await r.json(); return Array.isArray(a) && a.length>0; }catch(e){ return false; }
+}
+
 async function loadDashboard(){
-  // TODO(backend): return await (await fetch('/api/admin/dashboard')).json();
-  return { recent:[], pending:[] };
+  var recent=[], pending=[];
+  try{ var r = await admRest('carmasters?select=name,office,created_at&order=created_at.desc&limit=6'); recent = r.map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(x.created_at) }; }); }catch(e){ console.error('recent',e); }
+  try{ var p = await admRest('rewards?select=item_name,created_at,carmasters(name)&status=eq.pending&order=created_at.desc&limit=8'); pending = p.map(function(x){ return { name:(x.carmasters&&x.carmasters.name)||'회원', reward:x.item_name||'리워드', reason:'가입 축하 웰컴기프트' }; }); }catch(e){ console.error('pending',e); }
+  return { recent:recent, pending:pending };
 }
 async function loadMembers(filters){
-  // TODO(backend): return await (await fetch('/api/admin/members?'+new URLSearchParams(filters))).json();
-  return [];
+  try{
+    var rows = await admRest('carmasters?select=code,name,office,phone,created_at,status&order=created_at.desc');
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', phone:_mask(m.phone), join:_date(m.created_at), total:0, status:_stat(m.status) }; });
+  }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
-  // TODO(backend): return await (await fetch('/api/admin/members/'+code)).json();
-  return {};
+  try{
+    var rows = await admRest('carmasters?select=*&code=eq.'+encodeURIComponent(code));
+    var m = rows[0]||{};
+    return { name:m.name, code:m.code, status:_stat(m.status), office:[m.brand,m.office].filter(Boolean).join(' · '), phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'), join:_date(m.created_at), total:0, reward:0 };
+  }catch(e){ console.error('getMember',e); return {}; }
 }
 async function searchCarmaster(q){
-  // TODO(backend): return await (await fetch('/api/admin/carmaster/search?q='+encodeURIComponent(q))).json();
-  return [];
+  q=(q||'').trim(); if(!q) return [];
+  try{
+    var enc = encodeURIComponent('%'+q+'%');
+    var rows = await admRest('carmasters?select=code,name,office,phone&or=(name.ilike.'+enc+',code.ilike.'+enc+',phone.ilike.'+enc+')&limit=20');
+    return rows.map(function(m){ return { code:m.code, name:m.name, office:m.office, phone:_mask(m.phone) }; });
+  }catch(e){ console.error('search',e); return []; }
 }
-async function linkWarranty(data){
-  // TODO: return await (await fetch('/api/admin/warranty/link',{method:'POST',body:JSON.stringify(data)})).json();
-  return { ok:true };
-}
-async function loadRewards(tab){
-  // TODO(backend): return await (await fetch('/api/admin/rewards?tab='+tab)).json();
-  return [];
-}
-async function approveRewards(ids){
-  // TODO: return await (await fetch('/api/admin/rewards/approve',{method:'POST',body:JSON.stringify({ids})})).json();
-  return { ok:true, count:ids.length };
-}
+async function linkWarranty(data){ return { ok:false, message:'보증서 연계는 딜러십 API 연동 후 제공됩니다.' }; }
+async function loadRewards(tab){ return []; }
+async function approveRewards(ids){ return { ok:true, count:ids.length }; }
 
 /* ── 내비 전환 ── */
 document.querySelectorAll('.nav-item').forEach(btn=>{
@@ -965,15 +1006,25 @@ $('ntCreate').addEventListener('click', ()=>{
   closeNoticeDrawer();
 });
 
-/* ── init ── */
-renderDashboard();
-renderMembers();
-renderWarranty();
-renderRewards();
-renderPromos();
-renderServices();
-renderNotices();
-renderAdmins();
+/* ── init (관리자 로그인 후 실행) ── */
+function initAdmin(){ try{ renderDashboard(); renderMembers(); renderWarranty(); renderRewards(); renderPromos(); renderServices(); renderNotices(); renderAdmins(); }catch(e){ console.error(e); } }
+(function(){
+  var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
+  function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
+  function admErr(m){ var e=$('admLoginErr'); if(e){ e.textContent=m||''; e.style.display=m?'block':'none'; } }
+  async function doAdmLogin(){
+    var email=($('admEmail').value||'').trim(), pw=$('admPw').value||'';
+    if(!email||!pw){ admErr('이메일과 비밀번호를 입력해 주세요.'); return; }
+    var btn=$('admLoginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
+    var r=await admLogin(email,pw); btn.disabled=false; btn.textContent='로그인';
+    if(r.ok){ admErr(''); hideOv(); initAdmin(); } else { admErr(r.message); }
+  }
+  $('admLoginBtn').addEventListener('click', doAdmLogin);
+  $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
+  $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
+  if(admToken()){ verifyAdmin().then(function(ok){ if(ok){ hideOv(); initAdmin(); } else { try{sessionStorage.removeItem('adm_token');}catch(e){} showOv(); } }); }
+  else showOv();
+})();
 </script>
 </body>
 </html>
