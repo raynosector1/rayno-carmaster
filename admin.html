@@ -210,24 +210,24 @@ input::placeholder{color:#B4B4B8;}
       <!-- ===== 대시보드 ===== -->
       <section class="view active" id="view-dashboard">
         <div class="kpis">
-          <div class="kpi"><div class="l">총 카마스터</div><div class="v">0<span> 명</span></div><div class="d up">—</div></div>
-          <div class="kpi"><div class="l">이번 달 신규 가입</div><div class="v">0<span> 명</span></div><div class="d up">—</div></div>
-          <div class="kpi warn"><div class="l">승인 대기 리워드</div><div class="v" style="color:var(--orange);">0<span style="color:#C89A82;"> 건</span></div><div class="d hot">—</div></div>
-          <div class="kpi"><div class="l">이번 달 시공</div><div class="v">0<span> 건</span></div><div class="d flat">—</div></div>
+          <div class="kpi"><div class="l">총 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div><div class="d up">—</div></div>
+          <div class="kpi"><div class="l">이번 달 신규 가입</div><div class="v"><span id="kpiMonth">0</span><span> 명</span></div><div class="d up">—</div></div>
+          <div class="kpi warn"><div class="l">승인 대기 리워드</div><div class="v" style="color:var(--orange);"><span id="kpiPending">0</span><span style="color:#C89A82;"> 건</span></div><div class="d hot">—</div></div>
+          <div class="kpi"><div class="l">이번 달 시공</div><div class="v"><span id="kpiInstall">0</span><span> 건</span></div><div class="d flat">—</div></div>
         </div>
         <div style="display:flex;gap:20px;">
           <div class="card" style="padding:22px 24px;flex:1.7;">
             <div style="display:flex;justify-content:space-between;align-items:center;"><div class="section-h">월별 가입 추이</div><div style="font-size:12px;color:var(--muted);font-weight:600;">최근 8개월</div></div>
-            <div class="chart" style="align-items:center;justify-content:center;color:var(--muted);font-size:13px;font-weight:600;">데이터가 없습니다</div>
+            <div class="chart" id="signupChart" style="align-items:center;justify-content:center;color:var(--muted);font-size:13px;font-weight:600;">데이터가 없습니다</div>
           </div>
           <div class="card" style="padding:22px 24px;flex:1;">
             <div class="section-h">리워드 지급 현황</div>
             <div style="display:flex;align-items:center;gap:20px;margin-top:22px;">
-              <div class="donut"><div class="in"><span style="font-size:20px;font-weight:800;">0</span><span style="font-size:10px;color:var(--muted);font-weight:600;">총 건수</span></div></div>
+              <div class="donut" id="rewardDonut"><div class="in"><span id="kpiRewardTotal" style="font-size:20px;font-weight:800;">0</span><span style="font-size:10px;color:var(--muted);font-weight:600;">총 건수</span></div></div>
               <div class="legend">
-                <div class="li"><span class="sw" style="background:var(--orange);"></span>지급완료 <b>—</b></div>
-                <div class="li"><span class="sw" style="background:#FFC49E;"></span>지급대기 <b>—</b></div>
-                <div class="li"><span class="sw" style="background:#E7E7E9;"></span>자동산정중 <b>—</b></div>
+                <div class="li"><span class="sw" style="background:var(--orange);"></span>지급완료 <b id="kpiRwDone">—</b></div>
+                <div class="li"><span class="sw" style="background:#FFC49E;"></span>지급대기 <b id="kpiRwPending">—</b></div>
+                <div class="li"><span class="sw" style="background:#E7E7E9;"></span>자동산정중 <b id="kpiRwAuto">—</b></div>
               </div>
             </div>
           </div>
@@ -602,11 +602,18 @@ async function verifyAdmin(){
 }
 
 async function loadDashboard(){
-  var recent=[], pending=[];
-  try{ var r = await admRest('carmasters?select=*'); r.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); }); recent = r.slice(0,6).map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(_ts(x)) }; }); }catch(e){ console.error('recent',e); }
-  try{ var p = await admRest('rewards?select=item_name,carmasters(name)&status=eq.pending&limit=8'); pending = p.map(function(x){ return { name:(x.carmasters&&x.carmasters.name)||'회원', reward:x.item_name||'리워드', reason:'가입 축하 웰컴기프트' }; }); }catch(e){ console.error('pending',e); }
-  return { recent:recent, pending:pending };
+  var all=[], rewards=[];
+  try{ all = await admRest('carmasters?select=*'); }catch(e){ console.error('carmasters',e); }
+  try{ rewards = await admRest('rewards?select=status,item_name,carmasters(name)'); }catch(e){ console.error('rewards',e); }
+  all.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
+  var recent = all.slice(0,6).map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(_ts(x)) }; });
+  var pending = rewards.filter(function(r){ return r.status==='pending'; }).slice(0,8).map(function(x){ return { name:(x.carmasters&&x.carmasters.name)||'회원', reward:x.item_name||'리워드', reason:'가입 축하 웰컴기프트' }; });
+  return { recent:recent, pending:pending, all:all, rewards:rewards };
 }
+function setTxt(id,v){ var e=$(id); if(e)e.textContent=v; }
+var _DONE_ST=['sent','done','completed','paid','approved','issued'], _AUTO_ST=['auto','calculating','산정중'];
+function fillDonut(done,pend,auto){ var el=$('rewardDonut'); if(!el)return; var tot=done+pend+auto; if(!tot){ el.style.background='#ECECEE'; return; } var a=done/tot*100, b=a+pend/tot*100; el.style.background='conic-gradient(var(--orange) 0 '+a+'%, #FFC49E '+a+'% '+b+'%, #E7E7E9 '+b+'% 100%)'; }
+function renderSignupChart(all){ var el=$('signupChart'); if(!el)return; var now=new Date(), months=[]; for(var i=7;i>=0;i--){ var dd=new Date(now.getFullYear(), now.getMonth()-i, 1); months.push({key:dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0'), label:(dd.getMonth()+1)+'월', n:0}); } all.forEach(function(m){ var k=_ts(m).slice(0,7); for(var j=0;j<months.length;j++){ if(months[j].key===k){ months[j].n++; break; } } }); var max=1; months.forEach(function(m){ if(m.n>max)max=m.n; }); el.style.color=''; el.style.display='block'; el.innerHTML='<div style="display:flex;align-items:flex-end;justify-content:space-around;width:100%;height:100%;gap:8px;box-sizing:border-box;padding-top:8px;">'+months.map(function(m){ var h=Math.round(m.n/max*100); return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><div style="font-size:11px;font-weight:800;color:#111;margin-bottom:4px;">'+(m.n||'')+'</div><div style="width:100%;max-width:34px;height:'+Math.max(h,2)+'%;min-height:3px;background:'+(m.n?'var(--orange)':'#EDEDEF')+';border-radius:6px 6px 0 0;"></div><div style="font-size:11px;color:#8A8A8E;font-weight:600;margin-top:6px;">'+m.label+'</div></div>'; }).join('')+'</div>'; }
 async function loadMembers(filters){
   try{
     var rows = await admRest('carmasters?select=*');
@@ -661,6 +668,16 @@ async function renderDashboard(){
        <div><div style="font-size:13.5px;font-weight:700;">${p.name} · ${p.reward}</div><div style="font-size:11.5px;color:var(--muted);margin-top:1px;">${p.reason}</div></div>
        <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;">승인</button></div>`).join('');
   $('pendingList').querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{ b.textContent='완료'; b.style.background='#E5E5E7'; b.style.color='#B0B0B4'; toast('승인 처리했습니다.'); }));
+  var now=new Date(), ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  var monthCount=(d.all||[]).filter(function(m){ return _ts(m).slice(0,7)===ym; }).length;
+  var rw=d.rewards||[];
+  var pend=rw.filter(function(r){ return r.status==='pending'; }).length;
+  var done=rw.filter(function(r){ return _DONE_ST.indexOf(r.status)>=0; }).length;
+  var auto=rw.filter(function(r){ return _AUTO_ST.indexOf(r.status)>=0; }).length;
+  setTxt('kpiTotal',(d.all||[]).length); setTxt('kpiMonth',monthCount); setTxt('kpiPending',pend); setTxt('kpiInstall',0);
+  setTxt('kpiRewardTotal',rw.length); setTxt('kpiRwDone',done); setTxt('kpiRwPending',pend); setTxt('kpiRwAuto',auto);
+  fillDonut(done,pend,auto);
+  renderSignupChart(d.all||[]);
 }
 
 /* ── 회원 목록 ── */
