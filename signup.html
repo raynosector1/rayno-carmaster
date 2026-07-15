@@ -213,17 +213,23 @@ async function loadOffices(){
 }
 async function checkLoginId(loginId){ return fn('check-id', { login_id: loginId }); }
 async function verifyIdentity(data){
-  var r = await fn('verify', { name:S.name, birth:S.birth, phone:(data&&data.phone)||S.phone, carrier:(data&&data.telco)||S.telco });
-  if(!r || !r.ok) return { ok:false, message:(r&&r.message)||'본인인증에 실패했습니다.' };
+  var phone = (((data&&data.phone)||S.phone)||'').replace(/\D/g,'');
+  var r = await fn('verify', { name:S.name, birth:(S.birth||'').replace(/\D/g,''), phone:phone, carrier:(data&&data.telco)||S.telco });
+  if(!r || !r.ok){ VTOKEN=null; return { ok:false, message:(r&&r.message)||'본인인증에 실패했습니다.' }; }
   VTOKEN = r.token; return { ok:true, token:r.token, display:r.display };
 }
 async function submitSignup(p){
+  if(!VTOKEN) return { ok:false, message:'본인인증이 필요합니다. 2단계에서 인증을 다시 진행해 주세요.' };
+  var bEtc = ((id('brandEtc')||{}).value||'').trim();
+  var oEtc = ((id('officeEtc')||{}).value||'').trim();
   return fn('signup', {
     token: VTOKEN,
-    login_id: p.loginId, password: p.password,
-    brand: (p.brand===ETC ? null : p.brand), brand_etc: (p.brand===ETC ? ((id('brandEtc')||{}).value||'').trim() : null),
+    login_id: (p.loginId||'').trim().toLowerCase(), password: p.password,
+    brand: (p.brand===ETC ? '기타' : p.brand), brand_etc: (p.brand===ETC ? bEtc : null),
     region: p.region,
-    office: (p.office===ETC ? null : p.office), office_etc: (p.office===ETC ? ((id('officeEtc')||{}).value||'').trim() : null),
+    office: (p.office===ETC ? '기타' : p.office), office_etc: (p.office===ETC ? oEtc : null),
+    agree_privacy: !!(p.agree && p.agree.req1),
+    agree_outsourcing: !!(p.agree && p.agree.req2),
     agree_marketing: !!(p.agree && p.agree.opt)
   });
 }
@@ -285,7 +291,7 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
     function render(l){ var m=String(Math.floor(l/60)).padStart(2,'0'),s=String(l%60).padStart(2,'0'); codeTimer.textContent=m+':'+s; }
     function startTimer(){ clearInterval(tHandle); var left=180; expired=false; codeTimer.style.display='block'; codeTimer.style.color='#FF5A00'; render(left); tHandle=setInterval(function(){ left--; if(left<=0){ clearInterval(tHandle); expired=true; codeTimer.textContent='만료'; codeTimer.style.color='#B4B4B8'; return; } render(left); },1000); }
     function g2(){ gate(n2, verified && code.value.replace(/\D/g,'').length===6); }
-    var reqBtn=id('reqCode'); if(reqBtn)reqBtn.addEventListener('click',function(){ if(!telco.value||phone.value.replace(/\D/g,'').length<10){ if(!telco.value)telco.style.borderColor='#FF3B30'; if(phone.value.replace(/\D/g,'').length<10)phone.style.borderColor='#FF3B30'; T('통신사와 휴대폰번호를 입력해 주세요.'); return; } phone.style.borderColor='#E7E7E9'; telco.style.borderColor='#E7E7E9'; verifyIdentity({telco:telco.value,phone:phone.value}); startTimer(); reqBtn.textContent='재발송'; T('인증번호를 발송했어요.'); });
+    var reqBtn=id('reqCode'); if(reqBtn)reqBtn.addEventListener('click',function(){ if(!telco.value||phone.value.replace(/\D/g,'').length<10){ if(!telco.value)telco.style.borderColor='#FF3B30'; if(phone.value.replace(/\D/g,'').length<10)phone.style.borderColor='#FF3B30'; T('통신사와 휴대폰번호를 입력해 주세요.'); return; } phone.style.borderColor='#E7E7E9'; telco.style.borderColor='#E7E7E9'; verifyIdentity({telco:telco.value,phone:phone.value}).then(function(rv){ if(rv&&rv.ok){ startTimer(); reqBtn.textContent='재발송'; T('인증번호를 발송했어요.'); } else { T((rv&&rv.message)||'본인인증에 실패했습니다.'); } }); });
     var cfBtn=id('confirmCode'); if(cfBtn)cfBtn.addEventListener('click',function(){ if(codeTimer.style.display==='none'&&!verified){ T('먼저 인증요청을 눌러 주세요.'); return; } if(expired){ code.style.borderColor='#FF3B30'; showErr(codeRow,'code','인증시간이 만료되었어요. 재발송해 주세요.'); return; } if(code.value.replace(/\D/g,'').length===6){ verified=true; clearInterval(tHandle); codeTimer.style.display='none'; code.style.borderColor='#22B07D'; code.style.background='#F3FBF7'; code.readOnly=true; hideErr(codeRow,'code'); cfBtn.textContent='인증완료'; cfBtn.style.background='#22B07D'; cfBtn.style.borderColor='#22B07D'; cfBtn.style.color='#fff'; telco.disabled=true; phone.readOnly=true; if(reqBtn){reqBtn.disabled=true;reqBtn.style.opacity='0.4';} showOk(codeRow,'인증이 완료되었어요.'); S.telco=telco.value;S.phone=phone.value;S.code=code.value; var rv=id('rvInfo'); if(rv)rv.textContent=(S.name||'회원')+' · '+maskPhone(S.phone); T('인증되었습니다.'); g2(); } else { code.style.borderColor='#FF3B30'; showErr(codeRow,'code','인증번호 6자리를 정확히 입력해 주세요.'); } });
     code.addEventListener('input',function(){ if(!verified)code.style.borderColor='#FF5A00'; hideErr(codeRow,'code'); g2(); });
     [telco,phone].forEach(function(x){ if(x){x.addEventListener('input',g2);x.addEventListener('change',g2);} });
