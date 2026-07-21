@@ -302,7 +302,7 @@ async function loadRewardList(){
     var DONE=['sent','done','completed','paid','approved','issued'];
     box.innerHTML = rows.map(function(r){
       var done = DONE.indexOf(r.status)>=0;
-      var label = done ? '지급완료' : '지급대기';
+      var label = done ? '지급완료' : '지급 준비중';
       var color = done ? '#22B07D' : '#FF8A3D';
       var bg = done ? 'rgba(34,176,125,0.10)' : 'rgba(255,90,0,0.10)';
       var kind = r.type==='welcome' ? '가입 축하 웰컴기프트' : (r.type==='manual' ? '관리자 지급' : '시공 실적 리워드');
