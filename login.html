@@ -114,7 +114,22 @@ async function login(loginId, pw){
       body: JSON.stringify({ email: (loginId||'').trim().toLowerCase()+'@'+SB_DOMAIN, password: pw })
     });
     var d = await r.json();
-    if(!r.ok || !d.access_token) return { ok:false, message:'아이디 또는 비밀번호를 확인해 주세요.' };
+    if(!r.ok || !d.access_token){
+      var em = String((d && (d.error_description || d.msg || d.message)) || '');
+      /* 정지(차단)된 계정 */
+      if(/ban|blocked|disabled/i.test(em)) return { ok:false, message:'이용이 정지된 계정입니다. 담당자에게 문의해 주세요.' };
+      return { ok:false, message:'아이디 또는 비밀번호를 확인해 주세요.' };
+    }
+    /* 계정 상태 재확인 (차단 반영 전 토큰 대비) */
+    try{
+      var cr = await fetch(SB_URL+'/rest/v1/carmasters?select=status&limit=1', { headers:{ apikey:SB_ANON, Authorization:'Bearer '+d.access_token } });
+      if(cr.ok){
+        var rows = await cr.json();
+        if(rows && rows[0] && (rows[0].status==='suspended' || rows[0].status==='banned')){
+          return { ok:false, message:'이용이 정지된 계정입니다. 담당자에게 문의해 주세요.' };
+        }
+      }
+    }catch(e){}
     try{ sessionStorage.setItem('cm_token', d.access_token); }catch(e){}
     return { ok:true };
   }catch(e){ return { ok:false, message:'네트워크 오류가 발생했습니다.' }; }

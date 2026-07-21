@@ -249,6 +249,15 @@ async function loadMyStats(){
   var t = cmToken();
   if(!t){ location.href='login.html'; return {}; }
   try{
+    /* 정지된 계정이면 즉시 차단 */
+    try{
+      var st = await rest('carmasters?select=status&limit=1');
+      if(st && st[0] && (st[0].status==='suspended' || st[0].status==='banned')){
+        try{ sessionStorage.removeItem('cm_token'); }catch(e){}
+        alert('이용이 정지된 계정입니다. 담당자에게 문의해 주세요.');
+        location.href='login.html'; return {};
+      }
+    }catch(e){}
     var rows = await rest('my_stats?select=code,name,brand,office,month_count,total_count');
     var me = (rows && rows[0]) || {};
     var prof = {};
