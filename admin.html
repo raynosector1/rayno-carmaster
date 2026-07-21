@@ -136,6 +136,10 @@ input::placeholder{color:#B4B4B8;}
 .overlay.on{display:block;}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:460px;max-width:92vw;background:#fff;box-shadow:-20px 0 50px rgba(0,0,0,.2);z-index:50;transform:translateX(100%);transition:transform .28s ease;display:flex;flex-direction:column;}
 .drawer.on{transform:translateX(0);}
+#drawer{width:780px;}
+#drawer .dh{padding:24px 32px;}
+#drawer .db{padding:30px 32px;}
+@media (max-width:900px){ #drawer{width:96vw;} }
 .drawer .dh{padding:22px 26px;border-bottom:1px solid #EEE;display:flex;justify-content:space-between;align-items:center;}
 .drawer .dh .t{font-size:17px;font-weight:800;}
 .drawer .x{width:32px;height:32px;border-radius:50%;background:#F2F2F3;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);}
@@ -272,7 +276,7 @@ input::placeholder{color:#B4B4B8;}
         </div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:112px 92px 104px 1fr 88px 140px 104px 82px 58px;">
+          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">
             <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
           </div>
           <div id="membersRows"></div>
@@ -423,7 +427,7 @@ input::placeholder{color:#B4B4B8;}
     </div>
 
     <div style="margin-top:20px;font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:7px;">회원 정보</div>
-    <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
+    <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:0 36px;">
       <div class="info-list">
         <div class="r"><span class="k">소속/지역/영업소</span><span class="v" id="dOffice">—</span></div>
         <div class="r"><span class="k">휴대전화</span><span class="v" id="dPhone">—</span></div>
@@ -813,7 +817,7 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, '112px 92px 104px 1fr 88px 140px 104px 82px 58px');
+  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -863,7 +867,7 @@ function applyMemberFilters(){
   if($('mTotal')) $('mTotal').textContent=rows.length;
   var badge=function(st){ return st==='일반'?'<span class="badge b-ok">일반</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':'<span class="badge b-off">정지</span>'; };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:112px 92px 104px 1fr 88px 140px 104px 82px 58px;">'+
+    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
