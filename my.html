@@ -67,6 +67,11 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
       <div class="link" data-goto="record" style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-top:1px solid #F5F5F6;"><span style="font-size:15px;font-weight:700;color:#111;">시공 내역</span><span style="color:#C4C4C8;">›</span></div>
       <div class="link" data-goto="reward" style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-top:1px solid #F5F5F6;"><span style="font-size:15px;font-weight:700;color:#111;">리워드 내역</span><span style="color:#C4C4C8;">›</span></div>
     </div>
+
+    <div id="noticeCard" style="display:none;margin-top:14px;">
+      <div style="font-size:13px;font-weight:800;color:#8A8A8E;padding-left:4px;">공지사항</div>
+      <div class="card" style="margin-top:8px;padding:4px 6px;" id="noticeList"></div>
+    </div>
   </section>
 
   <!-- ===== COUPON ===== -->
@@ -113,6 +118,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div style="display:flex;align-items:center;gap:12px;padding-top:6px;"><div class="link" data-goto="home" style="width:38px;height:38px;border-radius:50%;background:#fff;border:1.5px solid #EDEDEF;display:flex;align-items:center;justify-content:center;color:#111;font-size:19px;">‹</div><span style="font-size:20px;font-weight:800;color:#111;">리워드 내역</span></div>
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:12px;">
       <div id="rewardEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 20px 40px;"><div style="width:64px;height:64px;border-radius:16px;border:2px dashed #D0D0D4;display:flex;align-items:center;justify-content:center;margin-bottom:22px;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#C0C0C4" stroke-width="1.8" stroke-linecap="round"><path d="M5 20 V12 M12 20 V6 M19 20 V15"></path></svg></div><div style="font-size:17px;font-weight:800;color:#111;">아직 리워드 내역이 없어요</div><div style="margin-top:8px;font-size:13.5px;color:#8A8A8E;line-height:1.6;">가입 혜택 및 시공 달성 리워드가<br>지급되면 여기에 표시됩니다.</div></div>
+      <div id="rewardList" style="display:none;flex-direction:column;gap:10px;"></div>
       <!-- TODO(backend): 리워드 내역 카드를 여기에 렌더링 -->
     </div>
     <div style="margin-top:14px;padding:0 4px;font-size:12px;color:#A8A8AC;line-height:1.7;">※ 주유상품권은 가입 완료 후 자동 지급됩니다.<br>※ 사용 관련 문의는 발급사로 연락 부탁드립니다.</div>
@@ -124,19 +130,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
 
     <div id="recordEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 20px;"><div style="width:64px;height:64px;border-radius:16px;border:2px dashed #D0D0D4;display:flex;align-items:center;justify-content:center;margin-bottom:22px;"><div style="width:26px;height:26px;border-radius:7px;background:#E4E4E7;"></div></div><div style="font-size:17px;font-weight:800;color:#111;">아직 시공 내역이 없어요</div><div style="margin-top:8px;font-size:13.5px;color:#8A8A8E;line-height:1.6;">시공점에서 레이노 필름 시공 후<br>보증서가 연계되면 여기에 표시됩니다.</div></div>
 
-    <div id="recordList" style="display:none;">
-    <div style="margin-top:18px;font-size:13px;font-weight:800;color:#8A8A8E;">2026.07</div>
-    <div class="card" style="margin-top:10px;padding:4px 18px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid #F2F2F4;"><div><div style="font-size:15px;font-weight:700;color:#111;">아이오닉 6</div><div style="font-size:12.5px;color:#8A8A8E;margin-top:2px;">07.11 · 레이노 수원점</div></div><span style="font-size:11px;font-weight:800;color:#0FA968;background:rgba(15,169,104,0.12);padding:4px 10px;border-radius:999px;">정상</span></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;"><div><div style="font-size:15px;font-weight:700;color:#111;">그랜저 GN7</div><div style="font-size:12.5px;color:#8A8A8E;margin-top:2px;">07.04 · 레이노 광교점</div></div><span style="font-size:11px;font-weight:800;color:#0FA968;background:rgba(15,169,104,0.12);padding:4px 10px;border-radius:999px;">정상</span></div>
-    </div>
-
-    <div style="margin-top:18px;font-size:13px;font-weight:800;color:#8A8A8E;">2026.06</div>
-    <div class="card" style="margin-top:10px;padding:4px 18px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid #F2F2F4;"><div><div style="font-size:15px;font-weight:700;color:#111;">쏘렌토 MQ4</div><div style="font-size:12.5px;color:#8A8A8E;margin-top:2px;">06.22 · 레이노 광교점</div></div><span style="font-size:11px;font-weight:800;color:#0FA968;background:rgba(15,169,104,0.12);padding:4px 10px;border-radius:999px;">정상</span></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;"><div><div style="font-size:15px;font-weight:700;color:#111;">스포티지 NQ5</div><div style="font-size:12.5px;color:#8A8A8E;margin-top:2px;">06.09 · 레이노 광교점</div></div><span style="font-size:11px;font-weight:800;color:#D64545;background:rgba(214,69,69,0.10);padding:4px 10px;border-radius:999px;">취소</span></div>
-    </div>
-    </div>
+    <div id="recordList" style="display:none;flex-direction:column;gap:12px;margin-top:16px;"></div>
   </section>
 
   <!-- ===== PROFILE ===== -->
@@ -275,6 +269,79 @@ async function initEdit(){
 }
 
 /* ══════════ 백엔드 연동 (my) ══════════ */
+function _esc(v){ return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function _d(iso){ if(!iso)return ''; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+function _md(iso){ if(!iso)return ''; var d=new Date(iso); return String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
+function _ym(iso){ if(!iso)return ''; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0'); }
+
+/* 공지사항 (관리자에서 게시한 것만) */
+async function loadNotices(){
+  try{
+    var rows = await rest('notices?select=title,body,created_at&published=eq.true&order=created_at.desc&limit=5');
+    var card=_gid('noticeCard'), list=_gid('noticeList');
+    if(!card||!list||!rows||!rows.length) return;
+    list.innerHTML = rows.map(function(n,i){
+      var body = n.body ? '<div style="font-size:12.5px;color:#8A8A8E;line-height:1.55;margin-top:5px;white-space:pre-line;">'+_esc(n.body)+'</div>' : '';
+      return '<div style="padding:14px;'+(i?'border-top:1px solid #F5F5F6;':'')+'">'+
+        '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'+
+        '<div style="font-size:14.5px;font-weight:700;color:#111;line-height:1.4;">'+_esc(n.title)+'</div>'+
+        '<div style="font-size:11.5px;color:#B0B0B4;flex-shrink:0;">'+_d(n.created_at)+'</div></div>'+body+'</div>';
+    }).join('');
+    card.style.display='block';
+  }catch(e){ console.error('notices', e); }
+}
+
+/* 리워드 내역 */
+async function loadRewardList(){
+  try{
+    var rows = await rest('rewards?select=item_name,status,type,created_at&order=created_at.desc');
+    var box=_gid('rewardList'), empty=_gid('rewardEmpty');
+    if(!box) return;
+    if(!rows || !rows.length){ if(empty)empty.style.display='flex'; box.style.display='none'; return; }
+    if(empty) empty.style.display='none';
+    var DONE=['sent','done','completed','paid','approved','issued'];
+    box.innerHTML = rows.map(function(r){
+      var done = DONE.indexOf(r.status)>=0;
+      var label = done ? '지급완료' : '지급대기';
+      var color = done ? '#22B07D' : '#FF8A3D';
+      var bg = done ? 'rgba(34,176,125,0.10)' : 'rgba(255,90,0,0.10)';
+      var kind = r.type==='welcome' ? '가입 축하 웰컴기프트' : (r.type==='manual' ? '관리자 지급' : '시공 실적 리워드');
+      return '<div class="card" style="padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">'+
+        '<div style="min-width:0;"><div style="font-size:15px;font-weight:700;color:#111;">'+_esc(r.item_name||'리워드')+'</div>'+
+        '<div style="font-size:12.5px;color:#8A8A8E;margin-top:3px;">'+_esc(kind)+' · '+_d(r.created_at)+'</div></div>'+
+        '<span style="flex-shrink:0;font-size:11px;font-weight:800;color:'+color+';background:'+bg+';padding:5px 11px;border-radius:999px;">'+label+'</span></div>';
+    }).join('');
+    box.style.display='flex';
+  }catch(e){ console.error('rewards', e); }
+}
+
+/* 시공 내역 */
+async function loadRecordList(){
+  try{
+    var rows = await rest('warranty_matches?select=car_model,dealer_name,installed_at,created_at,status,link_type&order=installed_at.desc');
+    var box=_gid('recordList'), empty=_gid('recordEmpty');
+    if(!box) return;
+    if(!rows || !rows.length){ if(empty)empty.style.display='flex'; box.style.display='none'; return; }
+    if(empty) empty.style.display='none';
+    var groups={}, order=[];
+    rows.forEach(function(w){ var k=_ym(w.installed_at||w.created_at)||'기타'; if(!groups[k]){ groups[k]=[]; order.push(k); } groups[k].push(w); });
+    box.innerHTML = order.map(function(k){
+      var items = groups[k].map(function(w,i){
+        var cancelled = (w.status==='cancelled'||w.link_type==='cancelled');
+        var pill = cancelled
+          ? '<span style="font-size:11px;font-weight:800;color:#D64545;background:rgba(214,69,69,0.10);padding:4px 10px;border-radius:999px;">취소</span>'
+          : '<span style="font-size:11px;font-weight:800;color:#22B07D;background:rgba(34,176,125,0.10);padding:4px 10px;border-radius:999px;">완료</span>';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;'+(i?'border-top:1px solid #F2F2F4;':'')+'">'+
+          '<div style="min-width:0;"><div style="font-size:15px;font-weight:700;color:#111;">'+_esc(w.car_model||'차량')+'</div>'+
+          '<div style="font-size:12.5px;color:#8A8A8E;margin-top:2px;">'+_md(w.installed_at||w.created_at)+(w.dealer_name?' · '+_esc(w.dealer_name):'')+'</div></div>'+pill+'</div>';
+      }).join('');
+      return '<div><div style="font-size:13px;font-weight:800;color:#8A8A8E;">'+_esc(k)+'</div>'+
+             '<div class="card" style="margin-top:10px;padding:4px 18px;">'+items+'</div></div>';
+    }).join('');
+    box.style.display='flex';
+  }catch(e){ console.error('records', e); }
+}
+
 async function loadMyStats(){
   var t = cmToken();
   if(!t){ location.href='login.html'; return {}; }
@@ -307,6 +374,7 @@ async function loadMyStats(){
     if(_gid('pfOrg')) _gid('pfOrg').textContent = org;
     _CUR = { brand: me.brand||'', region: prof.region||'', office: me.office||'' };
     initEdit();
+    loadNotices(); loadRewardList(); loadRecordList();
     return {
       name: name, code: me.code || '—', org: org,
       month_count: me.month_count||0, total_count: me.total_count||0,
