@@ -130,7 +130,7 @@ async function login(loginId, pw){
         }
       }
     }catch(e){}
-    try{ sessionStorage.setItem('cm_token', d.access_token); }catch(e){}
+    try{ sessionStorage.setItem('cm_token', d.access_token); if(d.refresh_token) sessionStorage.setItem('cm_refresh', d.refresh_token); }catch(e){}
     return { ok:true };
   }catch(e){ return { ok:false, message:'네트워크 오류가 발생했습니다.' }; }
 }

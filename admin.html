@@ -653,19 +653,52 @@ function skelRows(n,cols){ const c=cols.split(/\s+/).length; let cells=''; for(l
 const SB_URL = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
 function admToken(){ try{ return sessionStorage.getItem('adm_token')||''; }catch(e){ return ''; } }
+function admRefreshToken(){ try{ return sessionStorage.getItem('adm_refresh')||''; }catch(e){ return ''; } }
+let _admRefreshing = null;
+async function admRefresh(){
+  if(_admRefreshing) return _admRefreshing;
+  _admRefreshing = (async function(){
+    var rt = admRefreshToken(); if(!rt) return false;
+    try{
+      var r = await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' }, body: JSON.stringify({ refresh_token: rt }) });
+      var d = await r.json();
+      if(!r.ok || !d.access_token) return false;
+      try{ sessionStorage.setItem('adm_token', d.access_token); if(d.refresh_token) sessionStorage.setItem('adm_refresh', d.refresh_token); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  })();
+  var ok = await _admRefreshing; _admRefreshing = null; return ok;
+}
+function admSessionOut(){
+  try{ sessionStorage.removeItem('adm_token'); sessionStorage.removeItem('adm_refresh'); }catch(e){}
+  var ov=$('admLoginOverlay');
+  if(ov){ ov.style.display='flex'; var e2=$('admLoginErr'); if(e2){ e2.textContent='로그인 유효시간이 만료되었습니다. 다시 로그인해 주세요.'; e2.style.display='block'; } }
+}
+/* 401/403 시 1회 자동 갱신 후 재시도 */
+async function admFetch(url, init){
+  init = init||{};
+  function withAuth(){ var h=Object.assign({}, init.headers||{}); h.apikey=SB_ANON; h.Authorization='Bearer '+admToken(); return Object.assign({}, init, { headers:h }); }
+  var r = await fetch(url, withAuth());
+  if(r.status===401 || r.status===403){
+    if(await admRefresh()) r = await fetch(url, withAuth());
+    else { admSessionOut(); throw new Error('session expired'); }
+    if(r.status===401 || r.status===403){ admSessionOut(); throw new Error('session expired'); }
+  }
+  return r;
+}
 async function admRest(path){
-  const r = await fetch(SB_URL+'/rest/v1/'+path, { headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken() } });
+  const r = await admFetch(SB_URL+'/rest/v1/'+path);
   if(!r.ok) throw new Error(await r.text());
   const t = await r.text(); return t ? JSON.parse(t) : [];
 }
 async function admWrite(path, method, body){
-  var r = await fetch(SB_URL+'/rest/v1/'+path, { method:method, headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken(), 'Content-Type':'application/json', Prefer:'return=representation' }, body: body?JSON.stringify(body):undefined });
+  var r = await admFetch(SB_URL+'/rest/v1/'+path, { method:method, headers:{ 'Content-Type':'application/json', Prefer:'return=representation' }, body: body?JSON.stringify(body):undefined });
   var t = await r.text(); var j=null; try{ j=t?JSON.parse(t):null; }catch(e){}
   if(!r.ok) throw new Error((j&&j.message)||t||('HTTP '+r.status));
   return j;
 }
 async function admCount(path){
-  try{ var r = await fetch(SB_URL+'/rest/v1/'+path, { headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken(), Prefer:'count=exact', Range:'0-0' } }); var cr=r.headers.get('content-range')||''; var tot=cr.split('/')[1]; return tot?parseInt(tot,10):0; }catch(e){ return 0; }
+  try{ var r = await admFetch(SB_URL+'/rest/v1/'+path, { headers:{ Prefer:'count=exact', Range:'0-0' } }); var cr=r.headers.get('content-range')||''; var tot=cr.split('/')[1]; return tot?parseInt(tot,10):0; }catch(e){ return 0; }
 }
 async function _cmIdByCode(code){ try{ var r = await admRest('carmasters?select=id&code=eq.'+encodeURIComponent(code)+'&limit=1'); return (r&&r[0])?r[0].id:null; }catch(e){ return null; } }
 function _today(){ var d=new Date(); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
@@ -685,7 +718,7 @@ async function admLogin(email, pw){
     var chk = await fetch(SB_URL+'/rest/v1/admins?select=email', { headers:{ apikey:SB_ANON, Authorization:'Bearer '+d.access_token } });
     var admins = chk.ok ? await chk.json() : [];
     if(!Array.isArray(admins) || !admins.length){ return { ok:false, message:'관리자 권한이 없는 계정입니다.' }; }
-    try{ sessionStorage.setItem('adm_token', d.access_token); }catch(e){}
+    try{ sessionStorage.setItem('adm_token', d.access_token); if(d.refresh_token) sessionStorage.setItem('adm_refresh', d.refresh_token); }catch(e){}
     return { ok:true };
   }catch(e){ return { ok:false, message:'네트워크 오류가 발생했습니다.' }; }
 }
@@ -768,7 +801,7 @@ async function loadRewards(tab){
 async function approveRewards(ids){
   try{
     for(var i=0;i<ids.length;i++){
-      var res = await fetch(SB_URL+'/rest/v1/rewards?id=eq.'+encodeURIComponent(ids[i]), { method:'PATCH', headers:{ apikey:SB_ANON, Authorization:'Bearer '+admToken(), 'Content-Type':'application/json', Prefer:'return=minimal' }, body: JSON.stringify({ status:'sent' }) });
+      var res = await admFetch(SB_URL+'/rest/v1/rewards?id=eq.'+encodeURIComponent(ids[i]), { method:'PATCH', headers:{ 'Content-Type':'application/json', Prefer:'return=minimal' }, body: JSON.stringify({ status:'sent' }) });
       if(!res.ok) console.error('approve fail', await res.text());
     }
     return { ok:true, count:ids.length };
@@ -938,7 +971,7 @@ function closeDrawer(){ $('overlay').classList.remove('on'); $('drawer').classLi
 $('drawerClose').addEventListener('click', closeDrawer);
 $('overlay').addEventListener('click', closeDrawer);
 async function admFn(action, payload){
-  try{ var r = await fetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+admToken() }, body: JSON.stringify(Object.assign({action:action}, payload||{})) }); return await r.json(); }
+  try{ var r = await admFetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(Object.assign({action:action}, payload||{})) }); return await r.json(); }
   catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
 }
 async function setMemberStatus(code, status, reason){ return admFn('set-status', { code:code, status:status, reason:reason }); }
@@ -1442,7 +1475,7 @@ function initAdmin(){ try{ renderDashboard(); renderMembers(); renderWarranty();
   $('admLoginBtn').addEventListener('click', doAdmLogin);
   $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
-  if(admToken()){ verifyAdmin().then(function(ok){ if(ok){ hideOv(); initAdmin(); } else { try{sessionStorage.removeItem('adm_token');}catch(e){} showOv(); } }); }
+  if(admToken()){ verifyAdmin().then(async function(ok){ if(!ok && admRefreshToken()){ if(await admRefresh()) ok = await verifyAdmin(); } if(ok){ hideOv(); initAdmin(); } else { try{sessionStorage.removeItem('adm_token'); sessionStorage.removeItem('adm_refresh');}catch(e){} showOv(); } }); }
   else showOv();
 })();
 </script>

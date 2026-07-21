@@ -208,12 +208,42 @@ const FN_AUTH = SB_URL + '/functions/v1/carmaster-auth';
 const ETC = '기타 (직접 입력)';
 const _gid = function(x){ return document.getElementById(x); };
 function cmToken(){ try{ return sessionStorage.getItem('cm_token')||''; }catch(e){ return ''; } }
+function cmRefreshToken(){ try{ return sessionStorage.getItem('cm_refresh')||''; }catch(e){ return ''; } }
+let _refreshing = null;
+async function cmRefresh(){
+  if(_refreshing) return _refreshing;
+  _refreshing = (async function(){
+    var rt = cmRefreshToken();
+    if(!rt) return false;
+    try{
+      var r = await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' }, body: JSON.stringify({ refresh_token: rt }) });
+      var d = await r.json();
+      if(!r.ok || !d.access_token) return false;
+      try{ sessionStorage.setItem('cm_token', d.access_token); if(d.refresh_token) sessionStorage.setItem('cm_refresh', d.refresh_token); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  })();
+  var ok = await _refreshing; _refreshing = null; return ok;
+}
+function cmSessionOut(){
+  try{ sessionStorage.removeItem('cm_token'); sessionStorage.removeItem('cm_refresh'); }catch(e){}
+  alert('로그인 유효시간이 만료되었습니다. 다시 로그인해 주세요.');
+  location.href='login.html';
+}
 async function rest(path, opts){
   opts = opts||{};
-  const h = { apikey: SB_ANON, 'Content-Type':'application/json' };
-  const t = cmToken(); if(t) h.Authorization = 'Bearer ' + t;
-  if(opts.prefer) h.Prefer = opts.prefer;
-  const r = await fetch(SB_URL + '/rest/v1/' + path, { method: opts.method||'GET', headers: h, body: opts.body });
+  async function go(){
+    const h = { apikey: SB_ANON, 'Content-Type':'application/json' };
+    const t = cmToken(); if(t) h.Authorization = 'Bearer ' + t;
+    if(opts.prefer) h.Prefer = opts.prefer;
+    return fetch(SB_URL + '/rest/v1/' + path, { method: opts.method||'GET', headers: h, body: opts.body });
+  }
+  var r = await go();
+  if(r.status===401 || r.status===403){          /* 토큰 만료 → 1회 자동 갱신 후 재시도 */
+    if(await cmRefresh()) r = await go();
+    else { cmSessionOut(); throw new Error('session expired'); }
+    if(r.status===401 || r.status===403){ cmSessionOut(); throw new Error('session expired'); }
+  }
   if(!r.ok) throw new Error(await r.text());
   const txt = await r.text(); return txt ? JSON.parse(txt) : null;
 }
@@ -288,7 +318,7 @@ async function loadMyStats(){
 }
 async function logout(){
   try{ var t=cmToken(); if(t){ await fetch(SB_URL+'/auth/v1/logout', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json', Authorization:'Bearer '+t }, body:'{}' }); } }catch(e){}
-  try{ sessionStorage.removeItem('cm_token'); }catch(e){}
+  try{ sessionStorage.removeItem('cm_token'); sessionStorage.removeItem('cm_refresh'); }catch(e){}
   return { ok:true };
 }
 async function updateProfile(data){
