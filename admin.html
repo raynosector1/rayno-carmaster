@@ -608,7 +608,7 @@ input::placeholder{color:#B4B4B8;}
 <!-- 공지 등록 드로어 -->
 <div class="overlay" id="noticeOverlay"></div>
 <div class="drawer" id="noticeDrawer">
-  <div class="dh"><div class="t">공지 등록</div><button class="x" id="noticeDrawerClose">✕</button></div>
+  <div class="dh"><div class="t" id="ntDrawerTitle">공지 등록</div><button class="x" id="noticeDrawerClose">✕</button></div>
   <div class="db">
     <div class="flabel">제목</div>
     <input class="finp" id="ntTitle" placeholder="공지 제목" maxlength="40">
@@ -1419,12 +1419,22 @@ async function renderNotices(){
   $('noticeList').innerHTML = !NOTICES.length ? EMPTY('등록된 공지가 없습니다') : NOTICES.map(n=>
     `<div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid #F2F2F2;" data-id="${n.id}">
        <div><div style="font-size:14.5px;font-weight:700;">${esc(n.title)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px;">${esc(n.target)} · ${n.date}</div></div>
-       <div style="display:flex;align-items:center;gap:14px;">${n.on?'<span class="badge b-ok">게시중</span>':'<span class="badge b-off">종료</span>'}<label class="switch"><input type="checkbox" class="ntToggle" ${n.on?'checked':''}><span class="tk"></span></label></div>
+       <div style="display:flex;align-items:center;gap:10px;">${n.on?'<span class="badge b-ok">게시중</span>':'<span class="badge b-off">종료</span>'}<button class="btn btn-soft ntEdit" style="padding:8px 14px;font-size:12.5px;font-weight:700;">수정</button><button class="btn ntDel" style="padding:8px 14px;font-size:12.5px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">삭제</button><label class="switch"><input type="checkbox" class="ntToggle" ${n.on?'checked':''}><span class="tk"></span></label></div>
      </div>`).join('');
   $('noticeList').querySelectorAll('.ntToggle').forEach(t=> t.addEventListener('change', async ()=>{
     var id=t.closest('[data-id]').dataset.id; var n = NOTICES.find(x=>x.id===id);
     try{ await admWrite('notices?id=eq.'+id,'PATCH',{ published:t.checked }); if(n)n.on=t.checked; toast((n?n.title:'공지')+(t.checked?' 공지를 게시했습니다.':' 공지를 종료했습니다.')); }catch(e){ toast('변경에 실패했습니다.'); if(n)t.checked=n.on; }
   }));
+  $('noticeList').querySelectorAll('.ntEdit').forEach(function(b){ b.addEventListener('click', function(){
+    var id=b.closest('[data-id]').dataset.id; var n=NOTICES.find(function(x){return x.id===id;});
+    if(n) openNoticeDrawer(n);
+  }); });
+  $('noticeList').querySelectorAll('.ntDel').forEach(function(b){ b.addEventListener('click', async function(){
+    var id=b.closest('[data-id]').dataset.id; var n=NOTICES.find(function(x){return x.id===id;});
+    if(!confirm('‘'+((n&&n.title)||'공지')+'’ 공지를 삭제하시겠습니까?\n\n삭제하면 되돌릴 수 없습니다.')) return;
+    try{ await admWrite('notices?id=eq.'+id,'DELETE'); toast('공지를 삭제했습니다.'); await renderNotices(); }
+    catch(e){ toast('삭제에 실패했습니다.'); }
+  }); });
 }
 async function renderAdmins(){
   var list=[];
@@ -1440,10 +1450,27 @@ $('inviteAdmin').addEventListener('click', ()=> toast('관리자 초대 링크�
 /* ── 공지 등록 드로어 ── */
 let ntMode = 'now';
 function ntValidate(){ const ok = $('ntTitle').value.trim() && $('ntBody').value.trim(); const b=$('ntCreate'); b.style.opacity=ok?'1':'.45'; b.style.pointerEvents=ok?'auto':'none'; }
-function ntReset(){ ntMode='now'; $('ntTitle').value=''; $('ntBody').value=''; $('ntTarget').selectedIndex=0; $('ntNow').classList.add('on'); $('ntSchedule').classList.remove('on'); ntValidate(); }
-function openNoticeDrawer(){ ntReset(); $('noticeOverlay').classList.add('on'); $('noticeDrawer').classList.add('on'); }
+function ntReset(){ ntEditId=null; ntMode='now'; $('ntTitle').value=''; $('ntBody').value=''; $('ntTarget').selectedIndex=0; $('ntNow').classList.add('on'); $('ntSchedule').classList.remove('on'); ntValidate(); }
+let ntEditId = null;
+function openNoticeDrawer(n){
+  ntReset();
+  if(n && n.id){
+    ntEditId = n.id;
+    $('ntTitle').value = n.title||'';
+    $('ntBody').value = n.body||'';
+    var tg=$('ntTarget'); if(tg && n.target){ tg.value = n.target; if(tg.value!==n.target) tg.selectedIndex=0; }
+    ntMode = n.on ? 'now' : 'schedule';
+    $('ntNow').classList.toggle('on', n.on); $('ntSchedule').classList.toggle('on', !n.on);
+    $('ntDrawerTitle').textContent='공지 수정'; $('ntCreate').textContent='수정 저장';
+    ntValidate();
+  } else {
+    ntEditId = null;
+    $('ntDrawerTitle').textContent='공지 등록'; $('ntCreate').textContent='공지 등록';
+  }
+  $('noticeOverlay').classList.add('on'); $('noticeDrawer').classList.add('on');
+}
 function closeNoticeDrawer(){ $('noticeOverlay').classList.remove('on'); $('noticeDrawer').classList.remove('on'); }
-$('newNotice').addEventListener('click', openNoticeDrawer);
+$('newNotice').addEventListener('click', function(){ openNoticeDrawer(); });
 $('noticeDrawerClose').addEventListener('click', closeNoticeDrawer);
 $('ntCancel').addEventListener('click', closeNoticeDrawer);
 $('noticeOverlay').addEventListener('click', closeNoticeDrawer);
@@ -1451,8 +1478,18 @@ $('ntNow').addEventListener('click', ()=>{ ntMode='now'; $('ntNow').classList.ad
 $('ntSchedule').addEventListener('click', ()=>{ ntMode='schedule'; $('ntSchedule').classList.add('on'); $('ntNow').classList.remove('on'); });
 ['ntTitle','ntBody'].forEach(i=> $(i).addEventListener('input', ntValidate));
 $('ntCreate').addEventListener('click', async ()=>{
+  var payload = { title:$('ntTitle').value.trim(), body:$('ntBody').value.trim(), target:$('ntTarget').value, published:(ntMode==='now') };
+  if(ntEditId){
+    try{
+      await admWrite('notices?id=eq.'+ntEditId,'PATCH',payload);
+      await renderNotices();
+      toast('공지를 수정했습니다.');
+      closeNoticeDrawer();
+    }catch(e){ toast('공지 수정에 실패했습니다.'); }
+    return;
+  }
   try{
-    await admWrite('notices','POST',{ title:$('ntTitle').value.trim(), body:$('ntBody').value.trim(), target:$('ntTarget').value, published:(ntMode==='now') });
+    await admWrite('notices','POST',payload);
     await renderNotices();
     toast(ntMode==='now' ? '공지를 게시했습니다.' : '공지를 예약 등록했습니다.');
     closeNoticeDrawer();
