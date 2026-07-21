@@ -269,6 +269,19 @@ async function initEdit(){
 }
 
 /* ══════════ 백엔드 연동 (my) ══════════ */
+function countUp(el, to, suffix){
+  if(!el) return; to = +to || 0; suffix = suffix||'';
+  if(to===0){ el.textContent='0'+suffix; return; }
+  var dur=900, t0=null;
+  function step(ts){
+    if(!t0) t0=ts;
+    var p=Math.min((ts-t0)/dur,1);
+    var e=1-Math.pow(1-p,3);                       /* ease-out */
+    el.textContent = Math.round(to*e) + suffix;
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
 function _esc(v){ return String(v==null?'':v).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function _d(iso){ if(!iso)return ''; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _md(iso){ if(!iso)return ''; var d=new Date(iso); return String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
@@ -482,13 +495,19 @@ const S = { name:'', code:'', org:'' };
     if(res.name){ id('homeName').textContent=res.name; }
     if(res.code){ id('cmCode').textContent=res.code; }
     if(res.org){ id('cardOrg').textContent=res.org; }
-    if(res.month_count!=null){ id('monthCount').textContent=res.month_count; }
-    if(res.total_count!=null){ id('totalCount').textContent=res.total_count; }
-    if(res.coupons!=null){ id('couponCount').textContent=res.coupons; }
-    if(res.reward_progress){ var rp=res.reward_progress, c=rp.current||0, gl=rp.goal||10, rem=Math.max(gl-c,0); var rr=id('rewardRemain'); if(rr)rr.textContent=rem+'건'; var rpv=id('rewardProg'); if(rpv)rpv.textContent=c+' / '+gl+'건'; var rb=id('rewardBar'); if(rb)rb.style.width=Math.min(c/gl*100,100)+'%'; }
+    if(res.month_count!=null){ countUp(id('monthCount'), res.month_count); }
+    if(res.total_count!=null){ countUp(id('totalCount'), res.total_count); }
+    if(res.coupons!=null){ countUp(id('couponCount'), res.coupons); }
+    if(res.reward_progress){
+      var rp=res.reward_progress, c=rp.current||0, gl=rp.goal||10, rem=Math.max(gl-c,0);
+      var rr=id('rewardRemain'); if(rr)rr.textContent=rem+'건';
+      var rpv=id('rewardProg'); if(rpv)rpv.textContent=c+' / '+gl+'건';
+      var rb=id('rewardBar');
+      if(rb){ rb.style.width='0%'; rb.style.transition='width 1.1s cubic-bezier(.2,.8,.3,1)';
+              setTimeout(function(){ rb.style.width=Math.min(c/gl*100,100)+'%'; }, 120); }
+    }
     if(res.name){ var pn=id('pfName'); if(pn)pn.textContent=res.name; }
     if(res.profile){ var pf=res.profile; if(pf.loginId)id('pfLoginId').textContent=pf.loginId; if(pf.phone)id('pfPhone').textContent=pf.phone; }
-    /* TODO(backend): 쿠폰/시공/리워드 목록 렌더링 */
   });
 })();
 </script>
