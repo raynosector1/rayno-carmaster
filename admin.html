@@ -188,12 +188,11 @@ input::placeholder{color:#B4B4B8;}
     </div>
     <nav class="nav" id="nav">
       <button class="nav-item active" data-view="dashboard" data-title="대시보드">대시보드</button>
-      <button class="nav-item" data-view="members" data-title="카마스터 회원">카마스터 회원</button>
-      <button class="nav-item" data-view="warranty" data-title="보증서 연계">보증서 연계</button>
-      <button class="nav-item" data-view="rewards" data-title="리워드 지급">리워드 지급</button>
-      <button class="nav-item" data-view="promotions" data-title="프로모션">프로모션</button>
-      <button class="nav-item" data-view="services" data-title="시공 내역">시공 내역</button>
-      <button class="nav-item" data-view="settings" data-title="공지·설정">공지·설정</button>
+      <button class="nav-item" data-view="members" data-title="회원 관리">회원 관리</button>
+      <button class="nav-item" data-view="promotions" data-title="프로모션 관리">프로모션 관리</button>
+      <button class="nav-item" data-view="rewards" data-title="리워드 관리">리워드 관리</button>
+      <button class="nav-item" data-view="services" data-title="시공 내역 관리">시공 내역 관리</button>
+      <button class="nav-item" data-view="settings" data-title="공지사항·설정">공지사항·설정</button>
     </nav>
     <div class="me">
       <div class="av">관</div>
@@ -284,44 +283,6 @@ input::placeholder{color:#B4B4B8;}
         <div class="pager">
           <span style="font-size:13px;color:var(--muted);">총 <b style="color:var(--ink);" id="mTotal">0</b>명</span>
           <div class="pg" id="mPager"></div>
-        </div>
-      </section>
-
-      <!-- ===== 보증서 연계 ===== -->
-      <section class="view" id="view-warranty">
-        <div class="link-cols">
-          <div class="link-l">
-            <div class="step-h"><span class="n">1</span>카마스터 조회</div>
-            <div style="margin-top:14px;display:flex;gap:8px;">
-              <input class="finp" id="wSearch" placeholder="코드·이름·휴대폰" style="flex:1;">
-              <button class="btn btn-dark" id="wSearchBtn" style="flex-shrink:0;">조회</button>
-            </div>
-            <div style="margin-top:8px;font-size:12px;color:var(--muted);">코드 · 이름 · 휴대폰번호로 검색할 수 있습니다.</div>
-            <div style="margin-top:16px;font-size:12px;font-weight:700;color:var(--muted);" id="wResultCount"></div>
-            <div id="wResults" style="margin-top:10px;display:flex;flex-direction:column;gap:10px;"></div>
-          </div>
-          <div class="link-r">
-            <div class="step-h"><span class="n">2</span>보증서 정보 · 연계</div>
-            <div class="card" style="margin-top:14px;padding:24px;">
-              <div id="wSelected" style="background:var(--ink2);border-radius:12px;padding:16px 20px;color:#fff;display:flex;align-items:center;gap:14px;">
-                <div style="width:44px;height:44px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;" id="wAv"></div>
-                <div style="flex:1;"><div style="font-size:16px;font-weight:800;"><span id="wName">—</span> <span style="font-size:12px;font-weight:600;color:#9A9A9E;">카마스터</span></div><div style="font-size:12px;color:#9A9A9E;margin-top:2px;" id="wMeta">—</div></div>
-                <span style="font-size:11px;font-weight:800;color:var(--orange);">연계 대상</span>
-              </div>
-              <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                <div><div class="flabel">보증서 번호</div><div class="freadonly">연계 시 자동 생성</div></div>
-                <div><div class="flabel">시공점</div><input class="finp" placeholder="시공점"></div>
-                <div><div class="flabel">차량 모델</div><input class="finp" id="wModel" placeholder="차량 모델"></div>
-                <div><div class="flabel">차대번호(VIN)</div><input class="finp" id="wVin" placeholder="차대번호(VIN)"></div>
-                <div><div class="flabel">시공일</div><input class="finp" placeholder="YYYY.MM.DD"></div>
-                <div><div class="flabel">필름 제품</div><input class="finp" placeholder="필름 제품"></div>
-              </div>
-              <div style="margin-top:24px;display:flex;justify-content:flex-end;gap:12px;">
-                <button class="btn btn-soft" style="padding:15px 24px;font-size:15px;">취소</button>
-                <button class="btn btn-primary" id="wConfirm" style="padding:15px 34px;font-size:15px;font-weight:800;">연계 확정</button>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -778,14 +739,6 @@ async function searchCarmaster(q){
     return rows.map(function(m){ return { code:m.code, name:m.name, office:m.office, phone:_mask(m.phone) }; });
   }catch(e){ console.error('search',e); return []; }
 }
-async function linkWarranty(data){
-  try{
-    var cmId = await _cmIdByCode(data.carmaster);
-    if(!cmId) return { ok:false, message:'카마스터를 찾을 수 없습니다.' };
-    await admWrite('warranty_matches','POST',{ carmaster_id:cmId, car_model:data.model||null, vin:data.vin||null, product:null, dealer_name:'관리자 수동 연계', link_type:'linked', status:'valid', installed_at:new Date().toISOString() });
-    return { ok:true };
-  }catch(e){ console.error('linkWarranty',e); return { ok:false, message:'연계에 실패했습니다.' }; }
-}
 async function loadRewards(tab){
   try{
     var rows = await admRest('rewards?select=*,carmasters(code,name,office)');
@@ -1078,42 +1031,6 @@ $('dDelete').addEventListener('click', async ()=>{
   btn.disabled=false; btn.textContent='계정 탈퇴 (완전 삭제)';
   if(res && res.ok){ toast(name+' 카마스터를 탈퇴 처리했습니다.'); closeDrawer(); renderMembers(); renderDashboard(); }
   else { toast((res&&res.message)||'탈퇴 처리에 실패했습니다.'); }
-});
-
-/* ── 보증서 연계 ── */
-async function renderWarranty(){
-  const list = await searchCarmaster($('wSearch').value);
-  $('wResultCount').textContent = '검색 결과 '+list.length+'건';
-  $('wResults').innerHTML = list.map((c,i)=>
-    `<div class="res${i===0?' sel':''}" data-i="${i}">
-       <span class="tick">✓</span>
-       <div class="nm">${c.name}</div>
-       <div class="meta">${c.code} · ${c.office}</div>
-       <div class="meta">${c.phone}</div>
-       ${i===0?'<div style="margin-top:8px;display:flex;gap:6px;"><span class="badge b-ok">활성</span><span class="badge b-ok">본인인증 완료</span></div>':''}
-     </div>`).join('');
-  S.warrantyPick = list[0] || null;
-  applyPick();
-  $('wResults').querySelectorAll('.res').forEach(el=> el.addEventListener('click', ()=>{
-    $('wResults').querySelectorAll('.res').forEach(r=>r.classList.remove('sel'));
-    el.classList.add('sel');
-    S.warrantyPick = list[+el.dataset.i];
-    applyPick();
-  }));
-}
-function applyPick(){
-  const c = S.warrantyPick; if(!c) return;
-  $('wAv').textContent = c.name.charAt(0);
-  $('wName').textContent = c.name;
-  $('wMeta').textContent = c.code+' · '+c.office;
-}
-$('wSearchBtn').addEventListener('click', renderWarranty);
-$('wSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') renderWarranty(); });
-$('wConfirm').addEventListener('click', async ()=>{
-  if(!S.warrantyPick){ toast('연계할 카마스터를 선택해 주세요.'); return; }
-  const res = await linkWarranty({ carmaster:S.warrantyPick.code, model:$('wModel').value, vin:$('wVin').value });
-  if(res && res.ok) toast(S.warrantyPick.name+' 카마스터 보증서 연계가 완료되었습니다.');
-  else toast('연계에 실패했습니다.');
 });
 
 async function createReward(data){
@@ -1497,7 +1414,7 @@ $('ntCreate').addEventListener('click', async ()=>{
 });
 
 /* ── init (관리자 로그인 후 실행) ── */
-function initAdmin(){ try{ renderDashboard(); renderMembers(); renderWarranty(); renderRewards(); renderPromos(); renderServices(); renderNotices(); renderAdmins(); }catch(e){ console.error(e); } }
+function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderNotices(); renderAdmins(); }catch(e){ console.error(e); } }
 (function(){
   var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
