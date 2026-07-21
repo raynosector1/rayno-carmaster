@@ -248,23 +248,38 @@ input::placeholder{color:#B4B4B8;}
 
       <!-- ===== 카마스터 회원 ===== -->
       <section class="view" id="view-members">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div class="filters">
-            <select class="filter" id="fltOffice" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">소속 전체</option></select>
-            <select class="filter" id="fltRegion" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">지역 전체</option></select>
-            <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체</option><option value="활성">활성</option><option value="인증대기">인증대기</option><option value="정지">정지</option></select>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input type="date" id="fltFrom" class="filter" style="font-family:inherit;">
+            <span style="color:var(--muted);font-size:13px;">~</span>
+            <input type="date" id="fltTo" class="filter" style="font-family:inherit;">
+            <button class="btn btn-line" id="fltApply" style="padding:10px 18px;font-size:13px;font-weight:700;">조회</button>
           </div>
           <button class="btn btn-line" id="exportMembers">↓ 엑셀 다운로드</button>
         </div>
-        <div class="table" id="membersTable">
-          <div class="tr th" style="grid-template-columns:130px 90px 1fr 150px 110px 90px 90px 70px;">
-            <span>카마스터코드</span><span>이름</span><span>소속·영업소</span><span>휴대폰</span><span>가입일</span><span>누적시공</span><span>상태</span><span></span>
+
+        <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <select class="filter" id="fltOffice" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">소속 전체</option></select>
+          <select class="filter" id="fltRegion" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">지역 전체</option></select>
+          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체</option><option value="일반">일반</option><option value="인증대기">인증대기</option><option value="정지">정지</option></select>
+          <input type="text" id="mSearch" placeholder="성함, 연락처, 영업소" class="filter" style="flex:1;min-width:200px;font-family:inherit;font-weight:500;">
+          <button class="btn btn-primary" id="mSearchBtn" style="padding:10px 22px;font-size:13px;font-weight:800;">검색</button>
+        </div>
+
+        <div style="margin-top:18px;font-size:15px;font-weight:800;color:var(--ink);">
+          가입자수 : <span id="mCount">0</span>명
+          <span style="font-size:13.5px;font-weight:600;color:var(--muted);margin-left:6px;">(일반: <span id="mCountOk">0</span> / 정지: <span id="mCountOff">0</span>)</span>
+        </div>
+
+        <div class="table" id="membersTable" style="margin-top:10px;">
+          <div class="tr th" style="grid-template-columns:112px 92px 104px 1fr 88px 140px 104px 82px 58px;">
+            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
           </div>
           <div id="membersRows"></div>
         </div>
         <div class="pager">
-          <span style="font-size:13px;color:var(--muted);">총 <b style="color:var(--ink);">0</b>명</span>
-          <div class="pg"><span class="p on">1</span><span class="p">2</span><span class="p">3</span><span class="p">›</span></div>
+          <span style="font-size:13px;color:var(--muted);">총 <b style="color:var(--ink);" id="mTotal">0</b>명</span>
+          <div class="pg" id="mPager"></div>
         </div>
       </section>
 
@@ -399,28 +414,85 @@ input::placeholder{color:#B4B4B8;}
 <div class="drawer" id="drawer">
   <div class="dh"><div class="t">회원 상세</div><button class="x" id="drawerClose">✕</button></div>
   <div class="db">
-    <div style="display:flex;align-items:center;gap:16px;">
-      <div style="width:60px;height:60px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;" id="dAv"></div>
-      <div><div style="font-size:20px;font-weight:800;" id="dName">—</div><div style="font-size:13px;color:var(--muted);margin-top:2px;" id="dCodeStatus">—</div></div>
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;font-weight:800;" id="dAv"></div>
+      <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">
+        <div style="font-size:20px;font-weight:800;" id="dName">—</div>
+        <span class="badge b-off" id="dCodeStatus" style="font-size:12px;">—</span>
+      </div>
     </div>
-    <div class="info-list" style="margin-top:22px;">
-      <div class="r"><span class="k">소속·영업소</span><span class="v" id="dOffice">—</span></div>
-      <div class="r"><span class="k">휴대폰</span><span class="v" id="dPhone">—</span></div>
-      <div class="r"><span class="k">생년월일</span><span class="v" id="dBirth">—</span></div>
-      <div class="r"><span class="k">가입일</span><span class="v" id="dJoin">—</span></div>
-      <div class="r"><span class="k">본인인증</span><span class="v" style="color:var(--ok);">완료</span></div>
+
+    <div style="margin-top:20px;font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:7px;">회원 정보</div>
+    <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
+      <div class="info-list">
+        <div class="r"><span class="k">소속/지역/영업소</span><span class="v" id="dOffice">—</span></div>
+        <div class="r"><span class="k">휴대전화</span><span class="v" id="dPhone">—</span></div>
+        <div class="r"><span class="k">생년월일</span><span class="v" id="dBirth">—</span></div>
+        <div class="r"><span class="k">가입일</span><span class="v" id="dJoin">—</span></div>
+        <div class="r"><span class="k">최근 로그인</span><span class="v" id="dLastLogin">—</span></div>
+      </div>
+      <div class="info-list">
+        <div class="r"><span class="k">본인인증</span><span class="v" id="dVerify">—</span></div>
+        <div class="r"><span class="k">개인정보 동의</span><span class="v" id="dAgreePrivacy">—</span></div>
+        <div class="r"><span class="k">마케팅 동의</span><span class="v" id="dAgreeMkt">—</span></div>
+        <div class="r"><span class="k">SMS 수신거부</span><span class="v" style="display:flex;align-items:center;gap:8px;justify-content:flex-end;"><span id="dSmsState">—</span><button class="btn" id="dSmsBtn" style="display:none;padding:5px 11px;font-size:12px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">수신거부 해제</button></span></div>
+        <div class="r"><span class="k">계정 상태</span><span class="v" id="dAccState">—</span></div>
+        <div class="r"><span class="k">정지 일시</span><span class="v" id="dSuspAt">-</span></div>
+        <div class="r"><span class="k">정지 사유</span><span class="v" id="dSuspReason">-</span></div>
+      </div>
     </div>
-    <div style="margin-top:16px;display:flex;gap:12px;">
-      <div style="flex:1;background:#F7F7F8;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:12px;color:var(--muted);font-weight:600;">누적 시공</div><div style="font-size:26px;font-weight:800;margin-top:4px;" id="dTotal">—</div></div>
-      <div style="flex:1;background:#F7F7F8;border-radius:12px;padding:16px;text-align:center;"><div style="font-size:12px;color:var(--muted);font-weight:600;">지급 리워드</div><div style="font-size:26px;font-weight:800;color:var(--orange);margin-top:4px;" id="dReward">—</div></div>
+    <div class="info" style="margin-top:12px;"><span class="i">i</span><span>SMS 수신거부가 설정된 경우 문자(SMS)가 발송되지 않습니다.</span></div>
+
+    <div style="margin-top:22px;font-size:14px;font-weight:800;color:var(--ink);">활동 정보</div>
+    <div style="margin-top:8px;display:flex;gap:10px;">
+      <div style="flex:1;background:#F7F7F8;border-radius:12px;padding:14px;"><div style="font-size:12px;color:var(--muted);font-weight:600;">품질보증서 발급 건수</div><div style="font-size:22px;font-weight:800;margin-top:4px;" id="dTotal">—</div></div>
+      <div style="flex:1;background:#F7F7F8;border-radius:12px;padding:14px;"><div style="font-size:12px;color:var(--muted);font-weight:600;">최근 보증서 발급일</div><div style="font-size:18px;font-weight:800;color:var(--ok);margin-top:6px;" id="dLastWr">—</div></div>
+      <div style="flex:1;background:#F7F7F8;border-radius:12px;padding:14px;"><div style="font-size:12px;color:var(--muted);font-weight:600;">지급 리워드</div><div style="font-size:22px;font-weight:800;color:var(--orange);margin-top:4px;" id="dReward">—</div></div>
     </div>
+    <div class="info" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <span style="display:flex;align-items:center;gap:8px;"><span class="i">i</span><span>품질보증서 발급 상세 내역은 ‘레이노 관리자’ 시스템에서 확인할 수 있습니다.</span></span>
+      <a href="#" id="dRaynoLink" target="_blank" rel="noopener" style="flex-shrink:0;font-size:12.5px;font-weight:700;color:var(--ink);text-decoration:underline;white-space:nowrap;">레이노 관리자에서 보기 ↗</a>
+    </div>
+
     <div style="margin-top:24px;display:flex;gap:10px;">
-      <button class="btn btn-soft" style="flex:1;padding:14px 0;font-size:14px;">시공 내역 보기</button>
-      <button class="btn" id="dSuspend" style="flex:1;padding:14px 0;font-size:14px;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
+      <button class="btn btn-soft" id="dResetPw" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;">비밀번호 초기화</button>
+      <button class="btn" id="dSuspend" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
     </div>
     <button id="dDelete" style="margin-top:10px;width:100%;padding:11px 0;background:none;border:none;font-size:13px;color:#B0B0B4;text-decoration:underline;cursor:pointer;font-family:inherit;">계정 탈퇴 (완전 삭제)</button>
   </div>
 </div>
+
+<!-- 계정 정지 사유 팝업 -->
+<div class="overlay" id="suspOverlay" style="z-index:150;"></div>
+<div id="suspModal" style="display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:151;width:min(94vw,460px);max-height:88vh;overflow-y:auto;background:#fff;border-radius:18px;padding:26px 26px 22px;box-shadow:0 24px 60px rgba(0,0,0,.28);">
+  <div style="font-size:17px;font-weight:800;color:var(--ink);">계정 정지</div>
+  <div class="info-list" style="margin-top:14px;">
+    <div class="r"><span class="k">회원</span><span class="v" id="suspName">—</span></div>
+    <div class="r"><span class="k">정지 일시</span><span class="v" id="suspNow">—</span></div>
+  </div>
+
+  <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+    <span style="font-size:13px;font-weight:800;color:var(--ink);">정지 사유 <span style="color:var(--err);">(필수)</span></span>
+    <button type="button" id="suspHelpBtn" style="background:none;border:none;padding:0;font-size:12.5px;font-weight:700;color:var(--muted);text-decoration:underline;cursor:pointer;font-family:inherit;">자세히 보기</button>
+  </div>
+  <select id="suspReason" style="margin-top:8px;width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font-size:14px;font-family:inherit;color:var(--ink);background:#fff;">
+    <option value="">정지 사유를 선택해주세요.</option>
+  </select>
+  <div id="suspDesc" style="display:none;margin-top:8px;background:#F7F7F8;border-radius:10px;padding:11px 13px;font-size:12.5px;color:#5A5A5E;line-height:1.55;"></div>
+  <div id="suspHelp" style="display:none;margin-top:8px;border:1px solid var(--line);border-radius:12px;overflow:hidden;"></div>
+
+  <div id="suspEtcWrap" style="display:none;margin-top:10px;">
+    <textarea id="suspEtc" maxlength="700" rows="4" placeholder="정지 사유를 직접 입력해 주세요. (최대 700자)" style="width:100%;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;font-size:13.5px;font-family:inherit;color:var(--ink);resize:vertical;outline:none;box-sizing:border-box;"></textarea>
+    <div style="text-align:right;font-size:11.5px;color:var(--muted);margin-top:4px;"><span id="suspEtcCnt">0</span> / 700자</div>
+  </div>
+
+  <div style="margin-top:16px;font-size:12.5px;font-weight:700;color:var(--err);">※ 위와 같은 사유로 해당 계정을 정말 정지하시겠습니까?</div>
+  <div style="margin-top:14px;display:flex;gap:9px;">
+    <button class="btn btn-soft" id="suspCancel" style="flex:1;padding:13px 0;font-size:14px;font-weight:700;">아니요</button>
+    <button class="btn" id="suspConfirm" style="flex:1;padding:13px 0;font-size:14px;font-weight:800;background:var(--err);color:#fff;border:none;">네</button>
+  </div>
+</div>
+
 <!-- 리워드 생성 드로어 -->
 <div class="overlay" id="rwOverlay"></div>
 <div class="drawer" id="rewardDrawer">
@@ -597,7 +669,7 @@ function _csv(rows){ return '\uFEFF'+rows.map(function(r){ return r.map(function
 function _download(name, text){ var b=new Blob([text],{type:'text/csv;charset=utf-8'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},1000); }
 function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime())/1000; if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전'; return Math.floor(s/86400)+'일 전'; }
 function _mask(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length===11)return p.slice(0,3)+'-'+p.slice(3,7)+'-'+p.slice(7); if(p.length===10)return p.slice(0,3)+'-'+p.slice(3,6)+'-'+p.slice(6); return p; }
-function _stat(s){ return s==='verified'?'활성':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
+function _stat(s){ return s==='verified'?'일반':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
 
@@ -636,16 +708,29 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', brand:m.brand||'', region:m.region||'', phone:_mask(m.phone), join:_date(_ts(m)), total:(wmap[m.id]||0), status:_stat(m.status) }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', brand:m.brand||'', region:m.region||'', phone:_mask(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
   try{
     var rows = await admRest('carmasters?select=*&code=eq.'+encodeURIComponent(code));
     var m = rows[0]||{};
-    var total=0, reward=0;
-    if(m.id){ total = await admCount('warranty_matches?select=id&carmaster_id=eq.'+m.id+'&link_type=eq.linked'); reward = await admCount('rewards?select=id&carmaster_id=eq.'+m.id); }
-    return { name:m.name, code:m.code, status:_stat(m.status), office:[m.brand,m.office].filter(Boolean).join(' · '), phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'), join:_date(_ts(m)), total:total, reward:reward };
+    var total=0, reward=0, lastWr=null;
+    if(m.id){
+      try{ var wm = await admRest('warranty_matches?select=installed_at,created_at&carmaster_id=eq.'+m.id+'&link_type=eq.linked'); total=(wm||[]).length;
+           (wm||[]).forEach(function(w){ var d=w.installed_at||w.created_at; if(d && (!lastWr || d>lastWr)) lastWr=d; }); }catch(e){}
+      reward = await admCount('rewards?select=id&carmaster_id=eq.'+m.id);
+    }
+    return {
+      id:m.id, name:m.name, code:m.code, status:_stat(m.status),
+      office:[m.brand,m.region,m.office].filter(Boolean).join(' '),
+      phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'),
+      join:_date(_ts(m)), total:total, reward:reward, lastWr:lastWr?_date(lastWr):'-',
+      smsOptout: !!m.sms_optout,
+      agreePrivacy: (m.agree_privacy!==false), agreeMkt: !!m.agree_marketing,
+      suspAt: m.suspended_at?_date(m.suspended_at):'-', suspReason: m.suspend_reason||'-',
+      verified: (m.status==='verified'||m.status==='suspended')
+    };
   }catch(e){ console.error('getMember',e); return {}; }
 }
 async function searchCarmaster(q){
@@ -728,9 +813,13 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, '130px 90px 1fr 150px 110px 90px 90px 70px');
+  $('membersRows').innerHTML = skelRows(7, '112px 92px 104px 1fr 88px 140px 104px 82px 58px');
+  var f=$('fltFrom'), t=$('fltTo');
+  if(f && !f.value) f.value='2025-01-01';
+  if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   await sleep(400);
   S.allMembers = await loadMembers({});
+  S.mPage = 1;
   populateMemberFilters(S.allMembers);
   applyMemberFilters();
 }
@@ -739,57 +828,207 @@ function populateMemberFilters(rows){
   if(fo && fo.dataset.filled!=='1'){ var bs=Array.from(new Set(rows.map(function(m){return m.brand;}).filter(Boolean))).sort(); fo.innerHTML='<option value="">소속 전체</option>'+bs.map(function(b){return '<option value="'+esc(b)+'">'+esc(b)+'</option>';}).join(''); fo.dataset.filled='1'; }
   if(fr && fr.dataset.filled!=='1'){ var rs=Array.from(new Set(rows.map(function(m){return m.region;}).filter(Boolean))).sort(); fr.innerHTML='<option value="">지역 전체</option>'+rs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join(''); fr.dataset.filled='1'; }
 }
-function applyMemberFilters(){
+function filteredMembers(){
   var fo=($('fltOffice')||{}).value||'', fr=($('fltRegion')||{}).value||'', fs=($('fltStatus')||{}).value||'';
-  var rows=(S.allMembers||[]).filter(function(m){ return (!fo||m.brand===fo)&&(!fr||m.region===fr)&&(!fs||m.status===fs); });
-  var badge=function(st){ return st==='활성'?'<span class="badge b-ok">활성</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':'<span class="badge b-off">정지</span>'; };
-  $('membersRows').innerHTML = !rows.length ? EMPTY('조건에 맞는 회원이 없습니다') : rows.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:130px 90px 1fr 150px 110px 90px 90px 70px;">'+
-      '<span style="font-weight:700;">'+esc(m.code)+'</span><span>'+esc(m.name)+'</span>'+
-      '<span style="color:#5A5A5E;">'+esc(m.office)+'</span><span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
-      '<span style="color:#8A8A8E;">'+m.join+'</span><span style="font-weight:700;">'+m.total+'건</span>'+
-      '<span>'+badge(m.status)+'</span><span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
+  var from=($('fltFrom')||{}).value||'', to=($('fltTo')||{}).value||'';
+  var q=(($('mSearch')||{}).value||'').trim().toLowerCase();
+  var qd=q.replace(/\D/g,'');
+  return (S.allMembers||[]).filter(function(m){
+    if(fo && m.brand!==fo) return false;
+    if(fr && m.region!==fr) return false;
+    if(fs && m.status!==fs) return false;
+    if(from && m.joinRaw && m.joinRaw < from) return false;
+    if(to && m.joinRaw && m.joinRaw > to) return false;
+    if(q){
+      var hitName=(m.name||'').toLowerCase().indexOf(q)>=0;
+      var hitOffice=(m.office||'').toLowerCase().indexOf(q)>=0;
+      var hitCode=(m.code||'').toLowerCase().indexOf(q)>=0;
+      var hitPhone=qd && String(m.phone||'').replace(/\D/g,'').indexOf(qd)>=0;
+      if(!(hitName||hitOffice||hitCode||hitPhone)) return false;
+    }
+    return true;
+  });
+}
+function applyMemberFilters(){
+  var rows=filteredMembers();
+  var PER=10;
+  var pages=Math.max(1, Math.ceil(rows.length/PER));
+  if(!S.mPage || S.mPage>pages) S.mPage=1;
+  var page=rows.slice((S.mPage-1)*PER, S.mPage*PER);
+  var ok=rows.filter(function(m){return m.status==='일반';}).length;
+  var off=rows.filter(function(m){return m.status==='정지';}).length;
+  if($('mCount')) $('mCount').textContent=rows.length;
+  if($('mCountOk')) $('mCountOk').textContent=ok;
+  if($('mCountOff')) $('mCountOff').textContent=off;
+  if($('mTotal')) $('mTotal').textContent=rows.length;
+  var badge=function(st){ return st==='일반'?'<span class="badge b-ok">일반</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':'<span class="badge b-off">정지</span>'; };
+  $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
+    return '<div class="tr td" style="grid-template-columns:112px 92px 104px 1fr 88px 140px 104px 82px 58px;">'+
+      '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
+      '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
+      '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
+      '<span style="color:#5A5A5E;">'+esc(m.office)+'</span>'+
+      '<span>'+esc(m.name)+'</span>'+
+      '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
+      '<span style="color:#8A8A8E;">'+m.join+'</span>'+
+      '<span>'+badge(m.status)+'</span>'+
+      '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
+  var pg=$('mPager');
+  if(pg){
+    var html='';
+    var s1=Math.max(1, S.mPage-2), e1=Math.min(pages, s1+4); s1=Math.max(1, e1-4);
+    if(S.mPage>1) html+='<span class="p" data-pg="'+(S.mPage-1)+'">‹</span>';
+    for(var i=s1;i<=e1;i++) html+='<span class="p'+(i===S.mPage?' on':'')+'" data-pg="'+i+'">'+i+'</span>';
+    if(S.mPage<pages) html+='<span class="p" data-pg="'+(S.mPage+1)+'">›</span>';
+    pg.innerHTML=html;
+    pg.querySelectorAll('[data-pg]').forEach(function(el){ el.addEventListener('click', function(){ S.mPage=+el.dataset.pg; applyMemberFilters(); }); });
+  }
 }
-['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', applyMemberFilters); });
-$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=await loadMembers({}); var csv=_csv([['코드','이름','영업소','전화','가입일','누적시공','상태']].concat(rows.map(function(m){return [m.code,m.name,m.office,m.phone,m.join,m.total,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
-
-/* ── 회원 상세 드로어 ── */
+['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', function(){ S.mPage=1; applyMemberFilters(); }); });
+if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
+if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
+if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
+$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.phone,m.join,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
+const RAYNO_ADMIN_URL = 'https://raynofilm.co.kr/include/app/8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918/index.php';
 async function openMember(code){
   S.dMemberCode = code;
   const m = await getMember(code);
-  $('dAv').textContent = (m.name||'?').charAt(0);
-  $('dName').textContent = m.name || '-';
-  const stColor = m.status==='활성'?'var(--ok)':m.status==='정지'?'var(--err)':'var(--orange)';
-  $('dCodeStatus').innerHTML = `${m.code} · <span style="color:${stColor};font-weight:700;">${m.status}</span>`;
-  $('dOffice').textContent = m.office || '-';
-  $('dPhone').textContent = m.phoneFull || m.phone || '-';
-  $('dBirth').textContent = m.birth || '-';
-  $('dJoin').textContent = m.join || '-';
+  const yes = '<span style="color:var(--ok);font-weight:700;">완료</span>';
+  const no  = '<span style="color:var(--muted);">미완료</span>';
+  $('dAv').textContent = (m.name||'-').slice(0,1);
+  $('dName').textContent = m.name || '—';
+  var cs=$('dCodeStatus'); cs.textContent = m.code || '—';
+  cs.className = 'badge ' + (m.status==='정지' ? 'b-off' : 'b-ok');
+  $('dOffice').textContent = m.office || '—';
+  $('dPhone').textContent = m.phone || '—';
+  $('dBirth').textContent = m.birth || '—';
+  $('dJoin').textContent = m.join || '—';
+  $('dLastLogin').textContent = '조회 중…';
+  $('dVerify').innerHTML = m.verified ? yes : no;
+  $('dAgreePrivacy').innerHTML = m.agreePrivacy ? yes : no;
+  $('dAgreeMkt').innerHTML = m.agreeMkt ? '<span style="color:var(--ok);font-weight:700;">동의</span>' : '<span style="color:var(--muted);">미동의</span>';
+  $('dAccState').innerHTML = m.status==='정지' ? '<span style="color:var(--err);font-weight:700;">정지</span>' : '<span style="color:var(--ok);font-weight:700;">활성</span>';
+  $('dSuspAt').textContent = m.suspAt || '-';
+  $('dSuspReason').textContent = m.suspReason || '-';
   $('dTotal').textContent = (m.total ?? 0)+'건';
+  $('dLastWr').textContent = m.lastWr || '-';
   $('dReward').textContent = (m.reward ?? 0)+'건';
+  $('dRaynoLink').href = RAYNO_ADMIN_URL;
+  /* SMS 수신거부 */
+  var st=$('dSmsState'), sb2=$('dSmsBtn');
+  if(m.smsOptout){ st.innerHTML='<span style="color:var(--err);font-weight:700;">거부</span>'; sb2.style.display='inline-block'; }
+  else { st.innerHTML='<span style="color:var(--muted);">-</span>'; sb2.style.display='none'; }
+  /* 정지/해제 버튼 */
   S.dMemberStatus = m.status;
-  var sb=$('dSuspend'); if(sb){ if(m.status==='정지'){ sb.textContent='정지 해제'; sb.style.borderColor='var(--ok)'; sb.style.color='var(--ok)'; } else { sb.textContent='계정 정지'; sb.style.borderColor='var(--err)'; sb.style.color='var(--err)'; } }
+  var sb=$('dSuspend');
+  if(sb){ if(m.status==='정지'){ sb.textContent='정지 해제'; sb.style.borderColor='var(--ok)'; sb.style.color='var(--ok)'; } else { sb.textContent='계정 정지'; sb.style.borderColor='var(--err)'; sb.style.color='var(--err)'; } }
   $('overlay').classList.add('on'); $('drawer').classList.add('on');
+  /* 최근 로그인 (Auth 조회) */
+  admFn('member-extra', { code:code }).then(function(r){
+    $('dLastLogin').textContent = (r && r.last_login) ? _date(r.last_login)+' '+new Date(r.last_login).toTimeString().slice(0,5) : '-';
+  }).catch(function(){ $('dLastLogin').textContent='-'; });
 }
 function closeDrawer(){ $('overlay').classList.remove('on'); $('drawer').classList.remove('on'); }
 $('drawerClose').addEventListener('click', closeDrawer);
 $('overlay').addEventListener('click', closeDrawer);
-async function setMemberStatus(code, status){
-  try{ var r = await fetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+admToken() }, body: JSON.stringify({ action:'set-status', code:code, status:status }) }); return await r.json(); }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
+async function admFn(action, payload){
+  try{ var r = await fetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+admToken() }, body: JSON.stringify(Object.assign({action:action}, payload||{})) }); return await r.json(); }
+  catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
 }
+async function setMemberStatus(code, status, reason){ return admFn('set-status', { code:code, status:status, reason:reason }); }
+
+/* 계정 정지 사유 팝업 */
+var SUSP_REASONS = [
+  { t:'퇴사', d:'해당 대리점에서 카마스터가 퇴사 혹은 대리점과의 계약이 종료된 경우' },
+  { t:'부정발급 및 어뷰징', d:'품질보증서 허위 기재, 존재하지 않는 계약에 대한 보증서 임의 발급, 수수료 부정 수급' },
+  { t:'계정 도용 및 공유 의심', d:'타인 명의 도용 가입, 또는 하나의 계정을 여러 명/타 대리점이 공유하여 사용하는 정황 감지' },
+  { t:'본사 운영 정책 위반', d:'레이노 가이드라인 미준수, 미승인 제품 판매 등 본사 계약 및 영업 수칙을 위반한 경우' },
+  { t:'장기 미접속 (휴면 보호)', d:'보안을 위해 일정 기간 로그인이나 보증서 발급 이력이 없어 임시로 보호 조치(잠금)하는 경우' },
+  { t:'기타 (직접 입력)', d:'위 사유에 해당하지 않는 경우 직접 입력합니다. (최대 700자)' }
+];
+(function(){
+  var sel=$('suspReason');
+  SUSP_REASONS.forEach(function(r){ var o=document.createElement('option'); o.value=r.t; o.textContent=r.t; sel.appendChild(o); });
+  $('suspHelp').innerHTML = SUSP_REASONS.map(function(r,i){
+    return '<div style="padding:11px 13px;'+(i?'border-top:1px solid var(--line);':'')+'"><div style="font-size:12.5px;font-weight:800;color:var(--ink);">'+esc(r.t)+'</div><div style="font-size:12px;color:#5A5A5E;line-height:1.5;margin-top:3px;">'+esc(r.d)+'</div></div>';
+  }).join('');
+})();
+$('suspHelpBtn').addEventListener('click', function(){
+  var h=$('suspHelp'), open=h.style.display!=='none';
+  h.style.display = open ? 'none' : 'block';
+  this.textContent = open ? '자세히 보기' : '접기';
+});
+$('suspReason').addEventListener('change', function(){
+  var r=SUSP_REASONS.find(function(x){ return x.t===this.value; }.bind(this));
+  var d=$('suspDesc');
+  if(r && r.t.indexOf('기타')<0){ d.textContent=r.d; d.style.display='block'; } else { d.style.display='none'; }
+  $('suspEtcWrap').style.display = (this.value.indexOf('기타')>=0) ? 'block' : 'none';
+});
+$('suspEtc').addEventListener('input', function(){ $('suspEtcCnt').textContent=this.value.length; });
+function openSusp(name){
+  $('suspName').textContent=name||'회원';
+  var n=new Date();
+  $('suspNow').textContent=n.getFullYear()+'.'+String(n.getMonth()+1).padStart(2,'0')+'.'+String(n.getDate()).padStart(2,'0')+' '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  $('suspReason').value=''; $('suspDesc').style.display='none'; $('suspHelp').style.display='none'; $('suspHelpBtn').textContent='자세히 보기';
+  $('suspEtcWrap').style.display='none'; $('suspEtc').value=''; $('suspEtcCnt').textContent='0';
+  $('suspOverlay').classList.add('on'); $('suspModal').style.display='block';
+}
+function closeSusp(){ $('suspOverlay').classList.remove('on'); $('suspModal').style.display='none'; }
+$('suspCancel').addEventListener('click', closeSusp);
+$('suspOverlay').addEventListener('click', closeSusp);
+$('suspConfirm').addEventListener('click', async ()=>{
+  var pick=$('suspReason').value;
+  if(!pick){ toast('정지 사유를 선택해 주세요.'); return; }
+  var reason=pick;
+  if(pick.indexOf('기타')>=0){
+    var etc=$('suspEtc').value.trim();
+    if(!etc){ toast('정지 사유를 입력해 주세요.'); $('suspEtc').focus(); return; }
+    reason='기타 : '+etc;
+  }
+  var code=S.dMemberCode, name=$('dName').textContent||'회원';
+  var btn=$('suspConfirm'); btn.disabled=true; btn.textContent='처리 중...';
+  var res=await setMemberStatus(code,'suspended',reason);
+  btn.disabled=false; btn.textContent='네';
+  if(res && res.ok){ toast(name+' 카마스터를 정지했습니다.'); closeSusp(); closeDrawer(); renderMembers(); }
+  else toast((res&&res.message)||'처리에 실패했습니다.');
+});
+
 $('dSuspend').addEventListener('click', async ()=>{
   var code=S.dMemberCode, name=$('dName').textContent||'회원';
   if(!code) return;
-  var toSuspend = S.dMemberStatus!=='정지';
-  if(toSuspend && !confirm(name+' 카마스터를 정지하시겠습니까?\n\n정지 시 로그인·리워드 수령이 제한됩니다. (언제든 해제 가능)')) return;
+  if(S.dMemberStatus!=='정지'){ openSusp(name); return; }
   var btn=$('dSuspend'); btn.disabled=true; var prev=btn.textContent; btn.textContent='처리 중...';
-  var res=await setMemberStatus(code, toSuspend?'suspended':'verified');
+  var res=await setMemberStatus(code,'verified');
   btn.disabled=false; btn.textContent=prev;
-  if(res && res.ok){ toast(name+(toSuspend?' 카마스터를 정지했습니다.':' 카마스터 정지를 해제했습니다.')); closeDrawer(); renderMembers(); }
-  else { toast((res&&res.message)||'처리에 실패했습니다.'); }
+  if(res && res.ok){ toast(name+' 카마스터 정지를 해제했습니다.'); closeDrawer(); renderMembers(); }
+  else toast((res&&res.message)||'처리에 실패했습니다.');
 });
+
+/* SMS 수신거부 해제 */
+$('dSmsBtn').addEventListener('click', async ()=>{
+  if(!confirm('수신거부를 해제하시겠습니까?')) return;
+  var code=S.dMemberCode;
+  var res=await admFn('set-sms-optout', { code:code, optout:false });
+  if(!res || !res.ok){ toast((res&&res.message)||'처리에 실패했습니다.'); return; }
+  $('dSmsState').innerHTML='<span style="color:var(--muted);">-</span>'; $('dSmsBtn').style.display='none';
+  toast('수신거부를 해제했습니다.');
+  if(confirm('가입 안내 문자를 발송하시겠습니까?')) toast('문자 발송은 문자 대행사 연동 후 제공됩니다.');
+});
+
+/* 비밀번호 초기화 */
+$('dResetPw').addEventListener('click', async ()=>{
+  if(!confirm('비밀번호를 초기화하시겠습니까?')) return;
+  var btn=$('dResetPw'); btn.disabled=true; btn.textContent='처리 중...';
+  var res=await admFn('reset-password', { code:S.dMemberCode });
+  btn.disabled=false; btn.textContent='비밀번호 초기화';
+  if(!res || !res.ok){ toast((res&&res.message)||'초기화에 실패했습니다.'); return; }
+  if(res.sms_blocked) alert('임시 비밀번호가 발급되었습니다.\n\n임시 비밀번호 : '+res.temp_password+'\n\n※ 해당 회원은 SMS 수신거부 상태라 문자가 발송되지 않습니다. 별도로 안내해 주세요.');
+  else alert('임시 비밀번호가 발급되었습니다.\n\n임시 비밀번호 : '+res.temp_password+'\n\n※ 문자 자동 발송은 문자 대행사 연동 후 제공됩니다. 그전까지는 관리자가 직접 안내해 주세요.');
+  toast('비밀번호를 초기화했습니다.');
+});
+
 async function deleteMember(code){
   try{ var r = await fetch(SB_URL+'/functions/v1/carmaster-admin', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+admToken() }, body: JSON.stringify({ action:'delete-member', code:code }) }); return await r.json(); }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
 }
