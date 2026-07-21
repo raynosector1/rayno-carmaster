@@ -980,6 +980,12 @@ async function createPromotion(data){
   }catch(e){ console.error('createPromotion',e); return { ok:false }; }
 }
 function condLabel(p){ return p.cond==='signup' ? '가입 즉시' : p.cond==='monthly' ? '월 시공 '+p.n+'건' : '누적 시공 '+p.n+'건'; }
+async function updatePromotion(id, data){
+  try{
+    await admWrite('promotions?id=eq.'+id,'PATCH',{ name:data.name, cond:data.cond, threshold_n:data.n||0, reward:data.reward, period:data.period, auto:!!data.auto });
+    return { ok:true };
+  }catch(e){ console.error('updatePromotion',e); return { ok:false }; }
+}
 async function renderPromos(){
   if(!S.promos) S.promos = await loadPromotions();
   $('promoList').innerHTML = !S.promos.length ? EMPTY('등록된 프로모션이 없습니다') : S.promos.map(p=>
@@ -994,15 +1000,21 @@ async function renderPromos(){
            <div><div class="pk">달성자</div><div class="pv">${p.achieved.toLocaleString()}명</div></div>
          </div>
        </div>
+       <button class="btn btn-soft pmEdit" style="padding:9px 16px;font-size:13px;font-weight:700;flex-shrink:0;">수정</button>
        <label class="switch"><input type="checkbox" class="pmToggle" ${p.active?'checked':''}><span class="tk"></span></label>
      </div>`).join('');
   $('promoList').querySelectorAll('.pmToggle').forEach(t=> t.addEventListener('change', async ()=>{
     var id = t.closest('[data-id]').dataset.id; var p = S.promos.find(x=>x.id===id);
     try{ await admWrite('promotions?id=eq.'+id,'PATCH',{ active:t.checked }); if(p)p.active=t.checked; toast((p?p.name:'프로모션')+(t.checked?' 프로모션을 재개했습니다.':' 프로모션을 중지했습니다.')); }catch(e){ toast('변경에 실패했습니다.'); if(p)t.checked=p.active; }
   }));
+  $('promoList').querySelectorAll('.pmEdit').forEach(b=> b.addEventListener('click', ()=>{
+    var id = b.closest('[data-id]').dataset.id;
+    var p = S.promos.find(x=>x.id===id);
+    if(p) openPromoDrawer(p);
+  }));
 }
 
-/* ── 프로모션 생성 드로어 ── */
+/* ── 프로모션 생성/수정 드로어 ── */
 let pmCond = 'cumulative', pmPeriod = 'always';
 function pmValidate(){
   const r = $('pmReward').value;
@@ -1013,6 +1025,7 @@ function pmValidate(){
   const b = $('pmCreate'); b.style.opacity = ok?'1':'.45'; b.style.pointerEvents = ok?'auto':'none';
 }
 function pmReset(){
+  pmEditId=null;
   pmCond='cumulative'; pmPeriod='always';
   $('pmName').value=''; $('pmN').value='10'; $('pmNunit').textContent='건 누적 시 지급';
   $('pmNwrap').style.display='flex';
@@ -1023,9 +1036,37 @@ function pmReset(){
   $('pmPeriodSeg').querySelectorAll('.sg').forEach((s,i)=> s.classList.toggle('on', i===0));
   pmValidate();
 }
-function openPromoDrawer(){ pmReset(); $('promoOverlay').classList.add('on'); $('promoDrawer').classList.add('on'); }
+let pmEditId = null;
+function pmFill(p){
+  pmEditId = p.id;
+  $('pmName').value = p.name||'';
+  /* 조건 */
+  pmCond = p.cond||'cumulative';
+  $('pmCondSeg').querySelectorAll('.sg').forEach(function(x){ x.classList.toggle('on', x.dataset.cond===pmCond); });
+  $('pmNwrap').style.display = pmCond==='signup' ? 'none' : 'flex';
+  $('pmNunit').textContent = pmCond==='monthly' ? '건 (별 달성 시 지급)' : '건 누적 시 지급';
+  if(pmCond!=='signup') $('pmN').value = p.n||0;
+  /* 혜택 (목록에 없으면 직접입력) */
+  var sel=$('pmReward'); sel.value = p.reward||'';
+  if(sel.value !== (p.reward||'')){ sel.value='etc'; $('pmRewardEtc').style.display='block'; $('pmRewardEtc').value=p.reward||''; }
+  else { $('pmRewardEtc').style.display='none'; $('pmRewardEtc').value=''; }
+  /* 기간 */
+  var per = String(p.period||'상시');
+  var m = per.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\s*~\s*(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+  var pad=function(v){ return String(v).padStart(2,'0'); };
+  if(m){ pmPeriod='range'; $('pmStart').value=m[1]+'-'+pad(m[2])+'-'+pad(m[3]); $('pmEnd').value=m[4]+'-'+pad(m[5])+'-'+pad(m[6]); $('pmRangeWrap').style.display='grid'; }
+  else { pmPeriod='always'; $('pmStart').value=''; $('pmEnd').value=''; $('pmRangeWrap').style.display='none'; }
+  $('pmPeriodSeg').querySelectorAll('.sg').forEach(function(x){ x.classList.toggle('on', x.dataset.period===pmPeriod); });
+  $('pmAuto').checked = !!p.auto;
+  pmValidate();
+}
+function openPromoDrawer(p){
+  if(p && p.id){ pmReset(); pmFill(p); $('promoDrawerTitle').textContent='프로모션 수정'; $('pmCreate').textContent='수정 저장'; }
+  else { pmReset(); pmEditId=null; $('promoDrawerTitle').textContent='프로모션 생성'; $('pmCreate').textContent='프로모션 생성'; }
+  $('promoOverlay').classList.add('on'); $('promoDrawer').classList.add('on');
+}
 function closePromoDrawer(){ $('promoOverlay').classList.remove('on'); $('promoDrawer').classList.remove('on'); }
-$('newPromo').addEventListener('click', openPromoDrawer);
+$('newPromo').addEventListener('click', function(){ openPromoDrawer(); });
 $('promoDrawerClose').addEventListener('click', closePromoDrawer);
 $('pmCancel').addEventListener('click', closePromoDrawer);
 $('promoOverlay').addEventListener('click', closePromoDrawer);
@@ -1049,6 +1090,16 @@ $('pmCreate').addEventListener('click', async ()=>{
   const n = pmCond==='signup' ? 0 : (+$('pmN').value||0);
   const period = pmPeriod==='always' ? '상시' : ($('pmStart').value.replace(/-/g,'.')+' ~ '+$('pmEnd').value.replace(/-/g,'.'));
   const data = { name:$('pmName').value.trim(), cond:pmCond, n, reward, period, auto:$('pmAuto').checked };
+  if(pmEditId){
+    const res = await updatePromotion(pmEditId, data);
+    if(!res || !res.ok){ toast('프로모션 수정에 실패했습니다.'); return; }
+    const idx = S.promos.findIndex(x=>x.id===pmEditId);
+    if(idx>=0) S.promos[idx] = Object.assign({}, S.promos[idx], data);
+    await renderPromos();
+    toast('‘'+data.name+'’ 프로모션을 수정했습니다.');
+    closePromoDrawer();
+    return;
+  }
   const res = await createPromotion(data);
   if(!res || !res.ok){ toast('프로모션 생성에 실패했습니다.'); return; }
   S.promos.unshift(Object.assign({id:res.id,active:true,achieved:0}, data));
