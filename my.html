@@ -24,6 +24,17 @@ button{cursor:pointer;font-family:inherit}
 .seg>button.on{background:#fff;color:#111;box-shadow:0 2px 6px rgba(0,0,0,.06)}
 input:focus,select:focus,textarea:focus{border-color:#111!important}
 button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-visible,[data-act]:focus-visible,[data-cseg]:focus-visible,a:focus-visible{outline:2.5px solid #FF5A00;outline-offset:2px;border-radius:10px}
+
+.mcard{position:relative;overflow:hidden;border-radius:22px;padding:22px;
+  background:linear-gradient(152deg,#1B1D22 0%,#0E0F12 58%,#15171B 100%);
+  box-shadow:0 16px 38px rgba(14,15,18,.28);}
+.mcard-slash{position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 2px,transparent 2px 11px);
+  -webkit-mask-image:linear-gradient(200deg,#000 0%,transparent 62%);
+  mask-image:linear-gradient(200deg,#000 0%,transparent 62%);}
+.mcard-edge{position:absolute;top:0;right:0;width:62%;height:2px;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,122,51,.35) 35%,#FF5A00 100%);
+  box-shadow:0 0 14px rgba(255,90,0,.55);}
 </style>
 </head>
 <body>
@@ -36,36 +47,74 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
       <div class="link" data-goto="profile" style="width:38px;height:38px;border-radius:50%;background:#fff;border:1.5px solid #EDEDEF;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></div>
     </div>
 
-    <!-- profile -->
-    <div class="row" style="margin-top:20px;"><div style="width:48px;height:48px;border-radius:50%;background:#111;color:#fff;font-size:17px;font-weight:800;display:flex;align-items:center;justify-content:center;" id="avatar"></div><div><div style="font-size:18px;font-weight:800;color:#111;"><span id="homeName">회원</span> 카마스터님</div><div id="cardOrg" style="font-size:13px;color:#8A8A8E;margin-top:2px;">—</div></div></div>
+    <!-- ===== 멤버십 카드 (signature) ===== -->
+    <div class="mcard" style="margin-top:18px;">
+      <div class="mcard-slash"></div>
+      <div class="mcard-edge"></div>
+      <div style="position:relative;">
+        <div style="display:flex;align-items:center;gap:13px;">
+          <div id="avatar" style="width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);color:#fff;font-size:16px;font-weight:800;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);"></div>
+          <div style="min-width:0;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:1.6px;color:#FF7A33;">CARMASTER MEMBERSHIP</div>
+            <div style="margin-top:4px;font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.4px;"><span id="homeName">회원</span> 카마스터님</div>
+            <div id="cardOrg" style="font-size:12.5px;color:#8E939C;margin-top:2px;">—</div>
+          </div>
+        </div>
 
-    <!-- 시공 stats -->
-    <div class="card" style="margin-top:18px;padding:20px 0;display:flex;align-items:center;">
-      <div style="flex:1;text-align:center;"><div style="font-size:13px;color:#8A8A8E;font-weight:600;">이번 달 시공</div><div style="margin-top:8px;font-size:28px;font-weight:800;color:#111;letter-spacing:-0.5px;"><span id="monthCount">0</span><span style="font-size:15px;font-weight:700;color:#8A8A8E;margin-left:3px;">건</span></div></div>
-      <div style="width:1px;height:40px;background:#EDEDEF;"></div>
-      <div style="flex:1;text-align:center;"><div style="font-size:13px;color:#8A8A8E;font-weight:600;">누적 시공</div><div style="margin-top:8px;font-size:28px;font-weight:800;color:#111;letter-spacing:-0.5px;"><span id="totalCount">0</span><span style="font-size:15px;font-weight:700;color:#8A8A8E;margin-left:3px;">건</span></div></div>
+        <div style="margin-top:22px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;">
+          <div style="min-width:0;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;color:#7C818B;">MEMBER No.</div>
+            <div id="cmCode" style="margin-top:5px;font-size:23px;font-weight:800;color:#fff;letter-spacing:2.5px;font-variant-numeric:tabular-nums;">—</div>
+          </div>
+          <button id="copyCode" style="flex-shrink:0;padding:9px 16px;border:1px solid rgba(255,255,255,.22);border-radius:11px;background:rgba(255,255,255,.06);color:#fff;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;">복사</button>
+        </div>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.10);display:flex;align-items:center;">
+          <div style="flex:1;">
+            <div style="font-size:11.5px;color:#8E939C;font-weight:600;">이번 달 시공</div>
+            <div style="margin-top:5px;font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;font-variant-numeric:tabular-nums;"><span id="monthCount">0</span><span style="font-size:13px;font-weight:700;color:#8E939C;margin-left:3px;">건</span></div>
+          </div>
+          <div style="width:1px;height:34px;background:rgba(255,255,255,.10);"></div>
+          <div style="flex:1;padding-left:18px;">
+            <div style="font-size:11.5px;color:#8E939C;font-weight:600;">누적 시공</div>
+            <div style="margin-top:5px;font-size:26px;font-weight:800;color:#fff;letter-spacing:-0.5px;font-variant-numeric:tabular-nums;"><span id="totalCount">0</span><span style="font-size:13px;font-weight:700;color:#8E939C;margin-left:3px;">건</span></div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- reward progress -->
+    <!-- ===== 다음 리워드 ===== -->
     <div class="card" style="margin-top:12px;padding:20px;">
-      <div style="display:flex;align-items:center;gap:8px;"><span style="width:22px;height:22px;border-radius:50%;background:rgba(255,90,0,0.12);color:#FF5A00;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">10</span><span style="font-size:13px;color:#8A8A8E;font-weight:700;">다음 리워드까지</span></div>
-      <div style="margin-top:6px;font-size:28px;font-weight:800;color:#111;letter-spacing:-0.8px;"><span id="rewardRemain" style="color:#FF5A00;">—</span></div>
-      <div style="margin-top:4px;font-size:13.5px;color:#8A8A8E;">유리막 코팅 무료 쿠폰까지</div>
-      <div style="margin-top:16px;height:10px;background:#EFEFF1;border-radius:5px;overflow:hidden;"><div id="rewardBar" style="width:0%;height:100%;background:#FF5A00;border-radius:5px;"></div></div>
-      <div style="margin-top:9px;display:flex;align-items:center;justify-content:space-between;"><span id="rewardProg" style="font-size:12.5px;font-weight:800;color:#FF5A00;">0 / 10건</span><span style="font-size:12.5px;color:#B0B0B4;font-weight:600;">목표 10건</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12.5px;color:#8A8A8E;font-weight:700;">다음 리워드까지</span>
+        <span id="rewardProg" style="font-size:12.5px;font-weight:800;color:#FF5A00;font-variant-numeric:tabular-nums;">0 / 10건</span>
+      </div>
+      <div style="margin-top:8px;display:flex;align-items:baseline;gap:7px;">
+        <span id="rewardRemain" style="font-size:30px;font-weight:800;color:#111;letter-spacing:-1px;">—</span>
+        <span style="font-size:14px;font-weight:700;color:#8A8A8E;">남았어요</span>
+      </div>
+      <div id="rewardName" style="margin-top:3px;font-size:13.5px;color:#8A8A8E;">시공을 채우면 리워드가 지급됩니다</div>
+      <div style="margin-top:16px;height:8px;background:#EFEFF1;border-radius:99px;overflow:hidden;">
+        <div id="rewardBar" style="width:0%;height:100%;background:linear-gradient(90deg,#FF7A33,#FF5A00);border-radius:99px;box-shadow:0 0 10px rgba(255,90,0,.45);"></div>
+      </div>
     </div>
 
-    <!-- 카마스터 코드 -->
-    <div class="card" style="margin-top:12px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;">
-      <div><div style="font-size:12px;color:#8A8A8E;font-weight:600;">내 카마스터 코드</div><div id="cmCode" style="margin-top:5px;font-size:23px;font-weight:800;color:#111;letter-spacing:1px;">—</div></div>
-      <button id="copyCode" style="flex-shrink:0;padding:11px 20px;border:1.5px solid #E7E7E9;border-radius:12px;background:#fff;color:#111;font-size:13px;font-weight:800;">복사</button>
-    </div>
-
-    <!-- list -->
+    <!-- ===== 바로가기 ===== -->
     <div class="card" style="margin-top:12px;padding:4px 6px;">
-      <div class="link" data-goto="coupon" style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px;"><span style="font-size:15px;font-weight:700;color:#111;">내 쿠폰</span><span style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:800;color:#FF5A00;background:rgba(255,90,0,0.12);padding:3px 9px;border-radius:999px;"><b id="couponCount">0</b>장</span><span style="color:#C4C4C8;">›</span></span></div>
-      <div class="link" data-goto="record" style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-top:1px solid #F5F5F6;"><span style="font-size:15px;font-weight:700;color:#111;">시공 내역</span><span style="color:#C4C4C8;">›</span></div>
-      <div class="link" data-goto="reward" style="display:flex;align-items:center;justify-content:space-between;padding:16px 14px;border-top:1px solid #F5F5F6;"><span style="font-size:15px;font-weight:700;color:#111;">리워드 내역</span><span style="color:#C4C4C8;">›</span></div>
+      <div class="link" data-goto="coupon" style="display:flex;align-items:center;gap:12px;padding:15px 14px;">
+        <span style="width:34px;height:34px;border-radius:11px;background:#F4F4F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#111" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"></rect><path d="M12 7v10"></path></svg></span>
+        <span style="flex:1;font-size:15px;font-weight:700;color:#111;">내 쿠폰</span>
+        <span style="font-size:11px;font-weight:800;color:#FF5A00;background:rgba(255,90,0,0.12);padding:3px 9px;border-radius:999px;"><b id="couponCount">0</b>장</span>
+        <span style="color:#C4C4C8;">›</span>
+      </div>
+      <div class="link" data-goto="record" style="display:flex;align-items:center;gap:12px;padding:15px 14px;border-top:1px solid #F5F5F6;">
+        <span style="width:34px;height:34px;border-radius:11px;background:#F4F4F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"></path></svg></span>
+        <span style="flex:1;font-size:15px;font-weight:700;color:#111;">시공 내역</span><span style="color:#C4C4C8;">›</span>
+      </div>
+      <div class="link" data-goto="reward" style="display:flex;align-items:center;gap:12px;padding:15px 14px;border-top:1px solid #F5F5F6;">
+        <span style="width:34px;height:34px;border-radius:11px;background:#F4F4F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V12M12 20V5M19 20v-6"></path></svg></span>
+        <span style="flex:1;font-size:15px;font-weight:700;color:#111;">리워드 내역</span><span style="color:#C4C4C8;">›</span>
+      </div>
     </div>
 
     <div id="noticeCard" style="display:none;margin-top:14px;">
@@ -75,7 +124,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
   </section>
 
   <!-- ===== COUPON ===== -->
-  <section class="tab" data-tab="coupon">
+  <section class="tab" >
     <div style="display:flex;align-items:center;gap:12px;padding-top:6px;"><div class="link" data-goto="home" style="width:38px;height:38px;border-radius:50%;background:#fff;border:1.5px solid #EDEDEF;display:flex;align-items:center;justify-content:center;color:#111;font-size:19px;">‹</div><span style="font-size:20px;font-weight:800;color:#111;">내 쿠폰</span></div>
 
     <div class="seg" style="margin-top:16px;">
@@ -374,10 +423,11 @@ async function loadMyStats(){
     try{ var c = await rest('carmasters?select=login_id,phone,region&limit=1'); if(c && c[0]) prof = c[0]; }catch(e){}
     var coupons = 0;
     try{ var cp = await rest('coupons?select=id&status=eq.issued'); coupons = (cp||[]).length; }catch(e){}
-    var goal = 10;
-    try{ var rr = await rest('reward_rules?select=min_count&item_type=eq.coupon&active=eq.true&order=min_count.asc');
+    var goal = 10, goalName = '';
+    try{ var rr = await rest('reward_rules?select=min_count,item_name&active=eq.true&order=min_count.asc');
          var nx = (rr||[]).find(function(x){ return x.min_count > (me.total_count||0); });
-         if(nx) goal = nx.min_count; else if(rr && rr.length) goal = rr[rr.length-1].min_count; }catch(e){}
+         if(nx){ goal = nx.min_count; goalName = nx.item_name||''; }
+         else if(rr && rr.length){ goal = rr[rr.length-1].min_count; goalName = rr[rr.length-1].item_name||''; } }catch(e){}
     var name = me.name || '회원';
     var org = [me.brand, me.office].filter(Boolean).join(' · ') || '—';
     /* .then 핸들러가 안 채우는 항목은 여기서 직접 세팅 */
@@ -392,7 +442,7 @@ async function loadMyStats(){
       name: name, code: me.code || '—', org: org,
       month_count: me.month_count||0, total_count: me.total_count||0,
       coupons: coupons,
-      reward_progress: { current: me.total_count||0, goal: goal },
+      reward_progress: { current: me.total_count||0, goal: goal, name: goalName },
       profile: { loginId: prof.login_id||'—', phone: _maskPhone(prof.phone) }
     };
   }catch(e){ console.error('마이페이지 로딩 실패', e); return {}; }
@@ -501,6 +551,7 @@ const S = { name:'', code:'', org:'' };
     if(res.reward_progress){
       var rp=res.reward_progress, c=rp.current||0, gl=rp.goal||10, rem=Math.max(gl-c,0);
       var rr=id('rewardRemain'); if(rr)rr.textContent=rem+'건';
+      var rn=id('rewardName'); if(rn && rp.name) rn.textContent=rp.name+' 지급까지';
       var rpv=id('rewardProg'); if(rpv)rpv.textContent=c+' / '+gl+'건';
       var rb=id('rewardBar');
       if(rb){ rb.style.width='0%'; rb.style.transition='width 1.1s cubic-bezier(.2,.8,.3,1)';
