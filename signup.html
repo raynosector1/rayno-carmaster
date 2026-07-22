@@ -81,12 +81,15 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;"><div style="width:100%;height:4px;border-radius:2px;background:#FF5A00;"></div><div style="font-size:12px;font-weight:700;color:#FF5A00;white-space:nowrap;">2 본인인증</div></div>
             <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;"><div style="width:100%;height:4px;border-radius:2px;background:#EAEAEC;"></div><div style="font-size:12px;font-weight:700;color:#B4B4B8;white-space:nowrap;">3 계정·약관</div></div>
           </div>
-          <div style="margin-top:20px;font-size:14px;font-weight:800;color:#111;margin-bottom:10px;">통신사</div>
-          <select id="telco" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled="" selected="">통신사 선택</option><option>SKT</option><option>KT</option><option>LG U+</option><option>알뜰폰</option></select>
-          <div style="margin:16px 0 10px;font-size:14px;font-weight:800;color:#111;">휴대폰번호</div>
-          <div style="display:flex;gap:8px;"><input id="phone" type="tel" placeholder="휴대폰번호 입력" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;" inputmode="numeric"><button style="flex-shrink:0;padding:0 16px;border:none;background:#111;color:#fff;font-size:13px;font-weight:700;border-radius:14px;font-family:inherit;" id="reqCode">인증요청</button></div>
-          <div style="margin:16px 0 10px;font-size:14px;font-weight:800;color:#111;">인증번호</div>
-          <div style="display:flex;gap:8px;"><div style="flex:1;position:relative;"><input id="code" type="tel" inputmode="numeric" maxlength="6" placeholder="인증번호 6자리" style="width:100%;border:1.5px solid #FF5A00;border-radius:14px;padding:17px 62px 17px 16px;font-size:17px;color:#111;outline:none;background:#fff;"><span id="codeTimer" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:#FF5A00;display:none;">03:00</span></div><button style="flex-shrink:0;padding:0 20px;border:1.5px solid #111;background:#fff;color:#111;font-size:13px;font-weight:700;border-radius:14px;font-family:inherit;" id="confirmCode">확인</button></div>
+          <div style="margin-top:24px;display:flex;flex-direction:column;gap:14px;">
+            <div id="niceResult" style="display:none;width:100%;align-items:center;gap:12px;background:#F3FBF7;border:1.5px solid #22B07D;border-radius:14px;padding:16px;">
+              <span style="width:28px;height:28px;border-radius:50%;background:#22B07D;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#10003;</span>
+              <div style="flex:1;min-width:0;"><div style="font-size:14.5px;font-weight:800;color:#111;">본인인증 완료</div><div id="niceInfo" style="font-size:13px;color:#5A5A5E;margin-top:3px;"></div></div>
+            </div>
+            <button id="niceVerify" style="width:100%;padding:18px 0;border:none;border-radius:14px;background:#111;color:#fff;font-size:16px;font-weight:800;font-family:inherit;">휴대폰 본인인증 하기</button>
+            <div id="niceState" style="display:none;font-size:13px;font-weight:600;color:#8A8A8E;text-align:center;line-height:1.5;"></div>
+          </div>
+          <div style="margin-top:18px;display:flex;align-items:flex-start;gap:10px;background:#F5F5F6;border-radius:14px;padding:14px 16px;"><span style="width:24px;height:24px;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</span><div style="font-size:13.5px;line-height:1.5;color:#6A6A6E;font-weight:500;">버튼을 누르면 <b style="color:#111;font-weight:700;">NICE 본인확인</b> 창이 열립니다. 휴대폰 인증을 완료하면 자동으로 다음 단계를 진행할 수 있어요.</div></div>
           <div style="flex:1;min-height:24px;"></div>
           <div style="position:sticky;bottom:0;background:#fff;margin:0 -26px;padding:14px 26px calc(20px + env(safe-area-inset-bottom));border-top:1px solid #EFEFF1;">
           <div style="display:flex;gap:10px;">
@@ -333,17 +336,72 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
     function g1(){ var ok=brand.value&&region.value&&office.value&&nm.value.trim()&&bd.value.trim().length===8&&(!/기타/.test(brand.value)||(bEtc&&bEtc.value.trim()))&&(!/기타/.test(office.value)||(oEtc&&oEtc.value.trim())); gate(n1,!!ok); }
     g1();
   }
-  /* ===== step2 ===== */
-  var code=id('code');
-  if(code){ var telco=id('telco'),phone=id('phone'),n2=id('next2'),verified=false;
-    var codeTimer=id('codeTimer'),tHandle=null,expired=false,codeWrap=code.parentNode,codeRow=codeWrap.parentNode;
-    function render(l){ var m=String(Math.floor(l/60)).padStart(2,'0'),s=String(l%60).padStart(2,'0'); codeTimer.textContent=m+':'+s; }
-    function startTimer(){ clearInterval(tHandle); var left=180; expired=false; codeTimer.style.display='block'; codeTimer.style.color='#FF5A00'; render(left); tHandle=setInterval(function(){ left--; if(left<=0){ clearInterval(tHandle); expired=true; codeTimer.textContent='만료'; codeTimer.style.color='#B4B4B8'; return; } render(left); },1000); }
-    function g2(){ gate(n2, verified && code.value.replace(/\D/g,'').length===6); }
-    var reqBtn=id('reqCode'); if(reqBtn)reqBtn.addEventListener('click',function(){ if(!telco.value||phone.value.replace(/\D/g,'').length<10){ if(!telco.value)telco.style.borderColor='#FF3B30'; if(phone.value.replace(/\D/g,'').length<10)phone.style.borderColor='#FF3B30'; T('통신사와 휴대폰번호를 입력해 주세요.'); return; } phone.style.borderColor='#E7E7E9'; telco.style.borderColor='#E7E7E9'; verifyIdentity({telco:telco.value,phone:phone.value}).then(function(rv){ if(rv&&rv.ok){ startTimer(); reqBtn.textContent='재발송'; T('인증번호를 발송했어요.'); } else { T((rv&&rv.message)||'본인인증에 실패했습니다.'); } }); });
-    var cfBtn=id('confirmCode'); if(cfBtn)cfBtn.addEventListener('click',function(){ if(codeTimer.style.display==='none'&&!verified){ T('먼저 인증요청을 눌러 주세요.'); return; } if(expired){ code.style.borderColor='#FF3B30'; showErr(codeRow,'code','인증시간이 만료되었어요. 재발송해 주세요.'); return; } if(code.value.replace(/\D/g,'').length===6){ verified=true; clearInterval(tHandle); codeTimer.style.display='none'; code.style.borderColor='#22B07D'; code.style.background='#F3FBF7'; code.readOnly=true; hideErr(codeRow,'code'); cfBtn.textContent='인증완료'; cfBtn.style.background='#22B07D'; cfBtn.style.borderColor='#22B07D'; cfBtn.style.color='#fff'; telco.disabled=true; phone.readOnly=true; if(reqBtn){reqBtn.disabled=true;reqBtn.style.opacity='0.4';} showOk(codeRow,'인증이 완료되었어요.'); S.telco=telco.value;S.phone=phone.value;S.code=code.value; var rv=id('rvInfo'); if(rv)rv.textContent=(S.name||'회원')+' · '+maskPhone(S.phone); T('인증되었습니다.'); g2(); } else { code.style.borderColor='#FF3B30'; showErr(codeRow,'code','인증번호 6자리를 정확히 입력해 주세요.'); } });
-    code.addEventListener('input',function(){ if(!verified)code.style.borderColor='#FF5A00'; hideErr(codeRow,'code'); g2(); });
-    [telco,phone].forEach(function(x){ if(x){x.addEventListener('input',g2);x.addEventListener('change',g2);} });
+  /* ===== step2 : NICE 본인인증 ===== */
+  var niceBtn=id('niceVerify');
+  if(niceBtn){
+    var AUTH_API='https://carmaster-auth.raynofilm.co.kr';
+    var n2=id('next2'), nState=id('niceState'), nBox=id('niceResult'), nInfo=id('niceInfo');
+    var verified=false, pollT=null, attemptId=null, tries=0;
+
+    function setState(msg,color){ if(!nState)return; nState.textContent=msg||''; nState.style.color=color||'#8A8A8E'; nState.style.display=msg?'block':'none'; }
+    function stopPoll(){ if(pollT){ clearInterval(pollT); pollT=null; } }
+    function g2(){ gate(n2, verified); }
+
+    function resetBtn(){ niceBtn.disabled=false; niceBtn.style.opacity='1'; niceBtn.textContent='휴대폰 본인인증 하기'; }
+    function fail(msg){ stopPoll(); verified=false; VTOKEN=null; resetBtn(); setState(msg||'인증이 완료되지 않았습니다. 다시 시도해 주세요.','#FF3B30'); g2(); }
+
+    function finish(res){
+      stopPoll();
+      fn('verify-nice', { nice_token: res.token }).then(function(r){
+        if(!r || !r.ok){ fail((r&&r.message)||'인증 처리에 실패했습니다.'); return; }
+        VTOKEN = r.token; verified = true;
+        var dp = r.display || {};
+        S.name = dp.name || res.name || S.name;
+        niceBtn.style.display='none';
+        if(nBox) nBox.style.display='flex';
+        if(nInfo) nInfo.textContent = (S.name||'회원') + ' · ' + (dp.phone_masked || ('010-****-'+(res.phone_last4||'')));
+        setState('');
+        var rv=id('rvInfo'); if(rv) rv.textContent=(S.name||'회원')+' · '+(dp.phone_masked||'');
+        T('본인인증이 완료되었습니다.');
+        g2();
+      });
+    }
+
+    function poll(){
+      tries=0;
+      pollT=setInterval(function(){
+        tries++;
+        if(tries>300){ fail('인증 시간이 만료되었습니다. 다시 시도해 주세요.'); return; }
+        fetch(AUTH_API+'/v1/verify/result?attempt_id='+encodeURIComponent(attemptId))
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if(!d) return;
+            if(d.status==='verified') finish(d);
+            else if(d.status==='failed') fail('본인인증에 실패했습니다. 다시 시도해 주세요.');
+            else if(d.status==='expired') fail('인증 시간이 만료되었습니다. 다시 시도해 주세요.');
+          })
+          .catch(function(){});
+      },2000);
+    }
+
+    niceBtn.addEventListener('click',function(){
+      if(verified) return;
+      niceBtn.disabled=true; niceBtn.style.opacity='0.5'; niceBtn.textContent='인증창을 여는 중...';
+      setState('');
+      fetch(AUTH_API+'/v1/verify/start',{ method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' })
+        .then(function(r){ if(!r.ok) throw new Error('start '+r.status); return r.json(); })
+        .then(function(d){
+          if(!d || !d.auth_url) throw new Error('no url');
+          attemptId=d.attempt_id;
+          var p=window.open(d.auth_url,'niceAuth','width=480,height=812,menubar=no,status=no,toolbar=no,scrollbars=yes');
+          if(!p){ fail('팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도해 주세요.'); return; }
+          niceBtn.textContent='인증 진행 중...';
+          setState('인증 창에서 본인확인을 완료해 주세요.');
+          poll();
+        })
+        .catch(function(){ fail('인증 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.'); });
+    });
+
     g2();
   }
   /* ===== step3 ===== */
@@ -431,7 +489,7 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
   function openTerms(k){ var t=TERMS[k]; if(!t||!tSheet)return; termsLastFocus=document.activeElement; tTitle.textContent=t.title; tBody.innerHTML=t.body; tBody.scrollTop=0; tSheet.style.display='block'; tSheet.getBoundingClientRect(); tBackdrop.style.opacity='1'; tPanel.style.transform='translateY(0)'; var c=id('termsClose'); if(c)c.focus(); }
   function closeTerms(){ if(!tSheet||tSheet.style.display==='none')return; tBackdrop.style.opacity='0'; tPanel.style.transform='translateY(100%)'; setTimeout(function(){ tSheet.style.display='none'; if(termsLastFocus&&termsLastFocus.focus)termsLastFocus.focus(); },320); }
   if(tSheet)tSheet.addEventListener('keydown',function(e){ if(e.key==='Escape'){ closeTerms(); return; } if(e.key==='Tab'){ var f=termsFocusables(); if(!f.length)return; var first=f[0],last=f[f.length-1]; if(e.shiftKey&&document.activeElement===first){ e.preventDefault(); last.focus(); } else if(!e.shiftKey&&document.activeElement===last){ e.preventDefault(); first.focus(); } } });
-  ['brand','region','office','name','birth','telco','phone','code','loginId','password','password2'].forEach(function(x){ var el=id(x); if(el)el.setAttribute('aria-required','true'); });
+  ['brand','region','office','name','birth','loginId','password','password2'].forEach(function(x){ var el=id(x); if(el)el.setAttribute('aria-required','true'); });
   D.addEventListener('click',function(e){ var tr=e.target.closest('[data-terms]'); if(tr&&D.contains(tr)){ e.stopPropagation(); openTerms(tr.getAttribute('data-terms')); } });
   if(id('termsClose'))id('termsClose').addEventListener('click',closeTerms);
   if(id('termsConfirm'))id('termsConfirm').addEventListener('click',closeTerms);
