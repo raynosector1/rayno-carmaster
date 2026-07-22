@@ -1,0 +1,22 @@
+[Unit]
+Description=Rayno Carmaster NICE Auth Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=raynoauth
+Group=raynoauth
+WorkingDirectory=/opt/rayno-auth
+ExecStart=/usr/bin/node /opt/rayno-auth/server.js
+Restart=always
+RestartSec=3
+
+# 보안 강화
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
