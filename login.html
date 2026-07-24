@@ -42,6 +42,7 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
             <input id="loginId" type="text" placeholder="아이디" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false">
             <div style="position:relative;background:#fff;border:1.5px solid #E7E7E9;border-radius:14px;"><input id="password" type="password" placeholder="비밀번호" style="width:100%;border:none;background:none;outline:none;padding:17px 52px 17px 16px;font-size:17px;color:#111;font-family:inherit;" autocomplete="current-password"><button type="button" data-eye="" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:6px;cursor:pointer;line-height:0;"><svg data-off-ic="" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg data-on-ic="" style="display:none" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF5A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3 L21 21"></path></svg></button></div>
           </div>
+          <label for="saveId" style="margin-top:14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;"><input type="checkbox" id="saveId" style="width:18px;height:18px;accent-color:#FF5A00;margin:0;cursor:pointer;"><span style="font-size:14px;color:#5A5A5E;font-weight:600;">아이디 저장</span></label>
           <button style="margin-top:14px;width:100%;padding:19px 0;border:none;border-radius:999px;background:#FF5A00;color:#fff;font-size:17px;font-weight:800;font-family:inherit;" id="loginBtn" data-href="my.html" data-gate="0">로그인</button>
           <div id="loginErr" style="display:none;margin-top:12px;align-items:center;gap:7px;justify-content:center;color:#E23B3B;font-size:13px;font-weight:600;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E23B3B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg><span>아이디 또는 비밀번호를 확인해 주세요.</span></div>
           <div style="margin-top:18px;text-align:center;font-size:13.5px;color:#8A8A8E;font-weight:600;"><span data-go="1" style="cursor:pointer;color:#8A8A8E;font-weight:600;">아이디 찾기</span> &nbsp;&nbsp;<span style="color:#DADADC;">|</span>&nbsp;&nbsp; <span data-go="2" style="cursor:pointer;color:#8A8A8E;font-weight:600;">비밀번호 찾기</span></div>
@@ -253,11 +254,21 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
   /* ===== done → my ===== */
   D.querySelectorAll('[data-href]').forEach(function(el){ if(el.id)return; });
   /* ===== login ===== */
+  /* 아이디 저장 — 이 브라우저에만 남고 서버로 가지 않습니다. 비밀번호는 저장하지 않습니다. */
+  var SAVED_ID_KEY='cm_saved_id';
+  function readSavedId(){ try{ return localStorage.getItem(SAVED_ID_KEY)||''; }catch(e){ return ''; } }
+  function writeSavedId(v){ try{ if(v) localStorage.setItem(SAVED_ID_KEY,v); else localStorage.removeItem(SAVED_ID_KEY); }catch(e){} }
+
   var loginBtn=id('loginBtn');
-  if(loginBtn){ var li=id('loginId'),lp=id('password');
+  if(loginBtn){ var li=id('loginId'),lp=id('password'),sv=id('saveId');
+    (function(){
+      var saved=readSavedId();
+      if(saved && li){ li.value=saved; if(sv) sv.checked=true; if(lp) setTimeout(function(){ lp.focus(); },0); }
+    })();
+    if(sv) sv.addEventListener('change',function(){ if(!sv.checked) writeSavedId(''); });
     function gl(){ loginBtn.dataset.gate=(li.value.trim()&&lp.value.trim())?'1':'0'; }
     [li,lp].forEach(function(x){ if(x)x.addEventListener('input',function(){ gl(); var e=id('loginErr'); if(e)e.style.display='none'; li.style.borderColor='#E7E7E9'; lp.style.borderColor='#E7E7E9'; }); });
-    loginBtn.addEventListener('click',function(){ if(loginBtn.dataset.gate==='0'){shake(loginBtn);return;} login(li.value,lp.value).then(function(res){ if(res&&res.ok){ location.href='my.html'; } else { var e=id('loginErr'); if(e){ e.querySelector('span').textContent=(res&&res.message)||'로그인 정보를 확인해 주세요.'; e.style.display='flex'; } li.style.borderColor='#E23B3B'; lp.style.borderColor='#E23B3B'; shake(loginBtn); } }); });
+    loginBtn.addEventListener('click',function(){ if(loginBtn.dataset.gate==='0'){shake(loginBtn);return;} login(li.value,lp.value).then(function(res){ if(res&&res.ok){ writeSavedId((sv&&sv.checked)?li.value.trim():''); location.href='my.html'; } else { var e=id('loginErr'); if(e){ e.querySelector('span').textContent=(res&&res.message)||'로그인 정보를 확인해 주세요.'; e.style.display='flex'; } li.style.borderColor='#E23B3B'; lp.style.borderColor='#E23B3B'; shake(loginBtn); } }); });
     gl();
   }
   /* ===== find id ===== */
