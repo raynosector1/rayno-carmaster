@@ -450,6 +450,9 @@ async function loadMyStats(){
     _CUR = { brand: me.brand||'', brand_etc: me.brand_etc||'',
              region: me.region||'',
              office: me.office||'', office_etc: me.office_etc||'' };
+
+    /* 관리자가 비밀번호를 초기화한 계정이면 새 비밀번호부터 정하게 한다 */
+    if(me.pw_reset_required) setTimeout(showForcePwModal, 300);
     initEdit();
     loadNotices(); loadRewardList(); loadRecordList();
     return {
@@ -477,6 +480,62 @@ async function updateProfile(data){
     }});
     return r || { ok:false };
   }catch(e){ return { ok:false, message:'저장에 실패했습니다.' }; }
+}
+
+/* 비밀번호 변경 (본인) */
+async function changeMyPassword(currentPw, newPw){
+  try{
+    var r = await api('/v1/me/password', { method:'POST', body:{
+      current_password: currentPw || '', new_password: newPw
+    }});
+    return r || { ok:false };
+  }catch(e){ return { ok:false, message:'변경에 실패했습니다.' }; }
+}
+
+/* 임시 비밀번호로 들어온 경우: 새 비밀번호를 정할 때까지 닫히지 않는 안내 */
+function showForcePwModal(){
+  if(document.getElementById('forcePwOv')) return;
+  var D = document.getElementById('device') || document.body;
+  var ov = document.createElement('div');
+  ov.id = 'forcePwOv';
+  ov.style.cssText = 'position:absolute;inset:0;z-index:120;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;';
+  var sh = document.createElement('div');
+  sh.style.cssText = 'width:100%;background:#fff;border-radius:22px 22px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));';
+  sh.innerHTML =
+    '<div style="font-size:19px;font-weight:800;color:#111;">새 비밀번호를 설정해 주세요</div>'+
+    '<div style="margin-top:10px;font-size:13.5px;line-height:1.7;color:#6A6A6E;">'+
+      '관리자가 발급한 <b style="color:#111;">임시 비밀번호</b>로 로그인하셨습니다.<br>'+
+      '안전을 위해 지금 새 비밀번호로 변경해 주세요.'+
+    '</div>'+
+    '<input id="fpNew" type="password" placeholder="새 비밀번호" autocomplete="new-password" '+
+      'style="width:100%;margin-top:16px;border:1.5px solid #E7E7E9;border-radius:14px;padding:16px;font-size:16px;color:#111;outline:none;background:#fff;">'+
+    '<input id="fpNew2" type="password" placeholder="새 비밀번호 확인" autocomplete="new-password" '+
+      'style="width:100%;margin-top:10px;border:1.5px solid #E7E7E9;border-radius:14px;padding:16px;font-size:16px;color:#111;outline:none;background:#fff;">'+
+    '<div style="margin-top:8px;font-size:12.5px;color:#8A8A8E;">영문·숫자·특수문자를 모두 포함해 6자 이상</div>'+
+    '<div id="fpErr" style="display:none;margin-top:8px;font-size:13px;font-weight:600;color:#E23B3B;"></div>'+
+    '<button id="fpSave" style="width:100%;margin-top:18px;padding:17px 0;border:none;border-radius:999px;background:#FF5A00;color:#fff;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;">변경하기</button>'+
+    '<div id="fpLater" style="margin-top:14px;text-align:center;font-size:13.5px;color:#8A8A8E;font-weight:600;cursor:pointer;">나중에 하기 (로그아웃)</div>';
+  ov.appendChild(sh);
+  D.appendChild(ov);
+
+  function err(m){ var e=document.getElementById('fpErr'); if(e){ e.textContent=m||''; e.style.display=m?'block':'none'; } }
+
+  document.getElementById('fpSave').addEventListener('click', function(){
+    var a=document.getElementById('fpNew').value, b=document.getElementById('fpNew2').value;
+    if(!a || a!==b){ err('새 비밀번호가 일치하지 않습니다.'); return; }
+    var btn=this; btn.disabled=true; btn.textContent='변경 중...';
+    changeMyPassword('', a).then(function(res){
+      btn.disabled=false; btn.textContent='변경하기';
+      if(!res || !res.ok){ err((res && res.message) || '변경에 실패했습니다.'); return; }
+      ov.remove();
+      alert('비밀번호가 변경되었습니다.');
+    });
+  });
+
+  document.getElementById('fpLater').addEventListener('click', function(){
+    try{ sessionStorage.removeItem('cm_token'); }catch(e){}
+    location.href='login.html';
+  });
 }
 
 /* 회원 탈퇴 (본인 신청) */

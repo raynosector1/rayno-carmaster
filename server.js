@@ -562,6 +562,8 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 400, { ok: false, message: '아이디가 일치하지 않습니다.' });
       }
       await auth.changePassword(rows[0].user_id, body.password);
+      await db.execute('UPDATE ?? SET pw_reset_required = 0 WHERE id = ?',
+        [db.T.APP_USERS, rows[0].user_id]);
       log('reset_pw_succeeded');
       return sendJson(res, 200, { ok: true });
     }
@@ -592,6 +594,9 @@ const server = http.createServer(async (req, res) => {
         `SELECT COUNT(*) AS n FROM ?? WHERE carmaster_id = ? AND status = 'issued'`,
         [db.T.COUPONS, me.id]);
 
+      const [acc] = await db.query(
+        'SELECT pw_reset_required FROM ?? WHERE id = ? LIMIT 1', [db.T.APP_USERS, p.sub]);
+
       const rules = await db.query(
         `SELECT min_count, item_name FROM ?? WHERE active = 1 ORDER BY min_count ASC`,
         [db.T.REWARD_RULES]);
@@ -616,7 +621,8 @@ const server = http.createServer(async (req, res) => {
         total_count: total,
         coupons: Number(cp.n || 0),
         goal: next ? Number(next.min_count) : 10,
-        goal_name: next ? next.item_name : ''
+        goal_name: next ? next.item_name : '',
+        pw_reset_required: !!(acc && Number(acc.pw_reset_required) === 1)
       });
     }
 
@@ -671,6 +677,35 @@ const server = http.createServer(async (req, res) => {
         brand_label: (body.brand === '기타' && body.brand_etc) ? body.brand_etc : body.brand,
         office_label: (body.office === '기타' && body.office_etc) ? body.office_etc : body.office
       });
+    }
+
+    // ───── 비밀번호 변경 (본인) ─────
+    if (path === '/v1/me/password' && req.method === 'POST') {
+      const p = auth.authFromHeader(req);
+      const body = await readJsonBody(req);
+
+      const [acc] = await db.query(
+        'SELECT id, password_hash, pw_reset_required FROM ?? WHERE id = ? LIMIT 1',
+        [db.T.APP_USERS, p.sub]);
+      if (!acc) throw new Error('계정을 찾을 수 없습니다.');
+
+      const forced = Number(acc.pw_reset_required) === 1;
+      // 관리자 초기화 직후(강제 변경)에는 방금 입력한 임시 비밀번호를 다시 묻지 않는다
+      if (!forced) {
+        if (!auth.verifyPassword(body.current_password, acc.password_hash)) {
+          throw new Error('현재 비밀번호가 올바르지 않습니다.');
+        }
+      }
+      if (auth.verifyPassword(body.new_password, acc.password_hash)) {
+        throw new Error('이전과 다른 비밀번호를 사용해 주세요.');
+      }
+
+      await auth.changePassword(acc.id, body.new_password);
+      await db.execute('UPDATE ?? SET pw_reset_required = 0 WHERE id = ?',
+        [db.T.APP_USERS, acc.id]);
+
+      log('password_changed', { forced: forced ? 1 : 0 });
+      return sendJson(res, 200, { ok: true });
     }
 
     // ───── 회원 탈퇴 (본인 신청) ─────
@@ -909,6 +944,9 @@ const server = http.createServer(async (req, res) => {
           // hex는 전부 문자(a~f)일 수 있어 숫자를 한 자리 강제로 넣는다
           const temp = 'Rk' + crypto.randomBytes(4).toString('hex') + crypto.randomInt(10) + '!';
           await auth.changePassword(cm.user_id, temp);
+          // 임시 비밀번호로 로그인하면 새 비밀번호를 정하도록 표시해 둔다
+          await db.execute('UPDATE ?? SET pw_reset_required = 1 WHERE id = ?',
+            [db.T.APP_USERS, cm.user_id]);
           log('admin_password_reset');
           return sendJson(res, 200, { ok: true, temp_password: temp });
         }
