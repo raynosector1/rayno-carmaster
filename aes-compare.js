@@ -74,16 +74,17 @@ function maskPhone(v) {
     const rows = await db.query(
       `SELECT id, code, phone_last4,
               LENGTH(phone) AS hexlen,
-              LEFT(phone, 8) AS head8,
-              CAST(AES_DECRYPT(UNHEX(phone), ?) AS CHAR) AS dec
+              LEFT(phone, 8) AS head8, phone AS fullhex,
+              CAST(AES_DECRYPT(UNHEX(phone), ?) AS CHAR) AS plainval
          FROM rk_carmaster_carmasters
         ORDER BY id LIMIT 10`, [key]);
     if (!rows.length) line('   회원 없음');
     for (const r of rows) {
       line(`   [${r.code}] 암호문 ${r.hexlen}자 (${r.head8}...)  뒤4자리 ${r.phone_last4}`);
-      line(`        복호화 결과 : ${maskPhone(r.dec)}`);
-      if (r.dec) {
-        line(`        평문 형식   : 길이 ${String(r.dec).length}자, 하이픈 ${String(r.dec).includes('-') ? '있음' : '없음'}`);
+      line(`        암호문 전체 : ${r.fullhex}`);
+      line(`        복호화 결과 : ${maskPhone(r.plainval)}`);
+      if (r.plainval) {
+        line(`        평문 형식   : 길이 ${String(r.plainval).length}자, 하이픈 ${String(r.plainval).includes('-') ? '있음' : '없음'}`);
       }
     }
   } catch (e) { line(`   조회 오류 — ${e.message}`); }
@@ -92,10 +93,10 @@ function maskPhone(v) {
   try {
     const rows = await db.query(
       `SELECT id, LENGTH(email) AS hexlen,
-              CAST(AES_DECRYPT(UNHEX(email), ?) AS CHAR) AS dec
+              CAST(AES_DECRYPT(UNHEX(email), ?) AS CHAR) AS plainval
          FROM rk_carmaster_admins ORDER BY id LIMIT 5`, [key]);
     for (const r of rows) {
-      const d = r.dec ? String(r.dec) : null;
+      const d = r.plainval ? String(r.plainval) : null;
       line(`   [id ${r.id}] 암호문 ${r.hexlen}자 → 복호화 ${d ? d.replace(/^(.{2}).*(@.*)$/, '$1***$2') : '실패 / NULL'}`);
     }
   } catch (e) { line(`   조회 오류 — ${e.message}`); }
