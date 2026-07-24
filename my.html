@@ -606,6 +606,8 @@ const S = { name:'', code:'', org:'' };
         '<div style="margin-top:22px;display:flex;gap:10px;">'+
         '<button data-lv="cancel" style="flex:1;padding:15px 0;border:1.5px solid #E7E7E9;background:#fff;color:#111;font-size:15px;font-weight:700;border-radius:14px;cursor:pointer;">취소</button>'+
         '<button data-lv="go" style="flex:1;padding:15px 0;border:none;background:#D64545;color:#fff;font-size:15px;font-weight:800;border-radius:14px;cursor:pointer;">탈퇴하기</button></div>';
+      ov.appendChild(sh);
+      D.appendChild(ov);
       ov.addEventListener('click',function(e){
         var v=e.target.getAttribute&&e.target.getAttribute('data-lv');
         if(e.target===ov||v==='cancel'){ ov.remove(); return; }
