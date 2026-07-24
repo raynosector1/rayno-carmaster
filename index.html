@@ -115,8 +115,7 @@ button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2.5px soli
 
 /* ── 프로모션 연동 (관리자 promotions → 웰컴기프트 화면) ── */
 (function(){
-  var SB_URL='https://cgfgjxdhhgfjzimerxuc.supabase.co';
-  var SB_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
+  var API='https://carmaster-auth.raynofilm.co.kr';
   var box=document.getElementById('benefitList');
   if(!box) return;
   function esc(s){ return String(s==null?'':s).replace(/[&<>\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]; }); }
@@ -143,9 +142,10 @@ button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2.5px soli
         '<div style=\"font-size:13px;color:#8A8A8E;margin-top:4px;\">'+esc(descOf(p,up))+'</div>'+
       '</div></div>';
   }
-  fetch(SB_URL+'/rest/v1/promotions?select=*&active=eq.true', { headers:{ apikey:SB_ANON } })
-    .then(function(r){ return r.ok ? r.json() : []; })
-    .then(function(list){
+  fetch(API+'/v1/promotions')
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(res){
+      var list = (res && res.items) || [];
       if(!Array.isArray(list) || !list.length){ box.innerHTML=''; return; }
       var today=new Date(); today.setHours(0,0,0,0);
       list.forEach(function(p){ var sd=startDate(p.period); p._up = !!(sd && sd>today); });
