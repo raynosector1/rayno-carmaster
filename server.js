@@ -319,11 +319,13 @@ async function doSignup(body) {
       { loginId, password: body.password, role: 'carmaster' }, tx);
 
     // code 는 트리거가 채운다. phone_last4 는 평문 기준으로 직접 넣는다.
+    // code 는 빈 값으로 넣는다. 트리거가 CM-n 형태로 채번한다.
+    // (MySQL 5.6은 NOT NULL·기본값 없는 칸을 생략하면 트리거 실행 전에 거부한다)
     await tx.query(
-      `INSERT INTO ?? (id, user_id, login_id, status, name, phone, phone_last4, di_hash,
+      `INSERT INTO ?? (id, user_id, login_id, code, status, name, phone, phone_last4, di_hash,
                        verified_at, brand, brand_etc, region, office, office_etc,
                        agree_privacy, agree_outsourcing, agree_marketing, agreed_at)
-       VALUES (?, ?, ?, 'verified', ?, ${encPhone.sql}, ?, ?,
+       VALUES (?, ?, ?, '', 'verified', ?, ${encPhone.sql}, ?, ?,
                UTC_TIMESTAMP(), ?, ?, ?, ?, ?, 1, 1, ?, UTC_TIMESTAMP())`,
       [db.T.CARMASTERS, carmasterId, userId, loginId, v.name,
        ...encPhone.params, phone.slice(-4), v.di_hash,
@@ -477,6 +479,7 @@ const server = http.createServer(async (req, res) => {
 
     // ───── 회원가입 ─────
     if (path === '/v1/auth/signup' && req.method === 'POST') {
+      log('signup_requested');
       const body = await readJsonBody(req);
       const out = await doSignup(body);
       return sendJson(res, 200, out);
@@ -586,10 +589,19 @@ const server = http.createServer(async (req, res) => {
 
   } catch (err) {
     const status = err.status || 400;
-    if (status >= 500) db.logError('unhandled_error', err);
+    // 어느 창구에서 왜 거절됐는지 기록한다 (개인정보는 담지 않는다)
+    db.log('api_error', {
+      path: path,
+      status: status,
+      msg: String((err && err.message) || '').slice(0, 120)
+    });
+    // DB 내부 오류 문구는 사용자에게 그대로 보여주지 않는다 (로그에는 남는다)
+    const isDbError = !!(err && typeof err.code === 'string' && err.code.startsWith('ER_'));
     return sendJson(res, status, {
       ok: false,
-      message: err.message || '처리 중 오류가 발생했습니다.'
+      message: isDbError
+        ? '처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
+        : (err.message || '처리 중 오류가 발생했습니다.')
     });
   }
 });
