@@ -7,12 +7,17 @@
  *     node purge-withdrawn.js --run    → 실제 정리 실행
  *
  *   하는 일 (status='withdrawn' 이고 withdrawn_at 이 7일 지난 회원)
- *     1) 쿠폰·리워드 삭제
+ *     1) 쿠폰 삭제
  *     2) 카마스터 행의 개인정보 컬럼을 비움 (행 자체는 남김)
  *        - 남기는 값: id, user_id, code, status, withdrawn_at, di_hash, 동의이력, 생성일
  *        - di_hash 를 남기는 이유: 재가입 어뷰징(가입→리워드 수령→탈퇴→재가입 반복) 차단
- *     3) 로그인 계정(app_users) 행 삭제
- *     4) 전체를 트랜잭션으로 묶어 하나라도 실패하면 전부 되돌림
+ *     3) 리워드는 삭제하지 않고 관리자 메모만 지움
+ *        - 정산 근거와 어뷰징 추적 기록을 남기기 위함. 개인 식별 정보는 없음
+ *        - warranty_matches.reward_id 외래키 때문에 삭제 자체가 불가하기도 함
+ *     4) 로그인 계정(app_users)은 삭제하지 않고 무력화
+ *        - carmasters.user_id 외래키가 걸려 있어 삭제 불가
+ *        - 비밀번호 제거 + 아이디를 사용 불가 값으로 변경 + 차단 시각 기록
+ *     5) 전체를 트랜잭션으로 묶어 하나라도 실패하면 전부 되돌림
  */
 
 const fs = require('fs');
@@ -42,6 +47,16 @@ const ANONYMIZE_SQL = `
     office_etc = NULL, suspend_reason = NULL, suspended_at = NULL,
     sms_optout_at = NULL, last_login_at = NULL, last_sms_at = NULL,
     brand = '', brand_etc = '', region = '', office = '',
+    updated_at = NOW()
+  WHERE id = ?`;
+
+/* 로그인 계정 무력화.
+   carmasters.user_id 외래키 때문에 행을 지울 수 없어, 로그인이 불가능하도록 바꿉니다. */
+const NEUTRALIZE_USER_SQL = `
+  UPDATE rk_carmaster_app_users SET
+    login_id = CONCAT('wd_', LEFT(MD5(id), 12)),
+    password_hash = '',
+    banned_at = NOW(),
     updated_at = NOW()
   WHERE id = ?`;
 
@@ -133,9 +148,9 @@ const ANONYMIZE_SQL = `
       await db.withTransaction(async (conn) => {
         const run = (sql, params) => conn.execute ? conn.execute(sql, params) : conn.query(sql, params);
         await run(`DELETE FROM rk_carmaster_coupons WHERE carmaster_id = ?`, [t.id]);
-        await run(`DELETE FROM rk_carmaster_rewards WHERE carmaster_id = ?`, [t.id]);
+        await run(`UPDATE rk_carmaster_rewards SET memo = NULL, reason = NULL WHERE carmaster_id = ?`, [t.id]);
         await run(ANONYMIZE_SQL, [t.id]);
-        await run(`DELETE FROM rk_carmaster_app_users WHERE id = ?`, [t.user_id]);
+        await run(NEUTRALIZE_USER_SQL, [t.user_id]);
       });
       done++;
       line(`   ${t.code}  정리 완료`);
