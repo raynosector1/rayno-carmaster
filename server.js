@@ -642,6 +642,241 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true });
     }
 
+    // ═════════ 관리자 전용 ═════════
+    if (path.startsWith('/v1/admin/')) {
+      await auth.requireAdmin(req);   // 관리자가 아니면 여기서 막힌다
+      const sub = path.slice('/v1/admin/'.length);
+
+      // ── 내 관리자 정보 ──
+      if (sub === 'me' && req.method === 'GET') {
+        const p = auth.authFromHeader(req);
+        const d = db.decExpr('a.email', 'email');
+        const rows = await db.query(
+          `SELECT a.name, ${d.sql} FROM ?? a WHERE a.user_id = ? LIMIT 1`,
+          [...d.params, db.T.ADMINS, p.sub]);
+        return sendJson(res, 200, { ok: true, items: rows });
+      }
+
+      // ── 회원 목록 ──
+      if (sub === 'members' && req.method === 'GET') {
+        const d = db.decExpr('c.phone', 'phone');
+        const rows = await db.query(
+          `SELECT c.id, c.code, c.login_id, c.name, c.status, ${d.sql}, c.phone_last4,
+                  c.brand, c.brand_etc, c.region, c.office, c.office_etc,
+                  c.agree_marketing, c.sms_optout, c.verified_at, c.created_at,
+                  c.suspended_at, c.suspend_reason, c.withdrawn_at, c.last_login_at
+             FROM ?? c ORDER BY c.created_at DESC LIMIT 5000`,
+          [...d.params, db.T.CARMASTERS]);
+        return sendJson(res, 200, { ok: true, items: rows });
+      }
+
+      // ── 리워드 목록 (회원 정보 포함) ──
+      if (sub === 'rewards' && req.method === 'GET') {
+        const rows = await db.query(
+          `SELECT r.id, r.carmaster_id, r.type, r.rule_id, r.period, r.qty,
+                  r.item_name, r.amount, r.status, r.sent_at, r.sent_by,
+                  r.memo, r.reason, r.created_at,
+                  c.code AS c_code, c.name AS c_name, c.office AS c_office
+             FROM ?? r LEFT JOIN ?? c ON c.id = r.carmaster_id
+            ORDER BY r.created_at DESC LIMIT 5000`,
+          [db.T.REWARDS, db.T.CARMASTERS]);
+        rows.forEach(r => {
+          r.carmasters = { code: r.c_code, name: r.c_name, office: r.c_office };
+          delete r.c_code; delete r.c_name; delete r.c_office;
+        });
+        return sendJson(res, 200, { ok: true, items: rows });
+      }
+
+      // ── 시공(보증서) 내역 ──
+      if (sub === 'warranty' && req.method === 'GET') {
+        const rows = await db.query(
+          `SELECT w.id, w.warranty_no, w.link_type, w.carmaster_id, w.unlink_reason,
+                  w.dealer_code, w.dealer_name, w.installed_at, w.matched_at AS created_at,
+                  w.status, w.void_reason, w.reward_id, w.car_model, w.vin, w.product,
+                  c.code AS c_code, c.name AS c_name
+             FROM ?? w LEFT JOIN ?? c ON c.id = w.carmaster_id
+            ORDER BY w.installed_at DESC LIMIT 5000`,
+          [db.T.WARRANTY_MATCHES, db.T.CARMASTERS]);
+        rows.forEach(r => {
+          r.carmasters = { code: r.c_code, name: r.c_name };
+          delete r.c_code; delete r.c_name;
+        });
+        return sendJson(res, 200, { ok: true, items: rows });
+      }
+
+      // ── 공지 목록 ──
+      if (sub === 'notices' && req.method === 'GET') {
+        const rows = await db.query(
+          `SELECT id, title, body, target, published, created_at
+             FROM ?? ORDER BY created_at DESC LIMIT 500`, [db.T.NOTICES]);
+        return sendJson(res, 200, { ok: true, items: rows });
+      }
+
+      // ── 프로모션 목록 ──
+      if (sub === 'promotions' && req.method === 'GET') {
+        const rows = await db.query(
+          `SELECT id, name, cond, threshold_n, reward, period, auto, active, achieved, created_at
+             FROM ?? ORDER BY created_at DESC LIMIT 500`, [db.T.PROMOTIONS]);
+        return sendJson(res, 200, { ok: true, items: rows });
+      }
+
+      // ── 공지 생성·수정·삭제 ──
+      if (sub === 'notices' && req.method === 'POST') {
+        const b = await readJsonBody(req);
+        if (b.op === 'create') {
+          const nid = crypto.randomUUID();
+          await db.execute(
+            'INSERT INTO ?? (id, title, body, target, published) VALUES (?, ?, ?, ?, ?)',
+            [db.T.NOTICES, nid, b.title, b.body || null,
+             b.target || '전체 카마스터', b.published ? 1 : 0]);
+          log('admin_notice_created');
+          return sendJson(res, 200, { ok: true, id: nid });
+        }
+        if (b.op === 'update') {
+          const sets = [], vals = [];
+          if (b.title !== undefined)     { sets.push('title = ?');     vals.push(b.title); }
+          if (b.body !== undefined)      { sets.push('body = ?');      vals.push(b.body); }
+          if (b.target !== undefined)    { sets.push('target = ?');    vals.push(b.target); }
+          if (b.published !== undefined) { sets.push('published = ?'); vals.push(b.published ? 1 : 0); }
+          if (!sets.length) throw new Error('변경할 내용이 없습니다.');
+          await db.execute(`UPDATE ?? SET ${sets.join(', ')} WHERE id = ?`,
+            [db.T.NOTICES, ...vals, b.id]);
+          log('admin_notice_updated');
+          return sendJson(res, 200, { ok: true });
+        }
+        if (b.op === 'delete') {
+          await db.execute('DELETE FROM ?? WHERE id = ?', [db.T.NOTICES, b.id]);
+          log('admin_notice_deleted');
+          return sendJson(res, 200, { ok: true });
+        }
+        throw new Error('알 수 없는 요청입니다.');
+      }
+
+      // ── 프로모션 생성·수정 ──
+      if (sub === 'promotions' && req.method === 'POST') {
+        const b = await readJsonBody(req);
+        if (b.op === 'create') {
+          const pid = crypto.randomUUID();
+          await db.execute(
+            `INSERT INTO ?? (id, name, cond, threshold_n, reward, period, auto, active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [db.T.PROMOTIONS, pid, b.name, b.cond || 'cumulative',
+             Number(b.threshold_n || 0), b.reward || null, b.period || '상시',
+             b.auto ? 1 : 0, b.active === false ? 0 : 1]);
+          log('admin_promotion_created');
+          return sendJson(res, 200, { ok: true, id: pid });
+        }
+        if (b.op === 'update') {
+          const sets = [], vals = [];
+          if (b.name !== undefined)        { sets.push('name = ?');        vals.push(b.name); }
+          if (b.cond !== undefined)        { sets.push('cond = ?');        vals.push(b.cond); }
+          if (b.threshold_n !== undefined) { sets.push('threshold_n = ?'); vals.push(Number(b.threshold_n || 0)); }
+          if (b.reward !== undefined)      { sets.push('reward = ?');      vals.push(b.reward); }
+          if (b.period !== undefined)      { sets.push('period = ?');      vals.push(b.period); }
+          if (b.auto !== undefined)        { sets.push('auto = ?');        vals.push(b.auto ? 1 : 0); }
+          if (b.active !== undefined)      { sets.push('active = ?');      vals.push(b.active ? 1 : 0); }
+          if (!sets.length) throw new Error('변경할 내용이 없습니다.');
+          await db.execute(`UPDATE ?? SET ${sets.join(', ')} WHERE id = ?`,
+            [db.T.PROMOTIONS, ...vals, b.id]);
+          log('admin_promotion_updated');
+          return sendJson(res, 200, { ok: true });
+        }
+        throw new Error('알 수 없는 요청입니다.');
+      }
+
+      // ── 리워드 수동 지급 / 상태 변경 ──
+      if (sub === 'rewards' && req.method === 'POST') {
+        const b = await readJsonBody(req);
+        if (b.op === 'create') {
+          let cmId = b.carmaster_id || null;
+          if (!cmId) {
+            const [cm] = await db.query('SELECT id FROM ?? WHERE code = ? LIMIT 1',
+              [db.T.CARMASTERS, b.code]);
+            if (!cm) throw new Error('회원을 찾을 수 없습니다.');
+            cmId = cm.id;
+          }
+          const r = await db.execute(
+            `INSERT INTO ?? (carmaster_id, type, item_name, status, reason, sent_at)
+             VALUES (?, 'manual', ?, ?, ?, ?)`,
+            [db.T.REWARDS, cmId, b.item_name, b.status || 'pending',
+             b.reason || null, b.status === 'sent' ? new Date() : null]);
+          log('admin_reward_created');
+          return sendJson(res, 200, { ok: true, id: r.insertId });
+        }
+        if (b.op === 'update') {
+          const sent = b.status === 'sent';
+          await db.execute(
+            'UPDATE ?? SET status = ?, sent_at = ? WHERE id = ?',
+            [db.T.REWARDS, b.status, sent ? new Date() : null, b.id]);
+          log('admin_reward_updated', { to: b.status });
+          return sendJson(res, 200, { ok: true });
+        }
+        throw new Error('알 수 없는 요청입니다.');
+      }
+
+      // ── 회원 정지·해제 / 비밀번호 초기화 / 탈퇴 ──
+      if (sub === 'members' && req.method === 'POST') {
+        const b = await readJsonBody(req);
+        const [cm] = await db.query(
+          'SELECT id, user_id, name FROM ?? WHERE code = ? LIMIT 1',
+          [db.T.CARMASTERS, b.code]);
+        if (!cm) throw new Error('회원을 찾을 수 없습니다.');
+
+        if (b.op === 'set-status') {
+          const st = b.status === 'suspended' ? 'suspended' : 'verified';
+          await db.withTransaction(async (tx) => {
+            await tx.query(
+              'UPDATE ?? SET status = ?, suspended_at = ?, suspend_reason = ? WHERE id = ?',
+              [db.T.CARMASTERS, st, st === 'suspended' ? new Date() : null,
+               st === 'suspended' ? (b.reason || null) : null, cm.id]);
+            await tx.query('UPDATE ?? SET banned_at = ? WHERE id = ?',
+              [db.T.APP_USERS, st === 'suspended' ? new Date() : null, cm.user_id]);
+          });
+          log('admin_member_status', { to: st });
+          return sendJson(res, 200, { ok: true });
+        }
+
+        if (b.op === 'member-extra') {
+          const [u] = await db.query('SELECT last_login_at FROM ?? WHERE id = ? LIMIT 1',
+            [db.T.APP_USERS, cm.user_id]);
+          return sendJson(res, 200, { ok: true, last_login: (u && u.last_login_at) || null });
+        }
+
+        if (b.op === 'set-sms-optout') {
+          await db.execute(
+            'UPDATE ?? SET sms_optout = ?, sms_optout_at = ? WHERE id = ?',
+            [db.T.CARMASTERS, b.optout ? 1 : 0, b.optout ? new Date() : null, cm.id]);
+          log('admin_sms_optout', { to: b.optout ? 1 : 0 });
+          return sendJson(res, 200, { ok: true });
+        }
+
+        if (b.op === 'reset-password') {
+          const temp = 'Rk' + crypto.randomBytes(4).toString('hex') + '!';
+          await auth.changePassword(cm.user_id, temp);
+          log('admin_password_reset');
+          return sendJson(res, 200, { ok: true, temp_password: temp });
+        }
+
+        if (b.op === 'delete') {
+          await db.withTransaction(async (tx) => {
+            await tx.query('DELETE FROM ?? WHERE carmaster_id = ?', [db.T.COUPONS, cm.id]);
+            await tx.query('DELETE FROM ?? WHERE carmaster_id = ?', [db.T.REWARDS, cm.id]);
+            await tx.query(
+              'UPDATE ?? SET carmaster_id = NULL, link_type = ?, unlink_reason = ? WHERE carmaster_id = ?',
+              [db.T.WARRANTY_MATCHES, 'unlinked', '회원 탈퇴', cm.id]);
+            await tx.query('DELETE FROM ?? WHERE id = ?', [db.T.CARMASTERS, cm.id]);
+            await tx.query('DELETE FROM ?? WHERE id = ?', [db.T.APP_USERS, cm.user_id]);
+          });
+          log('admin_member_deleted');
+          return sendJson(res, 200, { ok: true });
+        }
+
+        throw new Error('알 수 없는 요청입니다.');
+      }
+
+      return sendJson(res, 404, { ok: false, message: '알 수 없는 요청입니다.' });
+    }
+
     // ───── 소속 지점 목록 ─────
     if (path === '/v1/offices' && req.method === 'GET') {
       const rows = await db.query(
