@@ -36,6 +36,9 @@ input::placeholder{color:#B4B4B8;}
 .sidebar .me .av{width:36px;height:36px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
 .sidebar .me .nm{font-size:13.5px;font-weight:700;}
 .sidebar .me .ro{font-size:11.5px;color:var(--muted);margin-top:1px;}
+.sidebar .me .who{flex:1;min-width:0;}
+.sidebar .me .logout{margin-left:auto;flex-shrink:0;padding:7px 11px;border-radius:8px;font-size:12px;font-weight:700;color:#C9C9CE;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);transition:.15s;}
+.sidebar .me .logout:hover{color:#fff;background:rgba(255,90,0,.22);border-color:rgba(255,90,0,.5);}
 
 /* 메인 */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;}
@@ -196,7 +199,8 @@ input::placeholder{color:#B4B4B8;}
     </nav>
     <div class="me">
       <div class="av">관</div>
-      <div><div class="nm">관리자</div><div class="ro">—</div></div>
+      <div class="who"><div class="nm">관리자</div><div class="ro">—</div></div>
+      <button class="logout" id="btnLogout" type="button">로그아웃</button>
     </div>
   </aside>
 
@@ -1498,6 +1502,12 @@ function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); 
     var r=await admLogin(email,pw); btn.disabled=false; btn.textContent='로그인';
     if(r.ok){ admErr(''); hideOv(); initAdmin(); } else { admErr(r.message); }
   }
+  var _lo = $('btnLogout');
+  if(_lo) _lo.addEventListener('click', function(){
+    if(!confirm('로그아웃 하시겠습니까?')) return;
+    try{ sessionStorage.removeItem('adm_token'); }catch(e){}
+    location.reload();
+  });
   $('admLoginBtn').addEventListener('click', doAdmLogin);
   $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
