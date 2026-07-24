@@ -60,7 +60,10 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
           <div style="margin-top:16px;display:flex;align-items:flex-start;gap:10px;background:#F5F5F6;border-radius:14px;padding:14px 16px;"><span style="width:24px;height:24px;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</span><div style="font-size:13.5px;line-height:1.5;color:#6A6A6E;font-weight:500;">소속·영업소가 목록에 없다면 <b style="color:#111;font-weight:700;">기타</b>를 선택해 직접 입력할 수 있어요.</div></div>
           <div style="flex:1;min-height:24px;"></div>
           <div style="position:sticky;bottom:0;background:#fff;margin:0 -26px;padding:14px 26px calc(20px + env(safe-area-inset-bottom));border-top:1px solid #EFEFF1;">
-          <button style="width:100%;padding:18px 0;border:none;border-radius:999px;background:#EAEAEC;color:#B4B4B8;font-size:17px;font-weight:800;font-family:inherit;" id="next1" data-go="1" data-gate="0">다음</button>
+          <div style="display:flex;gap:10px;">
+            <button style="flex:0 0 34%;padding:18px 0;border:1.5px solid #111;border-radius:999px;background:#fff;color:#111;font-size:16px;font-weight:800;font-family:inherit;" data-href="index.html">이전</button>
+            <button style="flex:1;padding:18px 0;border:none;border-radius:999px;background:#EAEAEC;color:#B4B4B8;font-size:16px;font-weight:800;font-family:inherit;" id="next1" data-go="1" data-gate="0">다음</button>
+          </div>
           </div>
         </div>
       </div>
@@ -207,7 +210,7 @@ async function api(path, opt){
 let TREE = [], VTOKEN = null;
 
 /* 소속 브랜드 노출 순서. 목록에 없는 브랜드는 뒤쪽에 가나다순으로 붙는다. */
-const BRAND_ORDER = ['현대','기아','KGM','르노','BMW','벤츠','아우디','볼보','폭스바겐','포드'];
+const BRAND_ORDER = ['현대','기아','KGM','르노','쉐보레','BMW','벤츠','아우디','볼보','폭스바겐','포드'];
 function brandRank(n){
   n = String(n||'').replace(/\s/g,'');
   for(var i=0;i<BRAND_ORDER.length;i++){
