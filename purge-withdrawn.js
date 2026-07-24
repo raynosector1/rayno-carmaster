@@ -2,6 +2,10 @@
 /**
  * 탈퇴 회원 7일 경과분 정리 배치
  *
+ *   시각 비교는 UTC_TIMESTAMP() 기준입니다.
+ *   withdrawn_at 이 UTC로 저장되는데 NOW() 는 서버 시간대(한국)를 돌려주므로,
+ *   NOW() 로 비교하면 9시간 일찍 삭제됩니다.
+ *
  *   기본 동작은 미리보기입니다. 아무것도 바꾸지 않습니다.
  *     node purge-withdrawn.js          → 누가 정리 대상인지 보여주기만 함
  *     node purge-withdrawn.js --run    → 실제 정리 실행
@@ -99,11 +103,11 @@ const NEUTRALIZE_USER_SQL = `
   try {
     targets = await db.query(
       `SELECT id, user_id, code, withdrawn_at,
-              DATEDIFF(NOW(), withdrawn_at) AS days
+              DATEDIFF(UTC_TIMESTAMP(), withdrawn_at) AS days
          FROM rk_carmaster_carmasters
         WHERE status = 'withdrawn'
           AND withdrawn_at IS NOT NULL
-          AND withdrawn_at < DATE_SUB(NOW(), INTERVAL ? DAY)
+          AND withdrawn_at < DATE_SUB(UTC_TIMESTAMP(), INTERVAL ? DAY)
           AND name IS NOT NULL
         ORDER BY withdrawn_at`, [KEEP_DAYS]);
   } catch (e) {
