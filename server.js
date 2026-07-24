@@ -296,25 +296,71 @@ async function doSignup(body) {
     throw new Error('소속 정보를 입력해 주세요.');
   }
 
-  // 중복가입 확인 (계정을 만들기 전에)
+  // 가입 이력 확인 (계정을 만들기 전에)
   const dup = await db.query(
-    'SELECT login_id, status FROM ?? WHERE di_hash = ? LIMIT 1',
+    'SELECT id, user_id, login_id, status FROM ?? WHERE di_hash = ? LIMIT 1',
     [db.T.CARMASTERS, v.di_hash]);
-  if (dup.length) {
-    const err = new Error(dup[0].status === 'withdrawn'
-      ? '탈퇴한 회원입니다. 탈퇴 후 7일 이내에는 복구만 가능하니 레이노 고객센터(1588-8695)로 문의해 주세요.'
-      : `이미 가입된 회원입니다. (아이디: ${dup[0].login_id})`);
+
+  // 탈퇴 이력이 있으면 재가입은 허용하되 웰컴기프트는 다시 주지 않는다.
+  // (가입 → 웰컴기프트 수령 → 탈퇴 → 재가입 → 재수령 반복 어뷰징 차단)
+  const rejoin = (dup.length && dup[0].status === 'withdrawn') ? dup[0] : null;
+
+  if (dup.length && !rejoin) {
+    const err = new Error(`이미 가입된 회원입니다. (아이디: ${dup[0].login_id})`);
     err.status = 409;
     throw err;
   }
 
-  if (!(await auth.isLoginIdAvailable(loginId))) {
+  if (!rejoin && !(await auth.isLoginIdAvailable(loginId))) {
     throw new Error('이미 사용 중인 아이디입니다.');
   }
 
   const phone = String(v.phone || '').replace(/\D/g, '');
   const encPhone = db.encParam(phone);
-  const carmasterId = crypto.randomUUID();
+  const carmasterId = rejoin ? rejoin.id : crypto.randomUUID();
+
+  if (rejoin) {
+    // ── 재가입: 기존 행을 되살린다 (di_hash 가 유일 제약이라 새로 만들 수 없다) ──
+    await db.withTransaction(async (tx) => {
+      // 예전 로그인 계정이 쥐고 있던 아이디를 먼저 비켜준다
+      await tx.query(
+        "UPDATE ?? SET login_id = CONCAT('wd_', LEFT(MD5(id), 12)), banned_at = UTC_TIMESTAMP() WHERE id = ?",
+        [db.T.APP_USERS, rejoin.user_id]);
+
+      const tk = await tx.query(
+        'SELECT id FROM ?? WHERE login_id = ? LIMIT 1', [db.T.APP_USERS, loginId]);
+      const tkRows = (Array.isArray(tk) && Array.isArray(tk[0])) ? tk[0] : tk;
+      if (tkRows && tkRows.length) throw new Error('이미 사용 중인 아이디입니다.');
+
+      const userId = await auth.createAccount(
+        { loginId, password: body.password, role: 'carmaster' }, tx);
+
+      await tx.query(
+        `UPDATE ?? SET user_id = ?, login_id = ?, status = 'verified',
+                       name = ?, phone = ${encPhone.sql}, phone_last4 = ?,
+                       verified_at = UTC_TIMESTAMP(), withdrawn_at = NULL,
+                       suspended_at = NULL, suspend_reason = NULL,
+                       brand = ?, brand_etc = ?, region = ?, office = ?, office_etc = ?,
+                       agree_privacy = 1, agree_outsourcing = 1, agree_marketing = ?,
+                       agreed_at = UTC_TIMESTAMP(), updated_at = UTC_TIMESTAMP()
+           WHERE id = ?`,
+        [db.T.CARMASTERS, userId, loginId, v.name,
+         ...encPhone.params, phone.slice(-4),
+         body.brand, body.brand_etc || null, body.region,
+         body.office, body.office_etc || null,
+         body.agree_marketing ? 1 : 0, rejoin.id]);
+
+      // 이제 아무도 참조하지 않는 예전 로그인 계정을 정리한다
+      await tx.query('DELETE FROM ?? WHERE id = ?', [db.T.APP_USERS, rejoin.user_id]);
+
+      // 웰컴기프트는 재지급하지 않는다 (신규 가입 혜택이므로)
+    });
+
+    log('signup_rejoined');
+    const rr = await auth.login(loginId, body.password);
+    const mm = await auth.getMyProfile(rr.user.id);
+    return { ok: true, token: rr.token, user: rr.user, carmaster: mm, rejoined: true };
+  }
 
   await db.withTransaction(async (tx) => {
     const userId = await auth.createAccount(
