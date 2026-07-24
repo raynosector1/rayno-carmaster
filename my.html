@@ -243,53 +243,43 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
 </div>
 
 <script>
-/* ══════════ Supabase 연결 (공통) ══════════ */
-const SB_URL = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
-const SB_DOMAIN = 'carmaster.raynofilm.co.kr';
-const FN_AUTH = SB_URL + '/functions/v1/carmaster-auth';
+/* ══════════ 백엔드 API (가비아 MySQL) ══════════ */
+const API = 'https://carmaster-auth.raynofilm.co.kr';
 const ETC = '기타 (직접 입력)';
 const _gid = function(x){ return document.getElementById(x); };
 function cmToken(){ try{ return sessionStorage.getItem('cm_token')||''; }catch(e){ return ''; } }
-function cmRefreshToken(){ try{ return sessionStorage.getItem('cm_refresh')||''; }catch(e){ return ''; } }
-let _refreshing = null;
-async function cmRefresh(){
-  if(_refreshing) return _refreshing;
-  _refreshing = (async function(){
-    var rt = cmRefreshToken();
-    if(!rt) return false;
-    try{
-      var r = await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' }, body: JSON.stringify({ refresh_token: rt }) });
-      var d = await r.json();
-      if(!r.ok || !d.access_token) return false;
-      try{ sessionStorage.setItem('cm_token', d.access_token); if(d.refresh_token) sessionStorage.setItem('cm_refresh', d.refresh_token); }catch(e){}
-      return true;
-    }catch(e){ return false; }
-  })();
-  var ok = await _refreshing; _refreshing = null; return ok;
-}
+
 function cmSessionOut(){
-  try{ sessionStorage.removeItem('cm_token'); sessionStorage.removeItem('cm_refresh'); }catch(e){}
+  try{ sessionStorage.removeItem('cm_token'); }catch(e){}
   alert('로그인 유효시간이 만료되었습니다. 다시 로그인해 주세요.');
   location.href='login.html';
 }
-async function rest(path, opts){
-  opts = opts||{};
-  async function go(){
-    const h = { apikey: SB_ANON, 'Content-Type':'application/json' };
-    const t = cmToken(); if(t) h.Authorization = 'Bearer ' + t;
-    if(opts.prefer) h.Prefer = opts.prefer;
-    return fetch(SB_URL + '/rest/v1/' + path, { method: opts.method||'GET', headers: h, body: opts.body });
+
+async function api(path, opt){
+  opt = opt || {};
+  var headers = { 'Content-Type':'application/json' };
+  var t = cmToken();
+  if(t && opt.auth !== false) headers['Authorization'] = 'Bearer ' + t;
+  var r;
+  try{
+    r = await fetch(API + path, {
+      method: opt.method || 'GET',
+      headers: headers,
+      body: opt.body ? JSON.stringify(opt.body) : undefined
+    });
+  }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
+
+  var d = null;
+  try{ d = await r.json(); }catch(e){ d = null; }
+
+  /* 출입증이 만료되었거나 올바르지 않으면 로그인 화면으로 */
+  if(opt.auth !== false && d && d.ok === false && /로그인/.test(d.message||'')){
+    cmSessionOut();
+    throw new Error('session expired');
   }
-  var r = await go();
-  if(r.status===401 || r.status===403){          /* 토큰 만료 → 1회 자동 갱신 후 재시도 */
-    if(await cmRefresh()) r = await go();
-    else { cmSessionOut(); throw new Error('session expired'); }
-    if(r.status===401 || r.status===403){ cmSessionOut(); throw new Error('session expired'); }
-  }
-  if(!r.ok) throw new Error(await r.text());
-  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+  return d || { ok:false, message:'응답을 읽지 못했습니다.' };
 }
+
 function _maskPhone(p){ p=(p||'').replace(/\D/g,''); if(p.length<7) return p||'—'; return p.slice(0,3)+'-****-'+p.slice(-4); }
 
 /* ══════════ 편집 탭 영업소 트리 ══════════ */
@@ -302,8 +292,14 @@ function fillEOffices(brand, region){ var el=_gid('eOffice'); if(!el)return; var
 async function initEdit(){
   var eB=_gid('eBrand'); if(!eB) return;
   try{
-    var r = await fetch(SB_URL+'/rest/v1/rpc/offices_tree', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' }, body:'{}' });
-    if(r.ok) TREE = await r.json();
+    var rr = await api('/v1/offices', { auth:false });
+    if(rr && rr.ok && rr.tree){
+      TREE = Object.keys(rr.tree).sort().map(function(b){
+        return { name:b, regions: Object.keys(rr.tree[b]).sort().map(function(rg){
+          return { name:rg, offices: rr.tree[b][rg] };
+        })};
+      });
+    }
   }catch(e){ console.error('영업점 로딩 실패', e); }
   fillEBrands();
   var eR=_gid('eRegion'), eO=_gid('eOffice'), eBE=_gid('eBrandEtc'), eOE=_gid('eOfficeEtc');
@@ -339,10 +335,11 @@ function _ym(iso){ if(!iso)return ''; var d=new Date(iso); return d.getFullYear(
 /* 공지사항 (관리자에서 게시한 것만) */
 async function loadNotices(){
   try{
-    var rows = await rest('notices?select=title,body,created_at&published=eq.true&order=created_at.desc&limit=5');
+    var res = await api('/v1/notices', { auth:false });
+    var rows = (res && res.items) || [];
     var card=_gid('noticeCard'), list=_gid('noticeList');
-    if(!card||!list||!rows||!rows.length) return;
-    list.innerHTML = rows.map(function(n,i){
+    if(!card||!list||!rows.length) return;
+    list.innerHTML = rows.slice(0,5).map(function(n,i){
       var body = n.body ? '<div style="font-size:12.5px;color:#8A8A8E;line-height:1.55;margin-top:5px;white-space:pre-line;">'+_esc(n.body)+'</div>' : '';
       return '<div style="padding:14px;'+(i?'border-top:1px solid #F5F5F6;':'')+'">'+
         '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'+
@@ -350,16 +347,17 @@ async function loadNotices(){
         '<div style="font-size:11.5px;color:#B0B0B4;flex-shrink:0;">'+_d(n.created_at)+'</div></div>'+body+'</div>';
     }).join('');
     card.style.display='block';
-  }catch(e){ console.error('notices', e); }
+  }catch(e){}
 }
 
 /* 리워드 내역 */
 async function loadRewardList(){
   try{
-    var rows = await rest('rewards?select=item_name,status,type,created_at&order=created_at.desc');
+    var res = await api('/v1/me/rewards');
+    var rows = (res && res.items) || [];
     var box=_gid('rewardList'), empty=_gid('rewardEmpty');
     if(!box) return;
-    if(!rows || !rows.length){ if(empty)empty.style.display='flex'; box.style.display='none'; return; }
+    if(!rows.length){ if(empty)empty.style.display='flex'; box.style.display='none'; return; }
     if(empty) empty.style.display='none';
     var DONE=['sent','done','completed','paid','approved','issued'];
     box.innerHTML = rows.map(function(r){
@@ -374,16 +372,17 @@ async function loadRewardList(){
         '<span style="flex-shrink:0;font-size:11px;font-weight:800;color:'+color+';background:'+bg+';padding:5px 11px;border-radius:999px;">'+label+'</span></div>';
     }).join('');
     box.style.display='flex';
-  }catch(e){ console.error('rewards', e); }
+  }catch(e){}
 }
 
 /* 시공 내역 */
 async function loadRecordList(){
   try{
-    var rows = await rest('warranty_matches?select=car_model,dealer_name,installed_at,created_at,status,link_type&order=installed_at.desc');
+    var res = await api('/v1/me/records');
+    var rows = (res && res.items) || [];
     var box=_gid('recordList'), empty=_gid('recordEmpty');
     if(!box) return;
-    if(!rows || !rows.length){ if(empty)empty.style.display='flex'; box.style.display='none'; return; }
+    if(!rows.length){ if(empty)empty.style.display='flex'; box.style.display='none'; return; }
     if(empty) empty.style.display='none';
     var groups={}, order=[];
     rows.forEach(function(w){ var k=_ym(w.installed_at||w.created_at)||'기타'; if(!groups[k]){ groups[k]=[]; order.push(k); } groups[k].push(w); });
@@ -401,65 +400,54 @@ async function loadRecordList(){
              '<div class="card" style="margin-top:10px;padding:4px 18px;">'+items+'</div></div>';
     }).join('');
     box.style.display='flex';
-  }catch(e){ console.error('records', e); }
+  }catch(e){}
 }
 
 async function loadMyStats(){
   var t = cmToken();
   if(!t){ location.href='login.html'; return {}; }
   try{
-    /* 정지된 계정이면 즉시 차단 */
-    try{
-      var st = await rest('carmasters?select=status&limit=1');
-      if(st && st[0] && (st[0].status==='suspended' || st[0].status==='banned')){
-        try{ sessionStorage.removeItem('cm_token'); }catch(e){}
-        alert('이용이 정지된 계정입니다. 담당자에게 문의해 주세요.');
-        location.href='login.html'; return {};
-      }
-    }catch(e){}
-    var rows = await rest('my_stats?select=code,name,brand,office,month_count,total_count');
-    var me = (rows && rows[0]) || {};
-    var prof = {};
-    try{ var c = await rest('carmasters?select=login_id,phone,region&limit=1'); if(c && c[0]) prof = c[0]; }catch(e){}
-    var coupons = 0;
-    try{ var cp = await rest('coupons?select=id&status=eq.issued'); coupons = (cp||[]).length; }catch(e){}
-    var goal = 10, goalName = '';
-    try{ var rr = await rest('reward_rules?select=min_count,item_name&active=eq.true&order=min_count.asc');
-         var nx = (rr||[]).find(function(x){ return x.min_count > (me.total_count||0); });
-         if(nx){ goal = nx.min_count; goalName = nx.item_name||''; }
-         else if(rr && rr.length){ goal = rr[rr.length-1].min_count; goalName = rr[rr.length-1].item_name||''; } }catch(e){}
+    var me = await api('/v1/me/summary');
+    if(!me || !me.ok){ return {}; }
+
+    if(me.status==='suspended' || me.status==='banned'){
+      try{ sessionStorage.removeItem('cm_token'); }catch(e){}
+      alert('이용이 정지된 계정입니다. 담당자에게 문의해 주세요.');
+      location.href='login.html'; return {};
+    }
+
     var name = me.name || '회원';
     var org = [me.brand, me.office].filter(Boolean).join(' · ') || '—';
-    /* .then 핸들러가 안 채우는 항목은 여기서 직접 세팅 */
     var av=_gid('avatar'); if(av) av.textContent = name.slice(0,1);
     if(_gid('pfBrand')) _gid('pfBrand').textContent = me.brand || '—';
     if(_gid('pfOffice')) _gid('pfOffice').textContent = me.office || '—';
     if(_gid('pfOrg')) _gid('pfOrg').textContent = org;
-    _CUR = { brand: me.brand||'', region: prof.region||'', office: me.office||'' };
+    _CUR = { brand: me.brand||'', region: me.region||'', office: me.office||'' };
     initEdit();
     loadNotices(); loadRewardList(); loadRecordList();
     return {
       name: name, code: me.code || '—', org: org,
       month_count: me.month_count||0, total_count: me.total_count||0,
-      coupons: coupons,
-      reward_progress: { current: me.total_count||0, goal: goal, name: goalName },
-      profile: { loginId: prof.login_id||'—', phone: _maskPhone(prof.phone) }
+      coupons: me.coupons||0,
+      reward_progress: { current: me.total_count||0, goal: me.goal||10, name: me.goal_name||'' },
+      profile: { loginId: me.login_id||'—', phone: me.phone_masked||'—' }
     };
-  }catch(e){ console.error('마이페이지 로딩 실패', e); return {}; }
+  }catch(e){ return {}; }
 }
+
 async function logout(){
-  try{ var t=cmToken(); if(t){ await fetch(SB_URL+'/auth/v1/logout', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json', Authorization:'Bearer '+t }, body:'{}' }); } }catch(e){}
-  try{ sessionStorage.removeItem('cm_token'); sessionStorage.removeItem('cm_refresh'); }catch(e){}
+  try{ sessionStorage.removeItem('cm_token'); }catch(e){}
   return { ok:true };
 }
+
 async function updateProfile(data){
   var t = cmToken(); if(!t) return { ok:false };
   try{
-    var me = await rest('carmasters?select=id&limit=1');
-    if(!me || !me[0]) return { ok:false };
-    await rest('carmasters?id=eq.'+me[0].id, { method:'PATCH', prefer:'return=minimal', body: JSON.stringify({ brand:data.brand, region:data.region, office:data.office }) });
-    return { ok:true };
-  }catch(e){ console.error('프로필 수정 실패', e); return { ok:false }; }
+    var r = await api('/v1/me/profile', { method:'POST', body:{
+      brand: data.brand, region: data.region, office: data.office
+    }});
+    return { ok: !!(r && r.ok), message: r && r.message };
+  }catch(e){ return { ok:false }; }
 }
 
 const S = { name:'', code:'', org:'' };

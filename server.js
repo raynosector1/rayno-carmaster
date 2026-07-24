@@ -555,6 +555,93 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { ok: true });
     }
 
+    // ───── 마이페이지 요약 ─────
+    if (path === '/v1/me/summary' && req.method === 'GET') {
+      const p = auth.authFromHeader(req);
+      const d = db.decExpr('c.phone', 'phone');
+      const rows = await db.query(
+        `SELECT c.id, c.code, c.login_id, c.name, c.status, c.brand, c.region, c.office,
+                c.phone_last4, ${d.sql}
+           FROM ?? c WHERE c.user_id = ? LIMIT 1`,
+        [...d.params, db.T.CARMASTERS, p.sub]);
+      if (!rows.length) return sendJson(res, 404, { ok: false, message: '회원 정보를 찾을 수 없습니다.' });
+      const me = rows[0];
+
+      const [stat] = await db.query(
+        `SELECT
+           COUNT(CASE WHEN status='valid'
+                       AND DATE_FORMAT(installed_at,'%Y-%m') = DATE_FORMAT(UTC_DATE(),'%Y-%m')
+                      THEN 1 END) AS month_count,
+           COUNT(CASE WHEN status='valid' THEN 1 END) AS total_count
+         FROM ?? WHERE carmaster_id = ? AND link_type = 'linked'`,
+        [db.T.WARRANTY_MATCHES, me.id]);
+
+      const [cp] = await db.query(
+        `SELECT COUNT(*) AS n FROM ?? WHERE carmaster_id = ? AND status = 'issued'`,
+        [db.T.COUPONS, me.id]);
+
+      const rules = await db.query(
+        `SELECT min_count, item_name FROM ?? WHERE active = 1 ORDER BY min_count ASC`,
+        [db.T.REWARD_RULES]);
+      const total = Number(stat.total_count || 0);
+      const next = rules.find(r => Number(r.min_count) > total) || rules[rules.length - 1] || null;
+
+      const phone = String(me.phone || '').replace(/\D/g, '');
+      const masked = phone.length >= 7
+        ? phone.slice(0, 3) + '-****-' + phone.slice(-4)
+        : (me.phone_last4 ? '010-****-' + me.phone_last4 : '—');
+
+      return sendJson(res, 200, {
+        ok: true,
+        code: me.code, login_id: me.login_id, name: me.name, status: me.status,
+        brand: me.brand, region: me.region, office: me.office,
+        phone_masked: masked,
+        month_count: Number(stat.month_count || 0),
+        total_count: total,
+        coupons: Number(cp.n || 0),
+        goal: next ? Number(next.min_count) : 10,
+        goal_name: next ? next.item_name : ''
+      });
+    }
+
+    // ───── 내 리워드 내역 ─────
+    if (path === '/v1/me/rewards' && req.method === 'GET') {
+      const p = auth.authFromHeader(req);
+      const rows = await db.query(
+        `SELECT r.item_name, r.status, r.type, r.created_at
+           FROM ?? r JOIN ?? c ON c.id = r.carmaster_id
+          WHERE c.user_id = ? ORDER BY r.created_at DESC LIMIT 100`,
+        [db.T.REWARDS, db.T.CARMASTERS, p.sub]);
+      return sendJson(res, 200, { ok: true, items: rows });
+    }
+
+    // ───── 내 시공 내역 ─────
+    if (path === '/v1/me/records' && req.method === 'GET') {
+      const p = auth.authFromHeader(req);
+      const rows = await db.query(
+        `SELECT w.car_model, w.dealer_name, w.installed_at, w.matched_at AS created_at,
+                w.status, w.link_type
+           FROM ?? w JOIN ?? c ON c.id = w.carmaster_id
+          WHERE c.user_id = ? ORDER BY w.installed_at DESC LIMIT 200`,
+        [db.T.WARRANTY_MATCHES, db.T.CARMASTERS, p.sub]);
+      return sendJson(res, 200, { ok: true, items: rows });
+    }
+
+    // ───── 소속 정보 수정 ─────
+    if (path === '/v1/me/profile' && req.method === 'POST') {
+      const p = auth.authFromHeader(req);
+      const body = await readJsonBody(req);
+      if (!body.brand || !body.region || !body.office) {
+        throw new Error('소속 정보를 모두 선택해 주세요.');
+      }
+      const r = await db.execute(
+        `UPDATE ?? SET brand = ?, region = ?, office = ? WHERE user_id = ?`,
+        [db.T.CARMASTERS, body.brand, body.region, body.office, p.sub]);
+      if (!r.affectedRows) throw new Error('회원 정보를 찾을 수 없습니다.');
+      log('profile_updated');
+      return sendJson(res, 200, { ok: true });
+    }
+
     // ───── 소속 지점 목록 ─────
     if (path === '/v1/offices' && req.method === 'GET') {
       const rows = await db.query(
