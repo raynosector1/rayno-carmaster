@@ -187,28 +187,25 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
   </div>
 <script>
 
-/* ══════════ Supabase 연결 (공통) ══════════ */
-const SB_URL = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
-const SB_DOMAIN = 'carmaster.raynofilm.co.kr';
-const FN_AUTH = SB_URL + '/functions/v1/carmaster-auth';
+/* ══════════ 백엔드 API (가비아 MySQL) ══════════ */
+const API = 'https://carmaster-auth.raynofilm.co.kr';
 const ETC = '기타 (직접 입력)';
 const id = function(x){ return document.getElementById(x); };
 function cmToken(){ try{ return sessionStorage.getItem('cm_token')||''; }catch(e){ return ''; } }
-async function fn(action, body){
+
+async function api(path, opt){
+  opt = opt || {};
+  var headers = { 'Content-Type':'application/json' };
+  var t = cmToken();
+  if(t && opt.auth !== false) headers['Authorization'] = 'Bearer ' + t;
   try{
-    const r = await fetch(FN_AUTH, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.assign({action}, body||{})) });
+    var r = await fetch(API + path, {
+      method: opt.method || 'GET',
+      headers: headers,
+      body: opt.body ? JSON.stringify(opt.body) : undefined
+    });
     return await r.json();
   }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
-}
-async function rest(path, opts){
-  opts = opts||{};
-  const h = { apikey: SB_ANON, 'Content-Type':'application/json' };
-  const t = cmToken(); if(t) h.Authorization = 'Bearer ' + t;
-  if(opts.prefer) h.Prefer = opts.prefer;
-  const r = await fetch(SB_URL + '/rest/v1/' + path, { method: opts.method||'GET', headers: h, body: opts.body });
-  if(!r.ok) throw new Error(await r.text());
-  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
 }
 
 /* ══════════ 백엔드 연동 (signup) ══════════ */
@@ -221,32 +218,38 @@ function fillOffices(brand, region){ var el=id('office'); if(!el)return; var h='
 
 async function loadOffices(){
   try{
-    var r = await fetch(SB_URL+'/rest/v1/rpc/offices_tree', { method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' }, body:'{}' });
-    if(!r.ok){ console.error('영업점 로딩 실패', await r.text()); TREE=[]; return; }
-    TREE = await r.json(); fillBrands();
-  }catch(e){ console.error('영업점 로딩 오류', e); TREE=[]; }
+    var r = await api('/v1/offices', { auth:false });
+    if(!r || !r.ok || !r.tree){ TREE=[]; return; }
+    TREE = Object.keys(r.tree).sort().map(function(b){
+      return { name:b, regions: Object.keys(r.tree[b]).sort().map(function(rg){
+        return { name:rg, offices: r.tree[b][rg] };
+      })};
+    });
+    fillBrands();
+  }catch(e){ TREE=[]; }
 }
-async function checkLoginId(loginId){ return fn('check-id', { login_id: loginId }); }
-async function verifyIdentity(data){
-  var phone = (((data&&data.phone)||S.phone)||'').replace(/\D/g,'');
-  var r = await fn('verify', { name:S.name, birth:(S.birth||'').replace(/\D/g,''), phone:phone, carrier:(data&&data.telco)||S.telco });
-  if(!r || !r.ok){ VTOKEN=null; return { ok:false, message:(r&&r.message)||'본인인증에 실패했습니다.' }; }
-  VTOKEN = r.token; return { ok:true, token:r.token, display:r.display };
+
+async function checkLoginId(loginId){
+  return api('/v1/auth/check-id', { method:'POST', auth:false, body:{ login_id: loginId } });
 }
+
 async function submitSignup(p){
   if(!VTOKEN) return { ok:false, message:'본인인증이 필요합니다. 2단계에서 인증을 다시 진행해 주세요.' };
   var bEtc = ((id('brandEtc')||{}).value||'').trim();
   var oEtc = ((id('officeEtc')||{}).value||'').trim();
-  return fn('signup', {
-    token: VTOKEN,
-    login_id: (p.loginId||'').trim().toLowerCase(), password: p.password,
+  var r = await api('/v1/auth/signup', { method:'POST', auth:false, body:{
+    nice_token: VTOKEN,
+    login_id: (p.loginId||'').trim().toLowerCase(),
+    password: p.password,
     brand: (p.brand===ETC ? '기타' : p.brand), brand_etc: (p.brand===ETC ? bEtc : null),
     region: p.region,
     office: (p.office===ETC ? '기타' : p.office), office_etc: (p.office===ETC ? oEtc : null),
     agree_privacy: !!(p.agree && p.agree.req1),
-    agree_outsourcing: !!(p.agree && p.agree.req1),  /* 위탁 동의 항목 삭제 → 통합 필수동의로 처리 */
+    agree_outsourcing: !!(p.agree && p.agree.req1),
     agree_marketing: !!(p.agree && p.agree.opt)
-  });
+  }});
+  if(r && r.ok && r.token){ try{ sessionStorage.setItem('cm_token', r.token); }catch(e){} }
+  return r;
 }
 
 /* ── 전역 상태 ── */
@@ -339,7 +342,7 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
   /* ===== step2 : NICE 본인인증 ===== */
   var niceBtn=id('niceVerify');
   if(niceBtn){
-    var AUTH_API='https://carmaster-auth.raynofilm.co.kr';
+    var AUTH_API=API;
     var n2=id('next2'), nState=id('niceState'), nBox=id('niceResult'), nInfo=id('niceInfo');
     var verified=false, pollT=null, attemptId=null, tries=0;
 
@@ -352,19 +355,16 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
 
     function finish(res){
       stopPoll();
-      fn('verify-nice', { nice_token: res.token }).then(function(r){
-        if(!r || !r.ok){ fail((r&&r.message)||'인증 처리에 실패했습니다.'); return; }
-        VTOKEN = r.token; verified = true;
-        var dp = r.display || {};
-        S.name = dp.name || res.name || S.name;
-        niceBtn.style.display='none';
-        if(nBox) nBox.style.display='flex';
-        if(nInfo) nInfo.textContent = (S.name||'회원') + ' · ' + (dp.phone_masked || ('010-****-'+(res.phone_last4||'')));
-        setState('');
-        var rv=id('rvInfo'); if(rv) rv.textContent=(S.name||'회원')+' · '+(dp.phone_masked||'');
-        T('본인인증이 완료되었습니다.');
-        g2();
-      });
+      VTOKEN = res.token; verified = true;
+      S.name = res.name || S.name;
+      var masked = '010-****-' + (res.phone_last4 || '');
+      niceBtn.style.display='none';
+      if(nBox) nBox.style.display='flex';
+      if(nInfo) nInfo.textContent = (S.name||'회원') + ' · ' + masked;
+      setState('');
+      var rv=id('rvInfo'); if(rv) rv.textContent=(S.name||'회원')+' · '+masked;
+      T('본인인증이 완료되었습니다.');
+      g2();
     }
 
     function poll(){
