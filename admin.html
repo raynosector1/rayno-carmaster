@@ -705,6 +705,14 @@ function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime()
 /* 목록용: 가운데를 가린다 (상세 화면에서는 _full 로 전체 표시) */
 function _mask(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length<7)return p; return p.slice(0,3)+'-****-'+p.slice(-4); }
 function _full(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length===11)return p.slice(0,3)+'-'+p.slice(3,7)+'-'+p.slice(7); if(p.length===10)return p.slice(0,3)+'-'+p.slice(3,6)+'-'+p.slice(6); return p; }
+/* '기타'로 저장된 항목은 회원이 직접 입력한 값을 함께 보여준다 */
+function _lab(v, etc){
+  v = v || '';
+  if(v === '기타' && etc) return '기타(' + etc + ')';
+  return v;
+}
+function _brandLab(m){ return _lab(m.brand, m.brand_etc); }
+function _officeLab(m){ return _lab(m.office, m.office_etc); }
 function _stat(s){ return s==='verified'?'일반':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
@@ -742,7 +750,7 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:m.office||'-', brand:m.brand||'', region:m.region||'', phone:_mask(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status) }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_mask(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
@@ -757,7 +765,7 @@ async function getMember(code){
     }
     return {
       id:m.id, name:m.name, code:m.code, status:_stat(m.status),
-      office:[m.brand,m.region,m.office].filter(Boolean).join(' '),
+      office:[_brandLab(m), m.region, _officeLab(m)].filter(Boolean).join(' · '),
       phone:_full(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'),
       join:_date(_ts(m)), total:total, reward:reward, lastWr:lastWr?_date(lastWr):'-',
       smsOptout: !!m.sms_optout,
@@ -772,7 +780,7 @@ async function searchCarmaster(q){
   try{
     var enc = encodeURIComponent('%'+q+'%');
     var rows = await admRest('carmasters?select=code,name,office,phone&or=(name.ilike.'+enc+',code.ilike.'+enc+',phone.ilike.'+enc+')&limit=20');
-    return rows.map(function(m){ return { code:m.code, name:m.name, office:m.office, phone:_mask(m.phone) }; });
+    return rows.map(function(m){ return { code:m.code, name:m.name, office:_officeLab(m), phone:_mask(m.phone) }; });
   }catch(e){ console.error('search',e); return []; }
 }
 async function loadRewards(tab){
