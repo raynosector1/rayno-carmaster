@@ -275,8 +275,8 @@ input::placeholder{color:#B4B4B8;}
         </div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">
-            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
+          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">
+            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
           </div>
           <div id="membersRows"></div>
         </div>
@@ -750,7 +750,7 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_mask(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status) }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
@@ -780,7 +780,7 @@ async function searchCarmaster(q){
   try{
     var enc = encodeURIComponent('%'+q+'%');
     var rows = await admRest('carmasters?select=code,name,office,phone&or=(name.ilike.'+enc+',code.ilike.'+enc+',phone.ilike.'+enc+')&limit=20');
-    return rows.map(function(m){ return { code:m.code, name:m.name, office:_officeLab(m), phone:_mask(m.phone) }; });
+    return rows.map(function(m){ return { code:m.code, name:m.name, office:_officeLab(m), phone:_full(m.phone) }; });
   }catch(e){ console.error('search',e); return []; }
 }
 async function loadRewards(tab){
@@ -852,7 +852,7 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px');
+  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -902,12 +902,13 @@ function applyMemberFilters(){
   if($('mTotal')) $('mTotal').textContent=rows.length;
   var badge=function(st){ return st==='일반'?'<span class="badge b-ok">일반</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':'<span class="badge b-off">정지</span>'; };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">'+
+    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.office)+'</span>'+
       '<span>'+esc(m.name)+'</span>'+
+      '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       '<span style="color:#8A8A8E;">'+m.join+'</span>'+
       '<span>'+badge(m.status)+'</span>'+
@@ -929,7 +930,7 @@ function applyMemberFilters(){
 if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
 if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
 if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
-$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.phone,m.join,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
+$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,m.join,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 const RAYNO_ADMIN_URL = 'https://raynofilm.co.kr/include/app/8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918/index.php';
 async function openMember(code){
   S.dMemberCode = code;

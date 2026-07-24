@@ -520,17 +520,18 @@ const server = http.createServer(async (req, res) => {
       const body = await readJsonBody(req);
       const v = verifyNiceToken(body.nice_token);
       const rows = await db.query(
-        'SELECT login_id FROM ?? WHERE di_hash = ? LIMIT 1',
+        'SELECT login_id, status FROM ?? WHERE di_hash = ? LIMIT 1',
         [db.T.CARMASTERS, v.di_hash]);
       if (!rows.length) {
         return sendJson(res, 404, { ok: false, message: '가입 정보를 찾을 수 없습니다.' });
       }
-      const lid = rows[0].login_id || '';
+      if (rows[0].status === 'withdrawn') {
+        return sendJson(res, 404, { ok: false,
+          message: '탈퇴한 회원입니다. 레이노 고객센터(1588-8695)로 문의해 주세요.' });
+      }
       log('find_id_succeeded');
-      return sendJson(res, 200, {
-        ok: true,
-        loginId: lid.slice(0, 3) + '*'.repeat(Math.max(lid.length - 3, 1))
-      });
+      // 본인인증을 통과한 사람에게만 응답하므로 아이디를 그대로 알려준다
+      return sendJson(res, 200, { ok: true, loginId: rows[0].login_id || '' });
     }
 
     // ───── 비밀번호 재설정 (NICE 인증 필요) ─────
@@ -543,10 +544,18 @@ const server = http.createServer(async (req, res) => {
       auth.checkPasswordFormat(body.password);
 
       const rows = await db.query(
-        'SELECT user_id, login_id FROM ?? WHERE di_hash = ? LIMIT 1',
+        'SELECT user_id, login_id, status FROM ?? WHERE di_hash = ? LIMIT 1',
         [db.T.CARMASTERS, v.di_hash]);
       if (!rows.length) {
         return sendJson(res, 404, { ok: false, message: '가입 정보를 찾을 수 없습니다.' });
+      }
+      if (rows[0].status === 'withdrawn') {
+        return sendJson(res, 400, { ok: false,
+          message: '탈퇴한 회원입니다. 레이노 고객센터(1588-8695)로 문의해 주세요.' });
+      }
+      if (rows[0].status === 'suspended') {
+        return sendJson(res, 400, { ok: false,
+          message: '이용이 정지된 계정입니다. 레이노 고객센터(1588-8695)로 문의해 주세요.' });
       }
       const inputId = String(body.login_id || '').trim();
       if (inputId && inputId !== rows[0].login_id) {
@@ -897,7 +906,8 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (b.op === 'reset-password') {
-          const temp = 'Rk' + crypto.randomBytes(4).toString('hex') + '!';
+          // hex는 전부 문자(a~f)일 수 있어 숫자를 한 자리 강제로 넣는다
+          const temp = 'Rk' + crypto.randomBytes(4).toString('hex') + crypto.randomInt(10) + '!';
           await auth.changePassword(cm.user_id, temp);
           log('admin_password_reset');
           return sendJson(res, 200, { ok: true, temp_password: temp });
