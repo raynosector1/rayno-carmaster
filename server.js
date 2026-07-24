@@ -298,10 +298,12 @@ async function doSignup(body) {
 
   // 중복가입 확인 (계정을 만들기 전에)
   const dup = await db.query(
-    'SELECT login_id FROM ?? WHERE di_hash = ? LIMIT 1',
+    'SELECT login_id, status FROM ?? WHERE di_hash = ? LIMIT 1',
     [db.T.CARMASTERS, v.di_hash]);
   if (dup.length) {
-    const err = new Error(`이미 가입된 회원입니다. (아이디: ${dup[0].login_id})`);
+    const err = new Error(dup[0].status === 'withdrawn'
+      ? '탈퇴한 회원입니다. 탈퇴 후 7일 이내에는 복구만 가능하니 레이노 고객센터(1588-8695)로 문의해 주세요.'
+      : `이미 가입된 회원입니다. (아이디: ${dup[0].login_id})`);
     err.status = 409;
     throw err;
   }
@@ -560,7 +562,8 @@ const server = http.createServer(async (req, res) => {
       const p = auth.authFromHeader(req);
       const d = db.decExpr('c.phone', 'phone');
       const rows = await db.query(
-        `SELECT c.id, c.code, c.login_id, c.name, c.status, c.brand, c.region, c.office,
+        `SELECT c.id, c.code, c.login_id, c.name, c.status,
+                c.brand, c.brand_etc, c.region, c.office, c.office_etc,
                 c.phone_last4, ${d.sql}
            FROM ?? c WHERE c.user_id = ? LIMIT 1`,
         [...d.params, db.T.CARMASTERS, p.sub]);
@@ -594,7 +597,11 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, {
         ok: true,
         code: me.code, login_id: me.login_id, name: me.name, status: me.status,
-        brand: me.brand, region: me.region, office: me.office,
+        brand: me.brand, brand_etc: me.brand_etc,
+        region: me.region,
+        office: me.office, office_etc: me.office_etc,
+        brand_label: (me.brand === '기타' && me.brand_etc) ? me.brand_etc : me.brand,
+        office_label: (me.office === '기타' && me.office_etc) ? me.office_etc : me.office,
         phone_masked: masked,
         month_count: Number(stat.month_count || 0),
         total_count: total,
@@ -634,11 +641,50 @@ const server = http.createServer(async (req, res) => {
       if (!body.brand || !body.region || !body.office) {
         throw new Error('소속 정보를 모두 선택해 주세요.');
       }
-      const r = await db.execute(
-        `UPDATE ?? SET brand = ?, region = ?, office = ? WHERE user_id = ?`,
-        [db.T.CARMASTERS, body.brand, body.region, body.office, p.sub]);
-      if (!r.affectedRows) throw new Error('회원 정보를 찾을 수 없습니다.');
+      // 회원이 있는지 먼저 확인한다.
+      // (MySQL은 값이 그대로면 변경 건수를 0으로 돌려주므로 그것만으로 판단하면 안 된다)
+      const [own] = await db.query(
+        'SELECT id FROM ?? WHERE user_id = ? LIMIT 1', [db.T.CARMASTERS, p.sub]);
+      if (!own) throw new Error('회원 정보를 찾을 수 없습니다.');
+
+      await db.execute(
+        `UPDATE ?? SET brand = ?, brand_etc = ?, region = ?, office = ?, office_etc = ?
+          WHERE id = ?`,
+        [db.T.CARMASTERS,
+         body.brand, body.brand_etc || null,
+         body.region,
+         body.office, body.office_etc || null,
+         own.id]);
+
       log('profile_updated');
+      return sendJson(res, 200, {
+        ok: true,
+        brand_label: (body.brand === '기타' && body.brand_etc) ? body.brand_etc : body.brand,
+        office_label: (body.office === '기타' && body.office_etc) ? body.office_etc : body.office
+      });
+    }
+
+    // ───── 회원 탈퇴 (본인 신청) ─────
+    if (path === '/v1/me/withdraw' && req.method === 'POST') {
+      const p = auth.authFromHeader(req);
+      const [own] = await db.query(
+        'SELECT id, status FROM ?? WHERE user_id = ? LIMIT 1', [db.T.CARMASTERS, p.sub]);
+      if (!own) throw new Error('회원 정보를 찾을 수 없습니다.');
+      if (own.status === 'withdrawn') throw new Error('이미 탈퇴 처리된 계정입니다.');
+
+      // 쿠폰·미지급 리워드는 즉시 소멸, 회원 정보는 7일간 보관 후 완전 삭제
+      await db.withTransaction(async (tx) => {
+        await tx.query('DELETE FROM ?? WHERE carmaster_id = ?', [db.T.COUPONS, own.id]);
+        await tx.query("DELETE FROM ?? WHERE carmaster_id = ? AND status = 'pending'",
+          [db.T.REWARDS, own.id]);
+        await tx.query(
+          "UPDATE ?? SET status = 'withdrawn', withdrawn_at = UTC_TIMESTAMP() WHERE id = ?",
+          [db.T.CARMASTERS, own.id]);
+        await tx.query('UPDATE ?? SET banned_at = UTC_TIMESTAMP() WHERE id = ?',
+          [db.T.APP_USERS, p.sub]);
+      });
+
+      log('member_withdrawn');
       return sendJson(res, 200, { ok: true });
     }
 

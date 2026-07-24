@@ -702,7 +702,9 @@ function _today(){ var d=new Date(); return d.getFullYear()+String(d.getMonth()+
 function _csv(rows){ return '\uFEFF'+rows.map(function(r){ return r.map(function(c){ c=String(c==null?'':c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(','); }).join('\n'); }
 function _download(name, text){ var b=new Blob([text],{type:'text/csv;charset=utf-8'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},1000); }
 function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime())/1000; if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전'; return Math.floor(s/86400)+'일 전'; }
-function _mask(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length===11)return p.slice(0,3)+'-'+p.slice(3,7)+'-'+p.slice(7); if(p.length===10)return p.slice(0,3)+'-'+p.slice(3,6)+'-'+p.slice(6); return p; }
+/* 목록용: 가운데를 가린다 (상세 화면에서는 _full 로 전체 표시) */
+function _mask(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length<7)return p; return p.slice(0,3)+'-****-'+p.slice(-4); }
+function _full(p){ p=(p||'').replace(/\D/g,''); if(!p)return '-'; if(p.length===11)return p.slice(0,3)+'-'+p.slice(3,7)+'-'+p.slice(7); if(p.length===10)return p.slice(0,3)+'-'+p.slice(3,6)+'-'+p.slice(6); return p; }
 function _stat(s){ return s==='verified'?'일반':(s==='suspended'||s==='banned'?'정지':'인증대기'); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
@@ -756,7 +758,7 @@ async function getMember(code){
     return {
       id:m.id, name:m.name, code:m.code, status:_stat(m.status),
       office:[m.brand,m.region,m.office].filter(Boolean).join(' '),
-      phone:_mask(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'),
+      phone:_full(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'),
       join:_date(_ts(m)), total:total, reward:reward, lastWr:lastWr?_date(lastWr):'-',
       smsOptout: !!m.sms_optout,
       agreePrivacy: (m.agree_privacy!==false), agreeMkt: !!m.agree_marketing,

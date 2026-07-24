@@ -307,9 +307,31 @@ async function initEdit(){
   if(eR) eR.onchange=function(){ fillEOffices(eB.value, eR.value); if(eO)eO.value=''; };
   /* 현재 값 미리 선택 */
   if(_CUR.brand){
-    var inTree = TREE.some(function(t){return t.name===_CUR.brand;});
-    if(inTree){ eB.value=_CUR.brand; fillERegions(_CUR.brand); if(eR&&_CUR.region){ eR.value=_CUR.region; fillEOffices(_CUR.brand,_CUR.region); if(eO&&_CUR.office)eO.value=_CUR.office; } }
-    else { eB.value=ETC; if(eBE){ eBE.style.display='block'; eBE.value=_CUR.brand; } fillERegions(ETC); if(eR&&_CUR.region)eR.value=_CUR.region; if(eO){ fillEOffices(ETC,_CUR.region); eO.value=ETC; if(eOE){ eOE.style.display='block'; eOE.value=_CUR.office||''; } } }
+    var isEtcBrand  = (_CUR.brand === '기타');
+    var isEtcOffice = (_CUR.office === '기타');
+    if(!isEtcBrand){
+      eB.value = _CUR.brand;
+      fillERegions(_CUR.brand);
+      if(eBE){ eBE.style.display='none'; eBE.value=''; }
+      if(eR && _CUR.region){
+        eR.value = _CUR.region;
+        fillEOffices(_CUR.brand, _CUR.region);
+        if(eO){
+          if(isEtcOffice){ eO.value = ETC; if(eOE){ eOE.style.display='block'; eOE.value = _CUR.office_etc || ''; } }
+          else { eO.value = _CUR.office; if(eOE){ eOE.style.display='none'; eOE.value=''; } }
+        }
+      }
+    } else {
+      eB.value = ETC;
+      if(eBE){ eBE.style.display='block'; eBE.value = _CUR.brand_etc || ''; }
+      fillERegions(ETC);
+      if(eR && _CUR.region) eR.value = _CUR.region;
+      if(eO){
+        fillEOffices(ETC, _CUR.region);
+        eO.value = ETC;
+        if(eOE){ eOE.style.display='block'; eOE.value = _CUR.office_etc || _CUR.office || ''; }
+      }
+    }
   }
 }
 
@@ -417,12 +439,17 @@ async function loadMyStats(){
     }
 
     var name = me.name || '회원';
-    var org = [me.brand, me.office].filter(Boolean).join(' · ') || '—';
+    /* '기타'로 저장된 경우 직접 입력한 값으로 보여준다 */
+    var brandLabel  = me.brand_label  || me.brand  || '';
+    var officeLabel = me.office_label || me.office || '';
+    var org = [brandLabel, officeLabel].filter(Boolean).join(' · ') || '—';
     var av=_gid('avatar'); if(av) av.textContent = name.slice(0,1);
-    if(_gid('pfBrand')) _gid('pfBrand').textContent = me.brand || '—';
-    if(_gid('pfOffice')) _gid('pfOffice').textContent = me.office || '—';
+    if(_gid('pfBrand')) _gid('pfBrand').textContent = brandLabel || '—';
+    if(_gid('pfOffice')) _gid('pfOffice').textContent = officeLabel || '—';
     if(_gid('pfOrg')) _gid('pfOrg').textContent = org;
-    _CUR = { brand: me.brand||'', region: me.region||'', office: me.office||'' };
+    _CUR = { brand: me.brand||'', brand_etc: me.brand_etc||'',
+             region: me.region||'',
+             office: me.office||'', office_etc: me.office_etc||'' };
     initEdit();
     loadNotices(); loadRewardList(); loadRecordList();
     return {
@@ -444,10 +471,20 @@ async function updateProfile(data){
   var t = cmToken(); if(!t) return { ok:false };
   try{
     var r = await api('/v1/me/profile', { method:'POST', body:{
-      brand: data.brand, region: data.region, office: data.office
+      brand: data.brand, brand_etc: data.brand_etc || null,
+      region: data.region,
+      office: data.office, office_etc: data.office_etc || null
     }});
-    return { ok: !!(r && r.ok), message: r && r.message };
-  }catch(e){ return { ok:false }; }
+    return r || { ok:false };
+  }catch(e){ return { ok:false, message:'저장에 실패했습니다.' }; }
+}
+
+/* 회원 탈퇴 (본인 신청) */
+async function withdrawMe(){
+  try{
+    var r = await api('/v1/me/withdraw', { method:'POST', body:{} });
+    return r || { ok:false };
+  }catch(e){ return { ok:false, message:'처리에 실패했습니다.' }; }
 }
 
 const S = { name:'', code:'', org:'' };
@@ -498,9 +535,35 @@ const S = { name:'', code:'', org:'' };
     else if(a==='leave'){
       var ov=document.createElement('div'); ov.style.cssText='position:absolute;inset:0;z-index:80;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;';
       var sh=document.createElement('div'); sh.style.cssText='width:100%;background:#fff;border-radius:22px 22px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));';
-      sh.innerHTML='<div style="font-size:19px;font-weight:800;color:#111;">정말 탈퇴하시겠어요?</div><div style="margin-top:10px;font-size:13.5px;line-height:1.7;color:#6A6A6E;">탈퇴 시 아래 내용이 처리됩니다.<br>· 개인정보는 관계 법령에 따라 파기·분리 보관됩니다.<br>· 보유 중인 <b style="color:#111;">쿠폰</b>과 미지급 <b style="color:#111;">리워드</b>는 모두 소멸됩니다.<br>· 누적 시공 실적은 복구할 수 없습니다.</div><div style="margin-top:22px;display:flex;gap:10px;"><button data-lv="cancel" style="flex:1;padding:15px 0;border:1.5px solid #E7E7E9;background:#fff;color:#111;font-size:15px;font-weight:700;border-radius:14px;cursor:pointer;">취소</button><button data-lv="go" style="flex:1;padding:15px 0;border:none;background:#D64545;color:#fff;font-size:15px;font-weight:800;border-radius:14px;cursor:pointer;">탈퇴 신청</button></div>';
-      ov.appendChild(sh); D.appendChild(ov);
-      ov.addEventListener('click',function(e){ var v=e.target.getAttribute&&e.target.getAttribute('data-lv'); if(e.target===ov||v==='cancel'){ ov.remove(); } else if(v==='go'){ ov.remove(); T('탈퇴 신청이 접수되었습니다. 고객센터(1588-8695)에서 안내드립니다.'); } });
+      sh.innerHTML='<div style="font-size:19px;font-weight:800;color:#111;">정말 탈퇴하시겠어요?</div>'+
+        '<div style="margin-top:10px;font-size:13.5px;line-height:1.7;color:#6A6A6E;">'+
+        '탈퇴하시면 <b style="color:#111;">회원 정보가 모두 삭제</b>됩니다.<br>'+
+        '· 보유 중인 <b style="color:#111;">쿠폰</b>과 미지급 <b style="color:#111;">리워드</b>는 즉시 소멸됩니다.<br>'+
+        '· 누적 시공 실적은 복구할 수 없습니다.<br>'+
+        '· 탈퇴 후 <b style="color:#111;">7일 이내</b>에는 회원 정보가 보관됩니다.<br>'+
+        '&nbsp;&nbsp;복구를 원하시면 <b style="color:#111;">레이노 고객센터(1588-8695)</b>로 문의해 주세요.<br>'+
+        '· 7일이 지나면 모든 정보가 완전히 삭제되어 되돌릴 수 없습니다.'+
+        '</div>'+
+        '<div style="margin-top:22px;display:flex;gap:10px;">'+
+        '<button data-lv="cancel" style="flex:1;padding:15px 0;border:1.5px solid #E7E7E9;background:#fff;color:#111;font-size:15px;font-weight:700;border-radius:14px;cursor:pointer;">취소</button>'+
+        '<button data-lv="go" style="flex:1;padding:15px 0;border:none;background:#D64545;color:#fff;font-size:15px;font-weight:800;border-radius:14px;cursor:pointer;">탈퇴하기</button></div>';
+      ov.addEventListener('click',function(e){
+        var v=e.target.getAttribute&&e.target.getAttribute('data-lv');
+        if(e.target===ov||v==='cancel'){ ov.remove(); return; }
+        if(v!=='go') return;
+        e.target.disabled=true; e.target.textContent='처리 중...';
+        withdrawMe().then(function(res){
+          if(!res || !res.ok){
+            e.target.disabled=false; e.target.textContent='탈퇴하기';
+            T((res && res.message) || '탈퇴 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+            return;
+          }
+          ov.remove();
+          try{ sessionStorage.removeItem('cm_token'); }catch(err){}
+          alert('탈퇴가 완료되었습니다.\n\n회원 정보는 7일간 보관되며, 복구를 원하시면 레이노 고객센터(1588-8695)로 문의해 주세요.');
+          location.href='index.html';
+        });
+      });
     }
     else { T('준비 중인 메뉴입니다.'); }
   }); });
@@ -513,13 +576,32 @@ const S = { name:'', code:'', org:'' };
     eBrand.addEventListener('change',function(){eEtc(eBrand,eBEtc);});
     eOffice.addEventListener('change',function(){eEtc(eOffice,eOEtc);});
     id('saveProfile').addEventListener('click',function(){
-      var brand=/기타/.test(eBrand.value)?eBEtc.value.trim():eBrand.value;
-      var office=/기타/.test(eOffice.value)?eOEtc.value.trim():eOffice.value;
-      if(!brand||!eRegion.value||!office){ T('소속·지역·영업소를 모두 선택해 주세요.'); return; }
-      updateProfile({brand:brand,region:eRegion.value,office:office}).then(function(){
-        var org=brand+' · '+office;
+      var brandIsEtc  = /기타/.test(eBrand.value);
+      var officeIsEtc = /기타/.test(eOffice.value);
+      var brandEtc  = brandIsEtc  ? (eBEtc.value||'').trim() : '';
+      var officeEtc = officeIsEtc ? (eOEtc.value||'').trim() : '';
+      if(brandIsEtc && !brandEtc){ T('소속을 직접 입력해 주세요.'); return; }
+      if(officeIsEtc && !officeEtc){ T('영업소를 직접 입력해 주세요.'); return; }
+      if(!eBrand.value || !eRegion.value || !eOffice.value){ T('소속·지역·영업소를 모두 선택해 주세요.'); return; }
+
+      /* 가입 때와 같은 형식으로 보낸다: 기타면 값은 '기타', 실제 입력은 _etc 로 */
+      var payload = {
+        brand:  brandIsEtc  ? '기타' : eBrand.value,  brand_etc:  brandEtc  || null,
+        region: eRegion.value,
+        office: officeIsEtc ? '기타' : eOffice.value, office_etc: officeEtc || null
+      };
+
+      var btn=id('saveProfile'); btn.disabled=true;
+      updateProfile(payload).then(function(res){
+        btn.disabled=false;
+        if(!res || !res.ok){ T((res && res.message) || '저장에 실패했습니다. 잠시 후 다시 시도해 주세요.'); return; }
+        var bl = res.brand_label  || payload.brand;
+        var ol = res.office_label || payload.office;
+        var org = bl+' · '+ol;
         id('cardOrg').textContent=org; id('pfOrg').textContent=org;
-        id('pfBrand').textContent=brand; id('pfOffice').textContent=office;
+        id('pfBrand').textContent=bl; id('pfOffice').textContent=ol;
+        _CUR = { brand:payload.brand, brand_etc:payload.brand_etc||'',
+                 region:payload.region, office:payload.office, office_etc:payload.office_etc||'' };
         T('회원정보가 수정되었습니다.'); show('profile');
       });
     });
