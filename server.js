@@ -327,6 +327,13 @@ async function doSignup(body) {
         "UPDATE ?? SET login_id = CONCAT('wd_', LEFT(MD5(id), 12)), banned_at = UTC_TIMESTAMP() WHERE id = ?",
         [db.T.APP_USERS, rejoin.user_id]);
 
+      // 탈퇴 계정이 이 아이디를 쥐고 있으면 먼저 비켜준다 (아이디 유일 제약)
+      await tx.query(
+        `UPDATE ?? u JOIN ?? c ON c.user_id = u.id
+            SET u.login_id = CONCAT('wd_', LEFT(MD5(u.id), 12))
+          WHERE u.login_id = ? AND c.status = 'withdrawn'`,
+        [db.T.APP_USERS, db.T.CARMASTERS, loginId]);
+
       const tk = await tx.query(
         'SELECT id FROM ?? WHERE login_id = ? LIMIT 1', [db.T.APP_USERS, loginId]);
       const tkRows = (Array.isArray(tk) && Array.isArray(tk[0])) ? tk[0] : tk;
@@ -363,6 +370,13 @@ async function doSignup(body) {
   }
 
   await db.withTransaction(async (tx) => {
+    // 탈퇴 계정이 이 아이디를 쥐고 있으면 먼저 비켜준다 (아이디 유일 제약)
+    await tx.query(
+      `UPDATE ?? u JOIN ?? c ON c.user_id = u.id
+        SET u.login_id = CONCAT('wd_', LEFT(MD5(u.id), 12))
+        WHERE u.login_id = ? AND c.status = 'withdrawn'`,
+      [db.T.APP_USERS, db.T.CARMASTERS, loginId]);
+
     const userId = await auth.createAccount(
       { loginId, password: body.password, role: 'carmaster' }, tx);
 

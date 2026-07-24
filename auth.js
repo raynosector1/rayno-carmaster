@@ -143,9 +143,16 @@ function checkPasswordFormat(pw) {
 
 /** 아이디 사용 가능 여부 */
 async function isLoginIdAvailable(loginId) {
+  // 탈퇴한 회원이 쥐고 있는 아이디는 다시 쓸 수 있는 것으로 본다.
+  // (탈퇴 계정은 로그인이 불가능하고, 7일 뒤 정리 배치가 아이디를 비켜준다)
   const rows = await db.query(
-    'SELECT id FROM ?? WHERE login_id = ? LIMIT 1',
-    [db.T.APP_USERS, String(loginId).trim()]
+    `SELECT u.id
+       FROM ?? u
+       LEFT JOIN ?? c ON c.user_id = u.id
+      WHERE u.login_id = ?
+        AND (c.status IS NULL OR c.status <> 'withdrawn')
+      LIMIT 1`,
+    [db.T.APP_USERS, db.T.CARMASTERS, String(loginId).trim()]
   );
   return rows.length === 0;
 }
