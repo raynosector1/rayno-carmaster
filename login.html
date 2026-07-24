@@ -54,8 +54,14 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
   <div style="display:flex;align-items:center;gap:12px;"><div style="width:38px;height:38px;border-radius:50%;background:#F2F2F4;display:flex;align-items:center;justify-content:center;color:#111;font-size:19px;cursor:pointer;" data-go="0">‹</div><span style="font-size:20px;font-weight:800;color:#111;">아이디 찾기</span></div>
   <h2 style="margin-top:22px;font-size:22px;font-weight:800;color:#111;line-height:1.35;letter-spacing:-0.6px;">가입 시 인증한 휴대폰으로<br>본인인증해 주세요</h2>
   <p style="margin-top:10px;font-size:14px;color:#8A8A8E;line-height:1.55;">본인인증이 완료되면 가입된 아이디를 확인할 수 있어요.</p>
-  <div style="margin:18px 0 10px;font-size:14px;font-weight:800;color:#111;">통신사</div><select id="fidTelco" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled="" selected="">통신사 선택</option><option>SKT</option><option>KT</option><option>LG U+</option><option>알뜰폰</option></select>
-  <div style="margin:18px 0 10px;font-size:14px;font-weight:800;color:#111;">휴대폰번호</div><div style="display:flex;gap:8px;"><input id="fidPhone" type="tel" placeholder="휴대폰번호 입력" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;" inputmode="numeric"><button style="flex-shrink:0;padding:0 16px;border:none;background:#111;color:#fff;font-size:13px;font-weight:700;border-radius:14px;font-family:inherit;cursor:pointer;" id="fidReq">인증요청</button></div>
+  <div style="margin-top:22px;display:flex;flex-direction:column;gap:12px;">
+    <div id="fidDone" style="display:none;width:100%;align-items:center;gap:12px;background:#F3FBF7;border:1.5px solid #22B07D;border-radius:14px;padding:16px;">
+      <span style="width:28px;height:28px;border-radius:50%;background:#22B07D;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#10003;</span>
+      <div style="flex:1;min-width:0;"><div style="font-size:14.5px;font-weight:800;color:#111;">본인인증 완료</div><div id="fidInfo" style="font-size:13px;color:#5A5A5E;margin-top:3px;"></div></div>
+    </div>
+    <button id="fidNice" style="width:100%;padding:18px 0;border:none;border-radius:14px;background:#111;color:#fff;font-size:16px;font-weight:800;font-family:inherit;">휴대폰 본인인증 하기</button>
+    <div id="fidState" style="display:none;font-size:13px;font-weight:600;color:#8A8A8E;text-align:center;line-height:1.5;"></div>
+  </div>
   <div id="findid-result" style="display:none;margin-top:20px;background:#F5F5F6;border-radius:16px;padding:20px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#8A8A8E;">가입된 아이디</div><div style="margin-top:8px;font-size:24px;font-weight:800;color:#111;letter-spacing:0.5px;">—</div></div>
   <div style="flex:1;"></div>
   <button data-reveal="#findid-result" style="width:100%;padding:19px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;" id="fidConfirm">아이디 확인하기</button>
@@ -67,7 +73,14 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
   <h2 style="margin-top:22px;font-size:22px;font-weight:800;color:#111;line-height:1.35;letter-spacing:-0.6px;">아이디 확인 후<br>본인인증해 주세요</h2>
   <p style="margin-top:10px;font-size:14px;color:#8A8A8E;line-height:1.55;">본인인증이 완료되면 비밀번호를 재설정할 수 있어요.</p>
   <div style="margin:18px 0 10px;font-size:14px;font-weight:800;color:#111;">아이디</div><input id="fpwId" type="text" placeholder="아이디를 입력해 주세요" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;">
-  <div style="margin:18px 0 10px;font-size:14px;font-weight:800;color:#111;">휴대폰번호</div><div style="display:flex;gap:8px;"><input id="fpwPhone" type="tel" placeholder="휴대폰번호 입력" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;" inputmode="numeric"><button style="flex-shrink:0;padding:0 16px;border:none;background:#111;color:#fff;font-size:13px;font-weight:700;border-radius:14px;font-family:inherit;cursor:pointer;">인증요청</button></div>
+  <div style="margin-top:22px;display:flex;flex-direction:column;gap:12px;">
+    <div id="fpwDone" style="display:none;width:100%;align-items:center;gap:12px;background:#F3FBF7;border:1.5px solid #22B07D;border-radius:14px;padding:16px;">
+      <span style="width:28px;height:28px;border-radius:50%;background:#22B07D;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#10003;</span>
+      <div style="flex:1;min-width:0;"><div style="font-size:14.5px;font-weight:800;color:#111;">본인인증 완료</div><div id="fpwInfo" style="font-size:13px;color:#5A5A5E;margin-top:3px;"></div></div>
+    </div>
+    <button id="fpwNice" style="width:100%;padding:18px 0;border:none;border-radius:14px;background:#111;color:#fff;font-size:16px;font-weight:800;font-family:inherit;">휴대폰 본인인증 하기</button>
+    <div id="fpwState" style="display:none;font-size:13px;font-weight:600;color:#8A8A8E;text-align:center;line-height:1.5;"></div>
+  </div>
   <div style="flex:1;"></div>
   <button style="width:100%;padding:19px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;" data-go="3">다음</button>
   <div style="height:26px;"></div>
@@ -86,65 +99,81 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
       </div>
 <script>
 
-/* ══════════ Supabase 연결 (공통) ══════════ */
-const SB_URL = 'https://cgfgjxdhhgfjzimerxuc.supabase.co';
-const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZmdqeGRoaGdmanppbWVyeHVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NzcwODMsImV4cCI6MjA5OTQ1MzA4M30.5cILWyFi-kdi2DErkD4lHB6iBuai8D8z_aTAGHkZ6i8';
-const SB_DOMAIN = 'carmaster.raynofilm.co.kr';
-const FN_AUTH = SB_URL + '/functions/v1/carmaster-auth';
+/* ══════════ 백엔드 API (가비아 MySQL) ══════════ */
+const API = 'https://carmaster-auth.raynofilm.co.kr';
 const ETC = '기타 (직접 입력)';
 function cmToken(){ try{ return sessionStorage.getItem('cm_token')||''; }catch(e){ return ''; } }
-async function fn(action, body){
+
+async function api(path, opt){
+  opt = opt || {};
+  var headers = { 'Content-Type':'application/json' };
+  var t = cmToken();
+  if(t && opt.auth !== false) headers['Authorization'] = 'Bearer ' + t;
   try{
-    const r = await fetch(FN_AUTH, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.assign({action}, body||{})) });
+    var r = await fetch(API + path, {
+      method: opt.method || 'GET',
+      headers: headers,
+      body: opt.body ? JSON.stringify(opt.body) : undefined
+    });
     return await r.json();
   }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
 }
 
-/* ══════════ 백엔드 연동 (login) ══════════ */
+/* NICE 본인인증 팝업 → 성공하면 인증 토큰 문자열 반환, 실패하면 null */
+function niceVerify(onState){
+  return new Promise(function(resolve){
+    if(onState) onState('인증창을 여는 중...');
+    api('/v1/verify/start', { method:'POST', body:{}, auth:false }).then(function(d){
+      if(!d || !d.auth_url){ if(onState) onState('인증 서버에 연결하지 못했습니다.'); return resolve(null); }
+      var p = window.open(d.auth_url, 'niceAuth', 'width=480,height=812,menubar=no,status=no,toolbar=no,scrollbars=yes');
+      if(!p){ if(onState) onState('팝업이 차단되었습니다. 팝업을 허용한 뒤 다시 시도해 주세요.'); return resolve(null); }
+      if(onState) onState('인증 창에서 본인확인을 완료해 주세요.');
+      var tries = 0;
+      var timer = setInterval(function(){
+        tries++;
+        if(tries > 300){ clearInterval(timer); if(onState) onState('인증 시간이 만료되었습니다. 다시 시도해 주세요.'); return resolve(null); }
+        fetch(API + '/v1/verify/result?attempt_id=' + encodeURIComponent(d.attempt_id))
+          .then(function(r){ return r.json(); })
+          .then(function(x){
+            if(!x) return;
+            if(x.status === 'verified'){ clearInterval(timer); if(onState) onState(''); resolve(x.token); }
+            else if(x.status === 'failed' || x.status === 'expired'){
+              clearInterval(timer);
+              if(onState) onState('본인인증이 완료되지 않았습니다. 다시 시도해 주세요.');
+              resolve(null);
+            }
+          }).catch(function(){});
+      }, 2000);
+    });
+  });
+}
+
 async function loadOffices(){ return; }
-async function checkLoginId(loginId){ return fn('check-id', { login_id: loginId }); }
-async function verifyIdentity(data){ return fn('verify', data||{}); }
-async function submitSignup(data){ return fn('signup', data||{}); }
 async function loadMyStats(){ return {}; }
+async function checkLoginId(loginId){
+  return api('/v1/auth/check-id', { method:'POST', body:{ login_id: loginId }, auth:false });
+}
 
 async function login(loginId, pw){
-  try{
-    var r = await fetch(SB_URL + '/auth/v1/token?grant_type=password', {
-      method:'POST', headers:{ apikey:SB_ANON, 'Content-Type':'application/json' },
-      body: JSON.stringify({ email: (loginId||'').trim().toLowerCase()+'@'+SB_DOMAIN, password: pw })
-    });
-    var d = await r.json();
-    if(!r.ok || !d.access_token){
-      var em = String((d && (d.error_description || d.msg || d.message)) || '');
-      /* 정지(차단)된 계정 */
-      if(/ban|blocked|disabled/i.test(em)) return { ok:false, message:'이용이 정지된 계정입니다. 담당자에게 문의해 주세요.' };
-      return { ok:false, message:'아이디 또는 비밀번호를 확인해 주세요.' };
-    }
-    /* 계정 상태 재확인 (차단 반영 전 토큰 대비) */
-    try{
-      var cr = await fetch(SB_URL+'/rest/v1/carmasters?select=status&limit=1', { headers:{ apikey:SB_ANON, Authorization:'Bearer '+d.access_token } });
-      if(cr.ok){
-        var rows = await cr.json();
-        if(rows && rows[0] && (rows[0].status==='suspended' || rows[0].status==='banned')){
-          return { ok:false, message:'이용이 정지된 계정입니다. 담당자에게 문의해 주세요.' };
-        }
-      }
-    }catch(e){}
-    try{ sessionStorage.setItem('cm_token', d.access_token); if(d.refresh_token) sessionStorage.setItem('cm_refresh', d.refresh_token); }catch(e){}
-    return { ok:true };
-  }catch(e){ return { ok:false, message:'네트워크 오류가 발생했습니다.' }; }
+  var d = await api('/v1/auth/login', {
+    method:'POST', auth:false,
+    body:{ login_id:(loginId||'').trim(), password: pw }
+  });
+  if(!d || !d.ok) return { ok:false, message:(d && d.message) || '아이디 또는 비밀번호를 확인해 주세요.' };
+  try{ sessionStorage.setItem('cm_token', d.token); }catch(e){}
+  return { ok:true };
 }
 
-/* 아이디 찾기 — 본인인증 후 가입 아이디 반환 (Edge Function find-id 액션 필요) */
-async function findId(data){
-  var phone = ((document.getElementById('fidPhone')||{}).value) || (data&&data.phone) || '';
-  return fn('find-id', { phone: phone });
+/* 아이디 찾기 — NICE 본인인증 토큰으로 조회 */
+async function findId(niceToken){
+  return api('/v1/auth/find-id', { method:'POST', body:{ nice_token: niceToken }, auth:false });
 }
-/* 비밀번호 재설정 — 아이디+본인인증 확인 후 재설정 (Edge Function reset-pw 액션 필요) */
-async function resetPw(data){
-  var loginId = ((document.getElementById('fpwId')||{}).value) || '';
-  var phone = ((document.getElementById('fpwPhone')||{}).value) || '';
-  return fn('reset-pw', { login_id: loginId, phone: phone, password: (data&&data.password)||'' });
+/* 비밀번호 재설정 — 아이디 + NICE 본인인증 토큰 */
+async function resetPw(loginId, niceToken, password){
+  return api('/v1/auth/reset-pw', {
+    method:'POST', auth:false,
+    body:{ login_id: loginId, nice_token: niceToken, password: password }
+  });
 }
 
 /* ── 전역 상태 ── */
@@ -232,10 +261,78 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
     gl();
   }
   /* ===== find id ===== */
-  var fidReq=id('fidReq'); if(fidReq)fidReq.addEventListener('click',function(){ var p=id('fidPhone'); if(!p.value.trim()){T('휴대폰번호를 입력해 주세요.');return;} verifyIdentity({phone:p.value}); T('인증번호를 발송했어요.'); });
-  var fidConfirm=id('fidConfirm'); if(fidConfirm)fidConfirm.addEventListener('click',function(){ findId({phone:(id('fidPhone')||{}).value}).then(function(res){ var box=id('findid-result'); if(box){ if(res&&res.loginId){ var v=box.querySelector('div:last-child'); if(v)v.textContent=res.loginId; } box.style.display='block'; } }); });
+  var NT_FID = null, NT_FPW = null;
+  function setState(elId, msg, err){
+    var el = id(elId); if(!el) return;
+    el.textContent = msg || '';
+    el.style.color = err ? '#E23B3B' : '#8A8A8E';
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  var fidNice = id('fidNice');
+  if(fidNice){
+    var fidConfirm = id('fidConfirm');
+    gate(fidConfirm, false);
+    fidNice.addEventListener('click', function(){
+      if(NT_FID) return;
+      fidNice.disabled = true; fidNice.style.opacity = '0.5'; fidNice.textContent = '인증 진행 중...';
+      niceVerify(function(m){ setState('fidState', m, /완료되지|만료|차단|못했/.test(m||'')); }).then(function(tok){
+        if(!tok){ fidNice.disabled=false; fidNice.style.opacity='1'; fidNice.textContent='휴대폰 본인인증 하기'; return; }
+        NT_FID = tok;
+        fidNice.style.display = 'none';
+        var box = id('fidDone'); if(box) box.style.display = 'flex';
+        gate(fidConfirm, true);
+      });
+    });
+    if(fidConfirm) fidConfirm.addEventListener('click', function(){
+      if(fidConfirm.dataset.gate === '0'){ shake(fidConfirm); T('먼저 본인인증을 완료해 주세요.'); return; }
+      findId(NT_FID).then(function(res){
+        var box = id('findid-result');
+        if(res && res.ok && res.loginId){
+          if(box){ var v = box.querySelector('div:last-child'); if(v) v.textContent = res.loginId; box.style.display='block'; }
+        } else {
+          T((res && res.message) || '가입 정보를 찾을 수 없습니다.');
+        }
+      });
+    });
+  }
+
   /* ===== reset pw ===== */
-  var resetConfirm=id('resetConfirm'); if(resetConfirm)resetConfirm.addEventListener('click',function(){ var a=id('newPw'),b=id('newPw2'); if(!a||!a.value||a.value!==(b&&b.value)){T('새 비밀번호가 일치하지 않습니다.');return;} resetPw({password:a.value}).then(function(){ var d=id('reset-done'); if(d)d.style.display='block'; }); });
+  var fpwNice = id('fpwNice');
+  if(fpwNice){
+    var fpwNext = null;
+    [].slice.call(D.querySelectorAll('[data-go="3"]')).forEach(function(b){ if(b.tagName==='BUTTON') fpwNext = b; });
+    gate(fpwNext, false);
+    fpwNice.addEventListener('click', function(){
+      var lid = id('fpwId');
+      if(!lid || !lid.value.trim()){ T('아이디를 먼저 입력해 주세요.'); return; }
+      if(NT_FPW) return;
+      fpwNice.disabled = true; fpwNice.style.opacity = '0.5'; fpwNice.textContent = '인증 진행 중...';
+      niceVerify(function(m){ setState('fpwState', m, /완료되지|만료|차단|못했/.test(m||'')); }).then(function(tok){
+        if(!tok){ fpwNice.disabled=false; fpwNice.style.opacity='1'; fpwNice.textContent='휴대폰 본인인증 하기'; return; }
+        NT_FPW = tok;
+        fpwNice.style.display = 'none';
+        var box = id('fpwDone'); if(box) box.style.display = 'flex';
+        gate(fpwNext, true);
+      });
+    });
+  }
+
+  var resetConfirm = id('resetConfirm');
+  if(resetConfirm) resetConfirm.addEventListener('click', function(){
+    var a = id('newPw'), b = id('newPw2'), lid = id('fpwId');
+    if(!a || !a.value || a.value !== (b && b.value)){ T('새 비밀번호가 일치하지 않습니다.'); return; }
+    if(!NT_FPW){ T('본인인증을 먼저 완료해 주세요.'); return; }
+    resetPw((lid && lid.value) || '', NT_FPW, a.value).then(function(res){
+      if(res && res.ok){
+        var d2 = id('reset-done'); if(d2) d2.style.display = 'block';
+        NT_FPW = null;
+      } else {
+        T((res && res.message) || '비밀번호 변경에 실패했습니다.');
+      }
+    });
+  });
+
   /* ===== my: tab bar + stats ===== */
   var bar=[].slice.call(D.querySelectorAll('div')).find(function(d){ return d.querySelectorAll('svg').length>=4 && /border-radius:999px/.test(d.getAttribute('style')||'') && /background:#111/.test(d.getAttribute('style')||''); });
   if(bar){ loadMyStats(); var items=[].slice.call(bar.children),names=['홈','쿠폰','리워드','내 정보']; items.forEach(function(it,i){ it.style.cursor='pointer'; it.addEventListener('click',function(){ items.forEach(function(x,j){ var svg=x.querySelector('svg'); if(j===i){x.style.background='#FF5A00';if(svg)svg.setAttribute('stroke','#fff');}else{x.style.background='none';if(svg)svg.setAttribute('stroke','#8A8A8E');} }); if(i>0)T(names[i]+' · 준비 중인 메뉴입니다'); }); }); }

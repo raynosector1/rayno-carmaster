@@ -507,6 +507,51 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
+    // ───── 아이디 찾기 (NICE 인증 필요) ─────
+    if (path === '/v1/auth/find-id' && req.method === 'POST') {
+      if (!rateAllow('f:' + ip, 5, 20)) {
+        return sendJson(res, 429, { ok: false, message: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
+      }
+      const body = await readJsonBody(req);
+      const v = verifyNiceToken(body.nice_token);
+      const rows = await db.query(
+        'SELECT login_id FROM ?? WHERE di_hash = ? LIMIT 1',
+        [db.T.CARMASTERS, v.di_hash]);
+      if (!rows.length) {
+        return sendJson(res, 404, { ok: false, message: '가입 정보를 찾을 수 없습니다.' });
+      }
+      const lid = rows[0].login_id || '';
+      log('find_id_succeeded');
+      return sendJson(res, 200, {
+        ok: true,
+        loginId: lid.slice(0, 3) + '*'.repeat(Math.max(lid.length - 3, 1))
+      });
+    }
+
+    // ───── 비밀번호 재설정 (NICE 인증 필요) ─────
+    if (path === '/v1/auth/reset-pw' && req.method === 'POST') {
+      if (!rateAllow('r:' + ip, 5, 20)) {
+        return sendJson(res, 429, { ok: false, message: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
+      }
+      const body = await readJsonBody(req);
+      const v = verifyNiceToken(body.nice_token);
+      auth.checkPasswordFormat(body.password);
+
+      const rows = await db.query(
+        'SELECT user_id, login_id FROM ?? WHERE di_hash = ? LIMIT 1',
+        [db.T.CARMASTERS, v.di_hash]);
+      if (!rows.length) {
+        return sendJson(res, 404, { ok: false, message: '가입 정보를 찾을 수 없습니다.' });
+      }
+      const inputId = String(body.login_id || '').trim();
+      if (inputId && inputId !== rows[0].login_id) {
+        return sendJson(res, 400, { ok: false, message: '아이디가 일치하지 않습니다.' });
+      }
+      await auth.changePassword(rows[0].user_id, body.password);
+      log('reset_pw_succeeded');
+      return sendJson(res, 200, { ok: true });
+    }
+
     // ───── 소속 지점 목록 ─────
     if (path === '/v1/offices' && req.method === 'GET') {
       const rows = await db.query(
