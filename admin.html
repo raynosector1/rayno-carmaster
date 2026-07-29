@@ -148,6 +148,18 @@ input::placeholder{color:#B4B4B8;}
 .freadonly{padding:13px 15px;background:var(--surface);border:1.5px solid #EDEDED;border-radius:11px;font-size:14px;color:var(--muted);font-weight:600;}
 
 /* drawer */
+/* 회원 화면 미리보기 — my.html 의 카드를 그대로 옮겨 온 모양이다.
+   회원이 실제로 보는 것과 달라지면 미리보기의 뜻이 없으므로 값을 임의로 바꾸지 말 것. */
+.pmv-goal{position:relative;overflow:hidden;border-radius:20px;padding:20px 22px;
+  background:linear-gradient(152deg,#1B1D22 0%,#0E0F12 62%,#15171B 100%);
+  box-shadow:0 12px 28px rgba(14,15,18,.24);}
+.pmv-glow{position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;
+  pointer-events:none;background:radial-gradient(circle,rgba(255,90,0,0.30),transparent 68%);}
+.pmv-soon{position:relative;border:1.5px dashed #DCDCE0;background:#FAFAFB;border-radius:16px;padding:15px 17px;overflow:hidden;}
+.pmv-soon .t{font-size:14.5px;font-weight:800;color:#7A7A80;letter-spacing:-0.3px;}
+.pmv-soon .m{margin-top:5px;font-size:12.5px;color:#A0A0A6;line-height:1.6;}
+.pmv-soon .n{position:absolute;top:14px;right:16px;font-size:11px;font-weight:800;color:#B4B4BA;background:#F0F0F2;border-radius:99px;padding:4px 9px;}
+
 html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤바를 밝게 그린다 */
 
 .overlay{position:fixed;inset:0;background:rgba(17,17,17,.45);z-index:40;display:none;}
@@ -846,6 +858,24 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     <div id="pmTeaserHint" style="display:none;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6;padding:0 2px;">
       회원 리워드 화면 아래쪽 <b>‘곧 만나보실 혜택’</b>에 잠금 카드로 표시됩니다.<br>
       ‘다음 리워드까지’ 목표에는 잡히지 않고, 자동 지급은 꺼집니다.
+    </div>
+
+    <div class="step-h" style="margin-top:28px;"><span class="n">4</span>저장 전 확인</div>
+
+    <div style="margin-top:12px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:16px 18px;">
+      <div style="font-size:13.5px;font-weight:800;color:var(--ink);">지금 조건이면 누가 대상인가</div>
+      <div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.7;">
+        저장하지 않고 <b>실제 시공 실적</b>으로 세어만 봅니다. 리워드는 만들어지지 않습니다.<br>
+        자동 산정이 쓰는 것과 같은 기준이라 실제 결과와 어긋나지 않습니다.
+      </div>
+      <button class="btn btn-line" id="pmPvRun" style="margin-top:12px;width:100%;padding:12px 0;font-size:13.5px;font-weight:800;">대상 확인</button>
+      <div id="pmPvResult" style="display:none;margin-top:12px;"></div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <div class="flabel">미리보기 · 회원 리워드 화면</div>
+      <div id="pmMyPv" style="background:#F4F4F6;border-radius:16px;padding:16px;"></div>
+      <div id="pmMyPvNote" style="margin-top:7px;font-size:11.5px;color:var(--muted);line-height:1.6;"></div>
     </div>
 
     <div style="margin-top:28px;display:flex;gap:10px;">
@@ -2135,6 +2165,8 @@ function pmFill(p){
 function openPromoDrawer(p){
   if(p && p.id){ pmReset(); pmFill(p); $('promoDrawerTitle').textContent='프로모션 수정'; $('pmCreate').textContent='수정 저장'; }
   else { pmReset(); pmEditId=null; $('promoDrawerTitle').textContent='프로모션 생성'; $('pmCreate').textContent='프로모션 생성'; }
+  pmPvClear();            /* 앞서 열었던 프로모션의 확인 결과가 남지 않게 한다 */
+  pmRenderMyPv();
   $('promoOverlay').classList.add('on'); $('promoDrawer').classList.add('on');
 }
 function closePromoDrawer(){ $('promoOverlay').classList.remove('on'); $('promoDrawer').classList.remove('on'); }
@@ -2275,7 +2307,140 @@ function pmPreview(){
     : ((pmPeriod==='range' && $('pmStart').value && $('pmEnd').value)
         ? ('기간 내 시공 ' + (+$('pmN').value||0) + '건 달성 시 지급')
         : ('누적 시공 ' + (+$('pmN').value||0) + '건 달성 시 지급'));
+
+  pmRenderMyPv();
 }
+
+/* ══════════════════════════════════════════════════════
+   저장 전 확인
+
+   ① 대상 미리보기 — 지금 조건이면 누가 몇 명인지 실제 실적으로 세어 본다.
+      서버가 자동 산정과 '같은' 조건식을 쓰므로 결과가 어긋나지 않는다.
+      아무것도 만들지 않는다.
+   ② 회원 리워드 화면 미리보기 — 켜는 순간 회원 수천 명이 보게 되므로
+      문구를 미리 눈으로 확인한다.
+   ══════════════════════════════════════════════════════ */
+
+/* 회원 화면에 어떻게 보이는지 */
+function pmRenderMyPv(){
+  var box=$('pmMyPv'), note=$('pmMyPvNote');
+  if(!box) return;
+
+  var name   = $('pmName').value.trim();
+  var reward = $('pmReward').value==='etc' ? $('pmRewardEtc').value.trim() : $('pmReward').value;
+  var goal   = (+$('pmN').value||0);
+  var teaser = $('pmTeaser').checked;
+
+  if(pmCond==='signup'){
+    box.innerHTML = '<div style="padding:18px;text-align:center;font-size:12.5px;color:var(--muted);'
+      + 'line-height:1.7;background:#fff;border-radius:12px;">가입 즉시 지급은 리워드 화면의 목표 카드에'
+      + ' 뜨지 않습니다.<br>가입 안내 화면에만 표시됩니다.</div>';
+    note.textContent = '';
+    return;
+  }
+
+  if(teaser){
+    box.innerHTML = '<div class="pmv-soon">'
+      + '<div class="n">'+goal+'건 남음</div>'
+      + '<div class="t">'+esc(name||'프로모션명')+'</div>'
+      + '<div class="m">'+esc(reward||'추후 공개 예정')+'</div></div>';
+    note.textContent = '리워드 화면 아래 ‘곧 만나보실 혜택’에 이렇게 보입니다. 목표 카드에는 잡히지 않습니다.';
+    return;
+  }
+
+  box.innerHTML =
+      '<div class="pmv-goal"><div class="pmv-glow"></div><div style="position:relative;">'
+    + '<div style="font-size:10.5px;font-weight:800;letter-spacing:1.5px;color:#FF7A2E;">NEXT REWARD</div>'
+    + '<div style="margin-top:7px;font-size:19px;font-weight:800;color:#fff;letter-spacing:-0.4px;">'
+    + esc(reward||name||'리워드')+'</div>'
+    + '<div style="margin-top:4px;font-size:12.5px;color:#9A9AA2;">시공 '+goal+'건을 달성하면 지급됩니다</div>'
+    + '<div style="margin-top:15px;height:7px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden;">'
+    + '<div style="width:0%;height:100%;background:linear-gradient(90deg,#FF7A33,#FF5A00);border-radius:99px;"></div></div>'
+    + '<div style="margin-top:9px;display:flex;align-items:baseline;justify-content:space-between;">'
+    + '<span style="font-size:13px;font-weight:800;color:#FF7A2E;">'+goal+'건 남았어요</span>'
+    + '<span style="font-size:12px;color:#8A8A92;">0 / '+goal+'건</span></div></div></div>';
+  note.textContent = '아직 시공이 없는 회원이 볼 화면입니다. 건수가 쌓이면 막대와 남은 건수가 줄어듭니다.';
+}
+
+/* 조건이 바뀌면 앞서 세어 본 결과는 더 이상 맞지 않는다 */
+function pmPvClear(){
+  var box=$('pmPvResult');
+  if(box){ box.style.display='none'; box.innerHTML=''; }
+}
+
+function pmPvBody(){
+  var useRange = pmPeriod==='range' && $('pmStart').value && $('pmEnd').value;
+  return {
+    op: 'preview',
+    id: pmEditId || '',
+    cond: pmCond,
+    threshold_n: pmCond==='signup' ? 0 : (+$('pmN').value||0),
+    start_date: useRange ? $('pmStart').value : '',
+    end_date:   useRange ? $('pmEnd').value   : ''
+  };
+}
+
+$('pmPvRun').addEventListener('click', async function(){
+  var box=$('pmPvResult');
+  this.style.pointerEvents='none'; this.textContent='세어보는 중…';
+  try{
+    var r = await admApi('/v1/admin/promotions', { method:'POST', body: pmPvBody() });
+    if(!r || !r.ok) throw new Error((r && r.message) || '확인에 실패했습니다.');
+
+    var head = '<div style="display:flex;gap:7px;flex-wrap:wrap;">'
+      + '<span class="badge b-ok">조건 충족 '+(r.total||0).toLocaleString()+'명</span>'
+      + (r.already ? '<span class="badge b-off">이미 받음 '+r.already.toLocaleString()+'명</span>' : '')
+      + '<span class="badge b-warn">새로 지급 '+(r.fresh||0).toLocaleString()+'명</span>'
+      + '</div>';
+
+    var body;
+    if(!r.items || !r.items.length){
+      body = '<div style="margin-top:11px;padding:18px;background:#fff;border:1px solid var(--line);'
+           + 'border-radius:10px;font-size:12.5px;color:var(--muted);text-align:center;line-height:1.8;">'
+           + '조건을 채운 카마스터가 없습니다.<br>목표 건수를 낮추거나 기간을 넓혀 보세요.</div>';
+    }else{
+      var cols = 'grid-template-columns:76px 1fr 1fr 60px;';
+      body = '<div class="table" style="margin-top:11px;background:#fff;">'
+        + '<div class="tr th" style="'+cols+'"><span>코드</span><span>이름</span>'
+        + '<span>소속·영업소</span><span style="text-align:right;">건수</span></div>'
+        + r.items.map(function(x){
+            return '<div class="tr" style="'+cols+'">'
+              + '<span style="font-weight:700;">'+esc(x.code||'-')+'</span>'
+              + '<span>'+esc(x.name||'-')
+              + (x.already ? ' <span class="badge b-off" style="margin-left:4px;">이미 받음</span>' : '')
+              + '</span>'
+              + '<span style="color:var(--muted);font-size:12.5px;">'
+              + esc([x.brand,x.office].filter(Boolean).join(' · ')||'-')+'</span>'
+              + '<span style="text-align:right;font-weight:800;">'+(x.n||0)+'</span></div>';
+          }).join('')
+        + '</div>'
+        + ((r.total > r.items.length)
+            ? '<div style="margin-top:7px;font-size:11.5px;color:var(--muted);">건수가 많은 순으로 '
+              + r.items.length + '명만 표시했습니다. (전체 ' + r.total.toLocaleString() + '명)</div>'
+            : '');
+    }
+
+    var note = '<div style="margin-top:9px;font-size:11.5px;color:var(--muted);line-height:1.7;">'
+      + (r.ranged ? '지정한 기간 안에 시공한 건만 셌습니다.' : '가입 후 쌓인 누적 시공을 모두 셌습니다.')
+      + ' 탈퇴한 회원은 빠집니다. 이 확인으로 만들어지는 리워드는 없습니다.</div>';
+
+    box.innerHTML = head + body + note;
+    box.style.display='';
+  }catch(e){
+    box.innerHTML = '<div style="margin-top:11px;font-size:12.5px;color:var(--err);'
+      + 'font-weight:700;line-height:1.7;">'+esc((e&&e.message)||'확인에 실패했습니다.')+'</div>';
+    box.style.display='';
+  }
+  this.textContent='대상 확인';
+  this.style.pointerEvents='auto';
+});
+
+['pmN','pmStart','pmEnd'].forEach(function(id){
+  var el=$(id); if(el) el.addEventListener('input', pmPvClear);
+});
+['pmCondSeg','pmPeriodSeg'].forEach(function(id){
+  var el=$(id); if(el) el.addEventListener('click', pmPvClear);
+});
 ['pmName','pmRewardEtc','pmSubText','pmAmount','pmN','pmStart','pmEnd'].forEach(function(id){
   var el=$(id); if(el) el.addEventListener('input', pmPreview);
 });
