@@ -468,7 +468,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             필름 제품명과 지역명은 레이노 홈페이지 쪽 값에 맞춰 이 시스템에도 따로 등록해 둔 표입니다.
             신제품이 나왔는데 등록하지 않으면 <b style="color:var(--ink);">오류 없이 원본 코드가 그대로 표시</b>되어
             잘못된 줄 모르고 지나가게 됩니다.<br>
-            실제 발급된 보증서에 쓰인 코드를 전부 모아 표와 대조합니다. 아무것도 바꾸지 않습니다.
+            카마스터와 연결된 보증서에 쓰인 코드를 전부 모아 표와 대조합니다. 아무것도 바꾸지 않습니다.
           </div>
           <div id="ccResult"></div>
         </div>
@@ -3557,7 +3557,10 @@ $('ccRun').addEventListener('click', async function(){
     var r = await admApi('/v1/admin/config/codes');
     if(!r || !r.ok) throw new Error((r && r.message) || '점검에 실패했습니다.');
     box.innerHTML =
-        ccBlock('필름 제품 코드', r.film||{},
+        '<div style="font-size:12px;color:var(--muted);margin-bottom:14px;">'
+      + '카마스터와 연결된 보증서 <b style="color:var(--ink);">'
+      + (r.scanned||0).toLocaleString()+'건</b>을 대조했습니다.</div>'
+      + ccBlock('필름 제품 코드', r.film||{},
             '위 코드를 server.js 의 FILM_LABEL 표에 추가해야 제품명이 제대로 표시됩니다. '
           + '레이노 홈페이지 쪽 코드값(php_config.md)을 확인해 등급까지 함께 맞춰 주세요.')
       + '<div style="height:1px;background:var(--line);margin:18px 0;"></div>'
