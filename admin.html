@@ -458,6 +458,20 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             <div id="adminList"></div>
           </div>
         </div>
+
+        <div class="card" style="padding:22px 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div class="section-h">제품·지역 코드 점검</div>
+            <button class="btn btn-line" id="ccRun" style="font-weight:800;">점검 실행</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:15px;">
+            필름 제품명과 지역명은 레이노 홈페이지 쪽 값에 맞춰 이 시스템에도 따로 등록해 둔 표입니다.
+            신제품이 나왔는데 등록하지 않으면 <b style="color:var(--ink);">오류 없이 원본 코드가 그대로 표시</b>되어
+            잘못된 줄 모르고 지나가게 됩니다.<br>
+            실제 발급된 보증서에 쓰인 코드를 전부 모아 표와 대조합니다. 아무것도 바꾸지 않습니다.
+          </div>
+          <div id="ccResult"></div>
+        </div>
       </section>
 
       <section class="view" id="view-sms">
@@ -2485,6 +2499,7 @@ async function loadServices(){
         code:   cm.code||'-',
         film:   w.product||'',            /* 제품명 */
         filmCd: w.product_code||'',       /* 제품 코드 */
+        filmNew: !!w.product_unknown,     /* 코드표에 없는 제품 */
         wr:     (w.warranty_no||w.wr_no||''),
         status: st
       };
@@ -2538,7 +2553,9 @@ function svDraw(){
           svCell(esc(r.carNo), esc(r.model)) +
           svCell(esc(r.shop), esc(r.shopArea)) +
           svCell(esc(r.cm), esc(r.code)) +
-          svCell(esc(r.film), esc(r.parts)) +
+          svCell(esc(r.film) + (r.filmNew
+          ? ' <span class="badge b-warn" title="제품 코드표에 없는 코드입니다. 설정 화면의 코드 점검을 확인해 주세요.">미등록</span>'
+          : ''), esc(r.parts)) +
           '<span style="font-size:12px;color:var(--muted);font-family:ui-monospace,Menlo,monospace;word-break:break-all;line-height:1.4;">' + esc(r.wr) + '</span>' +
           '<span>' + badge(r.status) + '</span>' +
         '</div>';
@@ -3500,6 +3517,59 @@ function closeSendDrawer(){
   $('sdOverlay').classList.remove('on');
   $('sdDrawer').classList.remove('on');
 }
+
+/* ── 제품·지역 코드 점검 ── */
+function ccBlock(title, d, hint){
+  var bad = (d.unknown && d.unknown.length) || 0;
+  var head = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+    + '<span style="font-size:13.5px;font-weight:800;">'+title+'</span>'
+    + '<span class="badge '+(bad ? 'b-err' : 'b-ok')+'">'
+    + (bad ? ('등록 안 된 코드 '+bad+'개') : '모두 등록됨')+'</span>'
+    + '<span style="font-size:11.5px;color:var(--muted);">보증서에 쓰인 '+(d.used||0)
+    + '종 · 우리 표에 '+(d.table_size||0)+'종'
+    + (d.idle ? (' · 표에만 있고 안 쓰인 '+d.idle+'종') : '')+'</span></div>';
+
+  if(!bad){
+    return head + '<div style="margin-top:8px;font-size:12.5px;color:var(--muted);">'
+      + '빠진 코드가 없습니다.</div>';
+  }
+  var cols='grid-template-columns:1fr 90px 120px;';
+  return head
+    + '<div class="table" style="margin-top:10px;background:#fff;border:1px solid var(--line);">'
+    + '<div class="tr th" style="'+cols+'"><span>코드</span>'
+    + '<span style="text-align:right;">건수</span><span style="text-align:right;">최근 시공</span></div>'
+    + d.unknown.map(function(x){
+        return '<div class="tr td" style="'+cols+'">'
+          + '<span style="font-weight:700;">'+esc(x.code)+'</span>'
+          + '<span style="text-align:right;font-weight:800;">'+(x.n||0).toLocaleString()+'</span>'
+          + '<span style="text-align:right;color:var(--muted);">'+esc(x.last_at||'-')+'</span></div>';
+      }).join('')
+    + '</div>'
+    + '<div style="margin-top:8px;font-size:12px;color:var(--err);line-height:1.7;font-weight:600;">'
+    + hint+'</div>';
+}
+
+$('ccRun').addEventListener('click', async function(){
+  var box=$('ccResult');
+  this.style.pointerEvents='none'; var pv=this.textContent; this.textContent='대조하는 중…';
+  box.innerHTML='';
+  try{
+    var r = await admApi('/v1/admin/config/codes');
+    if(!r || !r.ok) throw new Error((r && r.message) || '점검에 실패했습니다.');
+    box.innerHTML =
+        ccBlock('필름 제품 코드', r.film||{},
+            '위 코드를 server.js 의 FILM_LABEL 표에 추가해야 제품명이 제대로 표시됩니다. '
+          + '레이노 홈페이지 쪽 코드값(php_config.md)을 확인해 등급까지 함께 맞춰 주세요.')
+      + '<div style="height:1px;background:var(--line);margin:18px 0;"></div>'
+      + ccBlock('고객 지역 코드', r.area||{},
+            '위 코드를 server.js 의 AREA_LABEL 표에 추가해야 지역명이 제대로 표시됩니다.');
+    toast('대조를 마쳤습니다.');
+  }catch(e){
+    box.innerHTML='<div style="font-size:12.5px;color:var(--err);font-weight:700;">'
+      + esc((e&&e.message)||'점검에 실패했습니다.')+'</div>';
+  }
+  this.textContent=pv; this.style.pointerEvents='auto';
+});
 
 $('smsSendBtn').addEventListener('click', openSendDrawer);
 $('sdClose').addEventListener('click', closeSendDrawer);
