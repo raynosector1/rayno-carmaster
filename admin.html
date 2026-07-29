@@ -660,7 +660,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div class="r"><span class="k">본인인증</span><span class="v" id="dVerify">—</span></div>
         <div class="r"><span class="k">개인정보 동의</span><span class="v" id="dAgreePrivacy">—</span></div>
         <div class="r"><span class="k">마케팅 동의</span><span class="v" id="dAgreeMkt">—</span></div>
-        <div class="r"><span class="k">SMS 수신거부</span><span class="v" style="display:flex;align-items:center;gap:8px;justify-content:flex-end;"><span id="dSmsState">—</span><button class="btn" id="dSmsBtn" style="display:none;padding:5px 11px;font-size:12px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">수신거부 해제</button></span></div>
+        <div class="r"><span class="k">SMS 수신거부</span><span class="v" style="display:flex;align-items:center;gap:10px;justify-content:flex-end;"><span id="dSmsState">—</span><label class="switch" title="켜면 수신거부, 끄면 수신 허용"><input type="checkbox" id="dSmsTgl"><span class="tk"></span></label></span></div>
         <div class="r"><span class="k">계정 상태</span><span class="v" style="display:flex;align-items:center;gap:7px;justify-content:flex-end;"><span id="dAccState">—</span><button id="dStateTgl" title="자세히" style="display:none;width:24px;height:24px;padding:0;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-size:9px;line-height:1;color:var(--muted);font-family:inherit;">▲</button></span></div>
         <div id="dStateBox" style="display:none;margin-top:9px;background:#F7F7F8;border:1px solid var(--line);border-radius:11px;padding:12px 13px;"></div>
       </div>
@@ -1298,7 +1298,7 @@ async function getMember(code){
       office:[_brandLab(m), m.region, _officeLab(m)].filter(Boolean).join(' · '),
       phone:_full(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'),
       join:_date(_ts(m)), total:total, reward:reward, lastWr:lastWr?_date(lastWr):'-',
-      smsOptout: !!m.sms_optout,
+      smsOptout: (m.sms_optout === null || m.sms_optout === undefined) ? null : !!m.sms_optout,
       agreePrivacy: (m.agree_privacy!==false), agreeMkt: !!m.agree_marketing,
       suspAt: m.suspended_at?_date(m.suspended_at):'-', suspReason: m.suspend_reason||'-',
       suspAtRaw: m.suspended_at || null,
@@ -1672,10 +1672,19 @@ async function openMember(code){
   $('dLastWr').textContent = m.lastWr || '-';
   $('dReward').textContent = (m.reward ?? 0)+'건';
   $('dRaynoLink').href = RAYNO_ADMIN_URL;
-  /* SMS 수신거부 */
-  var st=$('dSmsState'), sb2=$('dSmsBtn');
-  if(m.smsOptout){ st.innerHTML='<span style="color:var(--err);font-weight:700;">거부</span>'; sb2.style.display='inline-block'; }
-  else { st.innerHTML='<span style="color:var(--muted);">-</span>'; sb2.style.display='none'; }
+  /* SMS 수신거부 — 번호 기준 표(rk_carmaster_sms_optout)가 유일한 기준이다 */
+  var st=$('dSmsState'), sTgl=$('dSmsTgl');
+  if(m.smsOptout === null){
+    /* 수신거부 표를 읽지 못한 경우. 임의로 '허용'이라고 하지 않는다 */
+    st.innerHTML='<span style="color:var(--muted);">확인 불가</span>';
+    if(sTgl){ sTgl.checked=false; sTgl.disabled=true; }
+  } else if(m.smsOptout){
+    st.innerHTML='<span style="color:var(--err);font-weight:700;">거부</span>';
+    if(sTgl){ sTgl.checked=true; sTgl.disabled=false; }
+  } else {
+    st.innerHTML='<span style="color:var(--ok);font-weight:700;">허용</span>';
+    if(sTgl){ sTgl.checked=false; sTgl.disabled=false; }
+  }
   /* 정지/해제 버튼 */
   S.dMemberStatus = m.status;
   var sb=$('dSuspend');
@@ -1777,15 +1786,32 @@ $('dSuspend').addEventListener('click', async ()=>{
   else toast((res&&res.message)||'처리에 실패했습니다.');
 });
 
-/* SMS 수신거부 해제 */
-$('dSmsBtn').addEventListener('click', async ()=>{
-  if(!confirm('수신거부를 해제하시겠습니까?')) return;
-  var code=S.dMemberCode;
-  var res=await admFn('set-sms-optout', { code:code, optout:false });
-  if(!res || !res.ok){ toast((res&&res.message)||'처리에 실패했습니다.'); return; }
-  $('dSmsState').innerHTML='<span style="color:var(--muted);">-</span>'; $('dSmsBtn').style.display='none';
-  toast('수신거부를 해제했습니다.');
-  if(confirm('가입 안내 문자를 발송하시겠습니까?')) toast('문자 발송은 문자 대행사 연동 후 제공됩니다.');
+/* SMS 수신거부 토글
+   고치는 곳은 번호 기준 표(rk_carmaster_sms_optout)다.
+   '문자 발송 > 수신거부 관리' 카드와 같은 곳이라 두 화면의 값이 항상 같다. */
+$('dSmsTgl').addEventListener('change', async function(){
+  var want = this.checked;                 /* 켜면 수신거부 */
+  var code = S.dMemberCode;
+  var name = $('dName').textContent || '회원';
+  var msg = want
+    ? (name + ' 카마스터를 수신거부로 등록하시겠습니까?\n\n이후 모든 문자 발송에서 제외됩니다.')
+    : (name + ' 카마스터의 수신거부를 해제하시겠습니까?\n\n다시 문자를 받게 됩니다.\n본인이 직접 요청한 경우에만 해제해 주세요.');
+  if(!confirm(msg)){ this.checked = !want; return; }
+
+  this.disabled = true;
+  var res = await admFn('set-sms-optout', { code: code, optout: want });
+  this.disabled = false;
+
+  if(!res || !res.ok){
+    this.checked = !want;                  /* 실패하면 되돌린다 */
+    toast((res && res.message) || '처리에 실패했습니다.');
+    return;
+  }
+  $('dSmsState').innerHTML = want
+    ? '<span style="color:var(--err);font-weight:700;">거부</span>'
+    : '<span style="color:var(--ok);font-weight:700;">허용</span>';
+  toast(res.message || (want ? '수신거부로 등록했습니다.' : '수신거부를 해제했습니다.'));
+  if(typeof ooLoad === 'function') ooLoad();   /* 수신거부 관리 카드도 함께 갱신 */
 });
 
 /* 비밀번호 초기화 */
