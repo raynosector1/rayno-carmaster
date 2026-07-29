@@ -521,6 +521,36 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           </div>
           <button class="btn btn-primary" id="stSend" style="margin-top:12px;width:100%;padding:13px 0;font-size:14px;font-weight:800;opacity:.45;pointer-events:none;">시험 발송</button>
         </div>
+
+        <div class="card" style="padding:22px 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div class="section-h">수신거부 관리 <span id="ooCount" class="badge b-off">0건</span></div>
+            <button class="btn btn-line" id="ooRefresh" style="padding:7px 14px;font-size:12.5px;">현황 새로고침</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.75;">
+            문자 하단의 무료수신거부 링크를 누르면 자동으로 등록됩니다.
+            전화로 요청을 받으신 경우 여기서 직접 등록하실 수 있습니다.<br>
+            <b style="color:var(--ink);">연락처 원문은 저장하지 않습니다.</b> 되돌릴 수 없게 변환한 값만 보관하므로
+            아래 목록으로는 누구의 번호인지 알 수 없습니다. 번호를 입력해 상태를 조회하는 방식으로 확인해 주세요.
+          </div>
+
+          <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input class="finp" id="ooPhone" placeholder="010-0000-0000" maxlength="20"
+                   style="flex:1;min-width:180px;padding:11px 13px;font-size:13px;">
+            <input class="finp" id="ooMemo" placeholder="메모 (선택 · 예: 고객센터 전화 요청)" maxlength="100"
+                   style="flex:1.4;min-width:200px;padding:11px 13px;font-size:13px;">
+          </div>
+          <div style="margin-top:9px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-line" id="ooCheck" style="flex:1;padding:11px 0;font-size:13px;font-weight:800;">상태 조회</button>
+            <button class="btn" id="ooAdd" style="flex:1;padding:11px 0;font-size:13px;font-weight:800;border:1.5px solid var(--err);color:var(--err);">수신거부 등록</button>
+            <button class="btn btn-soft" id="ooRemove" style="flex:1;padding:11px 0;font-size:13px;font-weight:800;">해제</button>
+          </div>
+          <div id="ooResult" style="display:none;margin-top:11px;padding:13px 15px;border-radius:10px;font-size:13px;line-height:1.7;"></div>
+
+          <div style="margin-top:20px;font-size:12.5px;font-weight:800;color:var(--ink);">최근 등록 (최대 100건)</div>
+          <div id="ooRows" style="margin-top:9px;"></div>
+        </div>
+
       </section>
 
       <section class="view" id="view-logs">
@@ -3574,6 +3604,99 @@ $('ccRun').addEventListener('click', async function(){
   this.textContent=pv; this.style.pointerEvents='auto';
 });
 
+/* ══════════════════════════════════════════════════════
+   수신거부 관리
+
+   이 표에는 연락처 원문이 없다. 되돌릴 수 없게 변환한 값만 있다.
+   그래서 목록만 봐서는 누구인지 알 수 없고, 번호를 넣어 조회하는 식으로만 확인한다.
+   미가입자 번호까지 쌓이는 표라서 유출 시 범위가 넓어지기 때문이다.
+   ══════════════════════════════════════════════════════ */
+function ooSay(kind, html){
+  var box=$('ooResult');
+  var color = kind==='bad' ? 'var(--err)' : (kind==='ok' ? 'var(--ok)' : 'var(--ink)');
+  var bg    = kind==='bad' ? '#FDF2F2' : (kind==='ok' ? '#F1F8F3' : '#F7F7F8');
+  box.style.background=bg;
+  box.style.border='1px solid '+(kind==='plain' ? 'var(--line)' : color);
+  box.style.color=color;
+  box.innerHTML=html;
+  box.style.display='';
+}
+
+function ooPhoneVal(){
+  var v=($('ooPhone').value||'').replace(/[^0-9]/g,'');
+  return v;
+}
+
+async function ooLoad(){
+  try{
+    var r=await admApi('/v1/admin/sms/optout');
+    if(!r || !r.ok) throw new Error((r && r.message) || '현황을 읽지 못했습니다.');
+    $('ooCount').textContent=(r.total||0).toLocaleString()+'건';
+    $('ooCount').className='badge '+((r.total||0) ? 'b-warn' : 'b-off');
+
+    var rows=r.items||[];
+    if(!rows.length){
+      $('ooRows').innerHTML='<div style="padding:16px;background:#F7F7F8;border-radius:10px;'
+        +'font-size:12.5px;color:var(--muted);text-align:center;">아직 수신거부한 사람이 없습니다.</div>';
+      return;
+    }
+    var cols='grid-template-columns:1fr 110px 150px;';
+    $('ooRows').innerHTML='<div class="table" style="border:1px solid var(--line);">'
+      + '<div class="tr th" style="'+cols+'"><span>변환값</span><span>경로</span>'
+      + '<span style="text-align:right;">등록일시</span></div>'
+      + rows.map(function(x){
+          var src = x.source==='admin' ? '관리자 등록' : (x.source==='link' ? '링크 클릭' : esc(x.source||'-'));
+          return '<div class="tr td" style="'+cols+'">'
+            + '<span style="font-family:monospace;font-size:12px;color:var(--muted);">'+esc(x.code||'')+'</span>'
+            + '<span>'+src+'</span>'
+            + '<span style="text-align:right;color:var(--muted);">'+esc(x.at_kst||'-')+'</span></div>';
+        }).join('')
+      + '</div>';
+  }catch(e){
+    $('ooRows').innerHTML='<div style="font-size:12.5px;color:var(--err);font-weight:700;">'
+      + esc((e&&e.message)||'현황을 읽지 못했습니다.')+'</div>';
+  }
+}
+
+$('ooRefresh').addEventListener('click', ooLoad);
+
+$('ooCheck').addEventListener('click', async function(){
+  var p=ooPhoneVal();
+  if(p.length<9){ ooSay('bad','연락처를 올바르게 입력해 주세요.'); return; }
+  try{
+    var r=await admApi('/v1/admin/sms/optout',{ method:'POST', body:{ op:'check', phone:p } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '조회에 실패했습니다.');
+    if(r.optout) ooSay('bad','<b>수신거부 상태입니다.</b> 이 번호로는 문자가 발송되지 않습니다.');
+    else ooSay('ok','수신거부가 등록되지 않은 번호입니다. 문자를 받을 수 있습니다.');
+  }catch(e){ ooSay('bad', esc((e&&e.message)||'조회에 실패했습니다.')); }
+});
+
+$('ooAdd').addEventListener('click', async function(){
+  var p=ooPhoneVal();
+  if(p.length<9){ ooSay('bad','연락처를 올바르게 입력해 주세요.'); return; }
+  if(!confirm('이 번호를 수신거부로 등록하시겠습니까?\n\n등록하면 이후 모든 문자 발송에서 제외됩니다.')) return;
+  try{
+    var r=await admApi('/v1/admin/sms/optout',{ method:'POST',
+      body:{ op:'add', phone:p, memo:($('ooMemo').value||'').trim() } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '등록에 실패했습니다.');
+    ooSay('ok','수신거부로 등록했습니다. 이후 발송에서 제외됩니다.');
+    $('ooMemo').value='';
+    ooLoad();
+  }catch(e){ ooSay('bad', esc((e&&e.message)||'등록에 실패했습니다.')); }
+});
+
+$('ooRemove').addEventListener('click', async function(){
+  var p=ooPhoneVal();
+  if(p.length<9){ ooSay('bad','연락처를 올바르게 입력해 주세요.'); return; }
+  if(!confirm('이 번호의 수신거부를 해제하시겠습니까?\n\n해제하면 다시 문자를 받게 됩니다.\n본인이 직접 요청한 경우에만 해제해 주세요.')) return;
+  try{
+    var r=await admApi('/v1/admin/sms/optout',{ method:'POST', body:{ op:'remove', phone:p } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '해제에 실패했습니다.');
+    ooSay('plain','수신거부를 해제했습니다. 이 번호는 다시 문자를 받게 됩니다.');
+    ooLoad();
+  }catch(e){ ooSay('bad', esc((e&&e.message)||'해제에 실패했습니다.')); }
+});
+
 $('smsSendBtn').addEventListener('click', openSendDrawer);
 $('sdClose').addEventListener('click', closeSendDrawer);
 $('sdCancel').addEventListener('click', closeSendDrawer);
@@ -3792,7 +3915,7 @@ function admAudit(what, n){
   }catch(e){}
 }
 
-function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); }catch(e){ console.error(e); } }
+function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); }catch(e){ console.error(e); } }
 (function(){
   var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
