@@ -891,6 +891,80 @@ input::placeholder{color:#B4B4B8;}
   </div>
 </div>
 
+<!-- 문자 발송 드로어 -->
+<div class="overlay" id="sdOverlay"></div>
+<div class="drawer" id="sdDrawer">
+  <div class="dh"><div class="t">문자 발송</div><button class="x" id="sdClose">✕</button></div>
+  <div class="db">
+
+    <div id="sdWarn" style="display:none;background:#FFF4E5;border:1px solid var(--orange);border-radius:12px;padding:13px 15px;font-size:12.5px;line-height:1.7;"></div>
+
+    <div class="flabel" style="margin-top:2px;">받는 사람</div>
+    <div style="display:flex;gap:8px;">
+      <button type="button" class="btn btn-line sdTab" data-mode="bulk" style="flex:1;">파일로 올리기</button>
+      <button type="button" class="btn btn-line sdTab" data-mode="manual" style="flex:1;">직접 입력 (5건까지)</button>
+    </div>
+
+    <div id="sdBulk" style="margin-top:12px;">
+      <div style="background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.7;">
+          양식을 내려받아 <b>성함</b>과 <b>연락처</b>를 채운 뒤 그대로 올려 주세요.<br>
+          엑셀에서 저장할 때 <b>CSV UTF-8(쉼표로 분리)</b>을 골라야 이름이 깨지지 않습니다.
+        </div>
+        <button class="btn btn-line" id="sdTpl" style="margin-top:11px;width:100%;padding:11px 0;font-size:13px;">양식 내려받기</button>
+        <input type="file" id="sdFile" accept=".csv,text/csv" style="margin-top:9px;width:100%;font-size:12.5px;font-family:inherit;">
+      </div>
+    </div>
+
+    <div id="sdManual" style="margin-top:12px;display:none;">
+      <div id="sdManualRows"></div>
+      <div style="margin-top:7px;font-size:11.5px;color:var(--muted);">성함은 비워 두어도 됩니다. 비우면 문자의 {이름} 자리에 '고객'이 들어갑니다.</div>
+    </div>
+
+    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <span id="sdCount" class="badge b-off">대상 0건</span>
+      <span id="sdCountNote" style="font-size:11.5px;color:var(--muted);"></span>
+    </div>
+    <div id="sdRowsPrev" style="margin-top:8px;"></div>
+
+    <div class="flabel" style="margin-top:20px;">문자 내용</div>
+    <select class="finp selc" id="sdPick" style="padding:11px 13px;font-size:13px;"><option value="">템플릿에서 불러오기</option></select>
+    <input class="finp" id="sdSubject" placeholder="문자 제목 (장문일 때 표시)" maxlength="30" style="margin-top:9px;">
+    <textarea class="finp" id="sdBody" rows="12" placeholder="보낼 내용" style="margin-top:9px;resize:vertical;line-height:1.75;min-height:240px;font-size:14px;"></textarea>
+    <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <span id="sdKind" class="badge b-off">단문 (SMS)</span>
+      <span id="sdBytes" style="font-size:12px;font-weight:700;color:var(--muted);">0 / 2,000 바이트</span>
+    </div>
+    <div style="margin-top:7px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+      내용에 <b>{이름}</b> 이라고 적으면 받는 사람 성함이 들어갑니다. (예: {이름}님 안녕하세요)
+    </div>
+
+    <div style="margin-top:16px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+      <div style="font-size:12.5px;font-weight:800;color:var(--ink);">광고 문자 필수 표기</div>
+      <div style="margin-top:9px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.6;">
+        <div id="sdChk1" style="color:var(--muted);">· 맨 앞에 <b>(광고)</b> 표기</div>
+        <div id="sdChk2" style="color:var(--muted);">· 회사명 또는 서비스명 표기</div>
+        <div id="sdChk3" style="color:var(--muted);">· 하단에 <b>무료수신거부</b> 표기</div>
+      </div>
+    </div>
+
+    <div class="flabel" style="margin-top:20px;">실제로 나갈 문구</div>
+    <div id="sdPreview" style="background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--ink);min-height:60px;">내용을 입력하면 여기에 보입니다.</div>
+    <div style="margin-top:6px;font-size:11.5px;color:var(--muted);">첫 번째 받는 사람 기준입니다.</div>
+
+    <button class="btn btn-line" id="sdCheck" style="margin-top:18px;width:100%;padding:13px 0;font-size:14px;font-weight:800;">발송 대상 점검</button>
+    <div id="sdResult" style="display:none;margin-top:11px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.9;"></div>
+
+    <div style="margin-top:22px;display:flex;gap:10px;">
+      <button class="btn btn-soft" id="sdCancel" style="flex:1;padding:15px 0;font-size:15px;">취소</button>
+      <button class="btn btn-primary" id="sdSend" style="flex:1.4;padding:15px 0;font-size:15px;font-weight:800;opacity:.45;pointer-events:none;">문자 발송</button>
+    </div>
+    <div style="margin-top:9px;font-size:11.5px;color:var(--muted);line-height:1.6;text-align:center;">
+      발송 대상 점검을 마쳐야 발송할 수 있습니다. 실제 요금이 발생합니다.
+    </div>
+  </div>
+</div>
+
 <!-- 공지 등록 드로어 -->
 <div class="overlay" id="noticeOverlay"></div>
 <div class="drawer" id="noticeDrawer">
@@ -2893,9 +2967,10 @@ async function renderSms(){
   $('smsRows').innerHTML = skelRows(3, '40px 48px 220px 1fr 116px');
   SMS_T = await loadSmsTemplates();
   $('smsCount').textContent = SMS_T.length;
-  var pick=$('stPick');
-  if(pick) pick.innerHTML = '<option value="">템플릿에서 불러오기</option>'
+  var opts = '<option value="">템플릿에서 불러오기</option>'
     + SMS_T.map(function(t){ return '<option value="'+esc(t.id)+'">'+esc(t.name||'(이름 없음)')+'</option>'; }).join('');
+  var pick=$('stPick');  if(pick) pick.innerHTML = opts;
+  var pick2=$('sdPick'); if(pick2) pick2.innerHTML = opts;
   var all = $('smsAll'); if(all) all.checked = false;
 
   $('smsRows').innerHTML = !SMS_T.length ? EMPTY('등록된 템플릿이 없습니다')
@@ -3032,6 +3107,7 @@ $('smsDelBtn').addEventListener('click', async function(){
 });
 
 /* ── 발송 설정 상태 ── */
+var SMS_ST = {};
 async function renderSmsStatus(){
   var badge=$('smsStatBadge'), box=$('smsStatBody');
   badge.textContent='확인 중'; badge.className='badge b-off';
@@ -3039,6 +3115,7 @@ async function renderSmsStatus(){
   try{
     var r = await admApi('/v1/admin/sms/status');
     var st = (r && r.status) || {};
+    SMS_ST = st;
     badge.textContent = st.connected ? '연결됨' : '준비 안 됨';
     badge.className = 'badge ' + (st.connected ? 'b-ok' : 'b-err');
     var mode = (st.mode==='live')
@@ -3093,8 +3170,291 @@ $('stSend').addEventListener('click', async function(){
   this.textContent='시험 발송'; stValidate();
 });
 
-$('smsSendBtn').addEventListener('click', function(){
-  toast('발송 대행사 API 키를 발급받은 뒤 열립니다.');
+/* ══════════════════════════════════════════════════════
+   문자 발송 (대량 · 직접 입력)
+
+   보내기 전에 반드시 '발송 대상 점검'을 거치게 했다.
+   실제로 몇 건이 나가는지 눈으로 확인한 뒤 누르도록 하기 위함이다.
+   ══════════════════════════════════════════════════════ */
+var SD = { mode:'bulk', rows:[], pre:null };
+
+/* 쉼표로 나뉜 파일을 읽는다. 따옴표로 감싼 칸과 칸 안의 쉼표·줄바꿈까지 처리한다. */
+function _csvParse(text){
+  var rows=[], row=[], cur='', q=false;
+  text = String(text||'').replace(/^\uFEFF/, '');
+  for(var i=0;i<text.length;i++){
+    var c=text.charAt(i);
+    if(q){
+      if(c==='"'){ if(text.charAt(i+1)==='"'){ cur+='"'; i++; } else q=false; }
+      else cur+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=''; }
+      else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else if(c==='\r'){ /* 무시 */ }
+      else cur+=c;
+    }
+  }
+  if(cur!=='' || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(function(r){
+    return r.some(function(c){ return String(c).trim()!==''; });
+  });
+}
+
+/* 읽어들인 표에서 성함·연락처 칸을 찾는다. */
+function sdFromCsv(rows){
+  if(!rows.length) return [];
+  var head = rows[0].map(function(c){ return String(c).trim(); });
+  var isHead = head.some(function(c){ return /성함|이름|연락처|휴대|전화|번호/.test(c); });
+  var ni=0, pi=1, start=0;
+
+  if(head.length===1){ ni=-1; pi=0; }        /* 한 칸뿐이면 연락처만 있는 것으로 본다 */
+
+  if(isHead){
+    start=1;
+    var find=function(re){ for(var i=0;i<head.length;i++) if(re.test(head[i])) return i; return -1; };
+    var a=find(/성함|이름/), b=find(/연락처|휴대|전화|번호/);
+    if(a>=0) ni=a;
+    if(b>=0) pi=b;
+  }
+
+  var out=[];
+  for(var i=start;i<rows.length;i++){
+    var r=rows[i];
+    var name  = (ni>=0 && r[ni]!=null) ? String(r[ni]).trim() : '';
+    var phone = (r[pi]!=null) ? String(r[pi]).trim() : '';
+    if(!name && !phone) continue;
+    out.push({ name:name, phone:phone });
+  }
+  return out;
+}
+
+/* 엑셀이 UTF-8로 저장하지 않는 경우가 있어, 실패하면 euc-kr로 한 번 더 시도한다. */
+function sdReadFile(file){
+  return new Promise(function(res, rej){
+    var fr=new FileReader();
+    fr.onerror=function(){ rej(new Error('파일을 읽지 못했습니다.')); };
+    fr.onload=function(){
+      var buf=fr.result, text;
+      try{ text=new TextDecoder('utf-8',{fatal:true}).decode(buf); }
+      catch(e){
+        try{ text=new TextDecoder('euc-kr').decode(buf); }
+        catch(e2){ text=new TextDecoder('utf-8').decode(buf); }
+      }
+      res(text);
+    };
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+/* 직접 입력 칸 5줄 */
+function sdBuildManual(){
+  var box=$('sdManualRows'); if(!box || box.dataset.built) return;
+  var h='';
+  for(var i=0;i<5;i++){
+    h += '<div style="display:grid;grid-template-columns:110px 1fr;gap:8px;margin-bottom:8px;">'
+       + '<input class="finp sdMN" placeholder="성함" maxlength="30" style="padding:10px 12px;font-size:13px;">'
+       + '<input class="finp sdMP" placeholder="010-0000-0000" maxlength="20" style="padding:10px 12px;font-size:13px;">'
+       + '</div>';
+  }
+  box.innerHTML=h;
+  box.dataset.built='1';
+  box.querySelectorAll('input').forEach(function(el){ el.addEventListener('input', sdCollect); });
+}
+
+function sdSetMode(m){
+  SD.mode=m;
+  document.querySelectorAll('.sdTab').forEach(function(b){
+    var on = b.dataset.mode===m;
+    b.style.borderColor = on ? 'var(--ink)' : 'var(--line)';
+    b.style.color       = on ? 'var(--ink)' : 'var(--muted)';
+    b.style.fontWeight  = on ? '800' : '600';
+  });
+  $('sdBulk').style.display   = (m==='bulk')   ? '' : 'none';
+  $('sdManual').style.display = (m==='manual') ? '' : 'none';
+  if(m==='manual') sdBuildManual();
+  sdCollect();
+}
+
+/* 화면에 입력된 대상을 모은다. 대상이 바뀌면 이전 점검 결과는 버린다. */
+function sdCollect(){
+  if(SD.mode==='manual'){
+    var names=document.querySelectorAll('.sdMN'), phones=document.querySelectorAll('.sdMP');
+    var out=[];
+    for(var i=0;i<phones.length;i++){
+      var ph=(phones[i].value||'').trim();
+      if(!ph) continue;
+      out.push({ name:(names[i] && names[i].value||'').trim(), phone:ph });
+    }
+    SD.rows=out;
+  }
+  SD.pre=null;
+  $('sdResult').style.display='none';
+  sdValidate();
+}
+
+function sdRenderRows(){
+  var box=$('sdRowsPrev');
+  if(!SD.rows.length){ box.innerHTML=''; return; }
+  var head='<div class="tr th" style="grid-template-columns:1fr 1fr;">'
+         + '<span>성함</span><span>연락처</span></div>';
+  var body=SD.rows.slice(0,5).map(function(r){
+    return '<div class="tr" style="grid-template-columns:1fr 1fr;">'
+      + '<span>'+esc(r.name||'(없음)')+'</span>'
+      + '<span>'+esc(r.phone||'')+'</span></div>';
+  }).join('');
+  var more = SD.rows.length>5
+    ? '<div style="padding:10px 14px;font-size:12px;color:var(--muted);">… 외 '+(SD.rows.length-5)+'건</div>' : '';
+  box.innerHTML='<div class="table">'+head+body+more+'</div>';
+}
+
+function sdValidate(){
+  var body=$('sdBody').value||'';
+  var n=smBytes(body), isLong=n>SMS_SHORT;
+
+  $('sdBytes').textContent = n.toLocaleString()+' / '+SMS_MAX.toLocaleString()+' 바이트';
+  $('sdBytes').style.color = (n>SMS_MAX) ? 'var(--err)' : 'var(--muted)';
+  $('sdKind').textContent = isLong ? '장문 (LMS)' : '단문 (SMS)';
+  $('sdKind').className = 'badge ' + (isLong ? 'b-warn' : 'b-off');
+
+  $('sdCount').textContent = '대상 '+SD.rows.length.toLocaleString()+'건';
+  $('sdCount').className = 'badge ' + (SD.rows.length ? 'b-ok' : 'b-off');
+  sdRenderRows();
+
+  var ok1=/^\s*\(광고\)/.test(body);
+  var ok2=/레이노|RAYNO|Rayno|카마스터/.test(body);
+  var ok3=/무료\s*수신\s*거부|무료수신거부|080/.test(body);
+  [['sdChk1',ok1],['sdChk2',ok2],['sdChk3',ok3]].forEach(function(x){
+    var el=$(x[0]); if(!el) return;
+    el.style.color = x[1] ? 'var(--ok)' : 'var(--muted)';
+    el.style.fontWeight = x[1] ? '700' : '400';
+  });
+
+  var first=SD.rows[0];
+  var who=(first && String(first.name||'').trim()) || '고객';
+  $('sdPreview').textContent = body.trim()
+    ? body.replace(/\{이름\}/g, who)
+    : '내용을 입력하면 여기에 보입니다.';
+
+  var canCheck = SD.rows.length>0 && !!body.trim() && n<=SMS_MAX;
+  var cb=$('sdCheck');
+  cb.style.opacity = canCheck ? '1' : '.45';
+  cb.style.pointerEvents = canCheck ? 'auto' : 'none';
+
+  var ready = (SMS_ST.optout_ready !== false) && !(SD.pre && SD.pre.optout_error);
+  var canSend = canCheck && !!SD.pre && SD.pre.sendable>0 && ready;
+  var sb=$('sdSend');
+  sb.style.opacity = canSend ? '1' : '.45';
+  sb.style.pointerEvents = canSend ? 'auto' : 'none';
+}
+
+function openSendDrawer(){
+  SD={ mode:'bulk', rows:[], pre:null };
+  $('sdFile').value='';
+  $('sdSubject').value=''; $('sdBody').value=''; $('sdPick').value='';
+  $('sdResult').style.display='none';
+  $('sdCountNote').textContent='';
+
+  var w=$('sdWarn'), msgs=[];
+  if(!SMS_ST.connected) msgs.push('발송 대행사에 연결되어 있지 않습니다. 위쪽 <b>발송 설정</b>을 먼저 확인해 주세요.');
+  if(SMS_ST.optout_ready===false) msgs.push('수신거부 목록 표가 아직 준비되지 않아 발송이 막혀 있습니다.');
+  if(SMS_ST.mode!=='live') msgs.push('지금은 <b>시험 모드</b>입니다. 등록한 허용 번호로만, 한 번에 5건까지 나갑니다.');
+  if(msgs.length){ w.innerHTML='· '+msgs.join('<br>· '); w.style.display=''; }
+  else w.style.display='none';
+
+  sdSetMode('bulk');
+  $('sdOverlay').classList.add('on');
+  $('sdDrawer').classList.add('on');
+}
+function closeSendDrawer(){
+  $('sdOverlay').classList.remove('on');
+  $('sdDrawer').classList.remove('on');
+}
+
+$('smsSendBtn').addEventListener('click', openSendDrawer);
+$('sdClose').addEventListener('click', closeSendDrawer);
+$('sdCancel').addEventListener('click', closeSendDrawer);
+$('sdOverlay').addEventListener('click', closeSendDrawer);
+document.querySelectorAll('.sdTab').forEach(function(b){
+  b.addEventListener('click', function(){ sdSetMode(b.dataset.mode); });
+});
+['sdSubject','sdBody'].forEach(function(i){ $(i).addEventListener('input', sdCollect); });
+
+$('sdPick').addEventListener('change', function(){
+  var v=this.value;
+  var t=SMS_T.find(function(x){ return x.id===v; });
+  if(!t) return;
+  $('sdSubject').value=t.subject||'';
+  $('sdBody').value=t.body||'';
+  sdCollect();
+});
+
+$('sdTpl').addEventListener('click', function(){
+  _download('문자발송_양식.csv', _csv([['성함','연락처'],['홍길동','010-0000-0000'],['',''],['',''],['','']]));
+  toast('양식을 내려받았습니다. 성함과 연락처를 채워 다시 올려 주세요.');
+});
+
+$('sdFile').addEventListener('change', async function(){
+  var f=this.files && this.files[0];
+  if(!f) return;
+  try{
+    var text=await sdReadFile(f);
+    var rows=sdFromCsv(_csvParse(text));
+    SD.rows=rows; SD.pre=null;
+    $('sdResult').style.display='none';
+    var broken=rows.some(function(r){ return /\uFFFD/.test(r.name||''); });
+    $('sdCountNote').textContent = broken
+      ? '이름이 깨져 보입니다. 엑셀에서 CSV UTF-8로 다시 저장해 주세요.'
+      : (f.name+' 읽음');
+    sdValidate();
+    toast(rows.length ? (rows.length+'건을 읽었습니다.') : '읽을 수 있는 줄이 없습니다.');
+  }catch(e){ toast((e && e.message) || '파일을 읽지 못했습니다.'); }
+});
+
+$('sdCheck').addEventListener('click', async function(){
+  this.style.pointerEvents='none'; this.textContent='확인하는 중…';
+  try{
+    var r=await admApi('/v1/admin/sms/preflight', { method:'POST',
+      body:{ items: SD.rows, n: SD.rows.length } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '점검에 실패했습니다.');
+    SD.pre=r;
+    var box=$('sdResult');
+    box.innerHTML =
+        '· 올린 대상 : <b>'+(r.total||0).toLocaleString()+'건</b><br>'
+      + '· 번호 형식이 잘못됨 : '+(r.invalid||0).toLocaleString()+'건<br>'
+      + '· 같은 번호 중복 : '+(r.dupe||0).toLocaleString()+'건<br>'
+      + '· 수신거부로 제외 : '+(r.optout||0).toLocaleString()+'건<br>'
+      + '<span style="color:var(--ink);font-weight:800;">· 실제 발송 : '
+      + (r.sendable||0).toLocaleString()+'건</span>'
+      + (r.optout_error
+          ? '<br><span style="color:var(--err);font-weight:700;">· 수신거부 목록을 확인하지 못했습니다. 표가 준비될 때까지 발송할 수 없습니다.</span>'
+          : '');
+    box.style.display='';
+    toast('점검을 마쳤습니다.');
+  }catch(e){
+    SD.pre=null;
+    var b2=$('sdResult');
+    b2.innerHTML='<span style="color:var(--err);font-weight:700;">'+esc((e && e.message) || '점검에 실패했습니다.')+'</span>';
+    b2.style.display='';
+  }
+  this.textContent='발송 대상 점검';
+  sdValidate();
+});
+
+$('sdSend').addEventListener('click', async function(){
+  if(!SD.pre || !SD.pre.sendable){ toast('발송 대상 점검을 먼저 해 주세요.'); return; }
+  if(!confirm(SD.pre.sendable.toLocaleString()+'명에게 실제 문자를 보냅니다.\n\n요금이 발생하며 되돌릴 수 없습니다. 계속하시겠습니까?')) return;
+  this.style.pointerEvents='none'; this.textContent='보내는 중…';
+  try{
+    var r=await admApi('/v1/admin/sms/send', { method:'POST', body:{
+      items: SD.rows, subject: $('sdSubject').value.trim(),
+      body: $('sdBody').value, n: SD.rows.length } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '발송에 실패했습니다.');
+    toast((r.sent||0).toLocaleString()+'건 발송 완료'+(r.message ? (' · '+r.message) : ''));
+    closeSendDrawer();
+  }catch(e){ toast((e && e.message) || '발송에 실패했습니다.'); }
+  this.textContent='문자 발송';
+  sdValidate();
 });
 
 /* ── init (관리자 로그인 후 실행) ── */
