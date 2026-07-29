@@ -2404,7 +2404,7 @@ $('pmPvRun').addEventListener('click', async function(){
         + '<div class="tr th" style="'+cols+'"><span>코드</span><span>이름</span>'
         + '<span>소속·영업소</span><span style="text-align:right;">건수</span></div>'
         + r.items.map(function(x){
-            return '<div class="tr" style="'+cols+'">'
+            return '<div class="tr td" style="'+cols+'">'
               + '<span style="font-weight:700;">'+esc(x.code||'-')+'</span>'
               + '<span>'+esc(x.name||'-')
               + (x.already ? ' <span class="badge b-off" style="margin-left:4px;">이미 받음</span>' : '')
@@ -3469,7 +3469,7 @@ function sdRenderRows(){
   var head='<div class="tr th" style="grid-template-columns:1fr 1fr;">'
          + '<span>성함</span><span>연락처</span></div>';
   var body=SD.rows.slice(0,5).map(function(r){
-    return '<div class="tr" style="grid-template-columns:1fr 1fr;">'
+    return '<div class="tr td" style="grid-template-columns:1fr 1fr;">'
       + '<span>'+esc(r.name||'(없음)')+'</span>'
       + '<span>'+esc(r.phone||'')+'</span></div>';
   }).join('');
