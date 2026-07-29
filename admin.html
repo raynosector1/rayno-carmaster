@@ -639,8 +639,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <button class="btn btn-soft" id="dResetPw" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;">비밀번호 초기화</button>
       <button class="btn" id="dSuspend" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
     </div>
-    <button class="btn btn-primary" id="dRestore" style="display:none;margin-top:10px;width:100%;padding:14px 0;font-size:14px;font-weight:800;">탈퇴 복구하기</button>
-    <div id="dRestoreHint" style="display:none;margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6;text-align:center;">탈퇴 후 7일 이내에만 복구할 수 있습니다.<br>소멸된 쿠폰·미지급 리워드는 되살아나지 않습니다.</div>
+    <div id="dOutHint" style="display:none;margin-top:10px;padding:13px 15px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;font-size:12.5px;color:var(--muted);line-height:1.7;text-align:center;">탈퇴한 계정입니다. 개인정보는 파기되었으며 복구할 수 없습니다.<br>같은 분이 다시 가입하시면 시공 실적은 이어지고, 웰컴기프트는 다시 지급되지 않습니다.</div>
     <button id="dDelete" style="margin-top:10px;width:100%;padding:11px 0;background:none;border:none;font-size:13px;color:#B0B0B4;text-decoration:underline;cursor:pointer;font-family:inherit;">계정 탈퇴 처리</button>
     <div id="dPurgeZone" style="display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);">
       <div style="font-size:11.5px;color:var(--err);font-weight:700;">테스트 도구 · 위험 구역</div>
@@ -1460,19 +1459,6 @@ function _dtm(iso){
   if(isNaN(d.getTime())) return '-';
   return _date(iso)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
 }
-/* 파기 배치는 매일 새벽 04:10 에 '탈퇴 후 7일 경과' 회원을 지운다.
-   따라서 실제 파기 시각은 (탈퇴시각 + 7일) 이후 처음 오는 04:10 이다.
-   화면에 '탈퇴일+7일'을 그대로 적으면 실제보다 하루 이른 날짜를 안내하게 된다. */
-function _purgeAt(iso){
-  if(!iso) return null;
-  var base=new Date(iso);
-  if(isNaN(base.getTime())) return null;
-  var due=base.getTime()+7*24*3600*1000;
-  var d=new Date(due);
-  var run=new Date(d.getFullYear(), d.getMonth(), d.getDate(), 4, 10, 0, 0);
-  if(run.getTime()<due) run=new Date(run.getTime()+24*3600*1000);
-  return run;
-}
 function _srow(k, v, color){
   return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3.5px 0;">'
     +'<span style="color:var(--muted);font-weight:600;white-space:nowrap;">'+k+'</span>'
@@ -1493,23 +1479,10 @@ function fillStateBox(m){
     html = _srow('정지 일시', esc(_dtm(m.suspAtRaw)), 'var(--err)')
          + _srow('정지 사유', esc(m.suspReason||'-'), 'var(--err)');
   } else if(out){
-    var pu=_purgeAt(m.withdrawnAt);
-    html = _srow('탈퇴 일시', esc(_dtm(m.withdrawnAt)));
-    if(pu){
-      var start=new Date(m.withdrawnAt).getTime();
-      var end=pu.getTime(), now=Date.now();
-      var left=Math.ceil((end-now)/(24*3600*1000));
-      var pct=Math.max(0, Math.min(100, ((now-start)/(end-start))*100));
-      var over=(now>=end);
-      html += _srow('개인정보 파기 예정', esc(_date(pu.toISOString())+' 04:10'));
-      html += '<div style="margin-top:11px;">'
-        +'<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-weight:600;"><span>탈퇴일</span><span>유예기간 만료</span></div>'
-        +'<div style="margin-top:5px;height:6px;border-radius:99px;background:#E4E4E7;overflow:hidden;">'
-          +'<div style="height:100%;width:'+pct.toFixed(1)+'%;background:'+(over?'#B0B0B4':'var(--orange)')+';border-radius:99px;"></div></div>'
-        +'<div style="margin-top:6px;text-align:right;font-size:11.5px;font-weight:800;color:'+(over?'var(--muted)':'var(--orange)')+';">'
-          +(over ? '유예기간 만료 — 복구 불가' : 'D-'+left+' 남음')
-        +'</div></div>';
-    }
+    /* 탈퇴 시 개인정보를 즉시 파기하므로 유예 기간도, 복구도 없다 */
+    html = _srow('탈퇴 일시', esc(_dtm(m.withdrawnAt)))
+         + _srow('개인정보', '파기 완료', 'var(--muted)')
+         + _srow('복구', '불가', 'var(--err)');
   }
 
   if(html){
@@ -1665,9 +1638,8 @@ async function openMember(code){
   if(sb){ if(m.status==='정지'){ sb.textContent='정지 해제'; sb.style.borderColor='var(--ok)'; sb.style.color='var(--ok)'; } else { sb.textContent='계정 정지'; sb.style.borderColor='var(--err)'; sb.style.color='var(--err)'; } }
   /* 탈퇴 회원이면 정지 버튼 대신 복구 버튼을 보여준다 */
   var isOut = (m.status==='탈퇴') || !!m.withdrawnAt;
-  var rb=$('dRestore'), rh=$('dRestoreHint'), db_=$('dDelete');
-  if(rb) rb.style.display = isOut ? 'block' : 'none';
-  if(rh) rh.style.display = isOut ? 'block' : 'none';
+  var oh=$('dOutHint'), db_=$('dDelete');
+  if(oh) oh.style.display = isOut ? 'block' : 'none';
   if(db_) db_.style.display = isOut ? 'none' : 'block';
   if(sb) sb.style.display = isOut ? 'none' : '';
   $('overlay').classList.add('on'); $('drawer').classList.add('on');
@@ -1685,7 +1657,7 @@ async function admFn(action, payload){
   var p = Object.assign({}, payload || {});
   var map = { 'set-status':'set-status', 'reset-password':'reset-password',
               'set-sms-optout':'set-sms-optout', 'member-extra':'member-extra',
-              'delete-member':'delete', 'restore-member':'restore',
+              'delete-member':'delete',
               'purge-member':'purge' };
   var op = map[action];
   if(!op) return { ok:false, message:'알 수 없는 요청입니다.' };
@@ -1787,20 +1759,6 @@ $('dResetPw').addEventListener('click', async ()=>{
 async function deleteMember(code){
   try{ return await admFn('delete-member', { code: code }); }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
 }
-async function restoreMember(code){
-  try{ return await admFn('restore-member', { code: code }); }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
-}
-$('dRestore').addEventListener('click', async ()=>{
-  var code = S.dMemberCode, name = $('dName').textContent || '회원';
-  if(!code) return;
-  if(!confirm(name+' 카마스터를 복구하시겠습니까?\n\n로그인이 다시 가능해집니다.\n탈퇴 시 소멸된 쿠폰과 미지급 리워드는 되살아나지 않습니다.')) return;
-  var btn=$('dRestore'); btn.disabled=true; var pv=btn.textContent; btn.textContent='처리 중...';
-  var res = await restoreMember(code);
-  btn.disabled=false; btn.textContent=pv;
-  if(res && res.ok){ toast((res.message)||'복구했습니다.'); closeDrawer(); renderMembers(); renderDashboard(); }
-  else { toast((res&&res.message)||'복구에 실패했습니다.'); }
-});
-
 function applyPurgeZone(){
   var z = $('dPurgeZone'); if(!z) return;
   z.style.display = S.testTools ? 'block' : 'none';
@@ -1827,7 +1785,7 @@ $('dPurge').addEventListener('click', async ()=>{
 $('dDelete').addEventListener('click', async ()=>{
   var code = S.dMemberCode, name = $('dName').textContent || '회원';
   if(!code) return;
-  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n로그인이 즉시 차단되고 쿠폰 · 미지급 리워드가 소멸됩니다.\n\n7일 이내에는 이 화면에서 복구할 수 있고,\n7일이 지나면 개인정보가 삭제되어 되돌릴 수 없습니다.')) return;
+  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n· 이름·연락처 등 개인정보가 즉시 파기됩니다\n· 되돌릴 수 없습니다\n· 쿠폰과 미지급 리워드가 소멸됩니다\n· 쓰던 아이디는 즉시 다시 쓸 수 있게 됩니다\n\n같은 분이 다시 가입하시면 시공 실적은 이어지고,\n웰컴기프트는 다시 지급되지 않습니다.\n\n계속하시겠습니까?')) return;
   var btn=$('dDelete'); btn.disabled=true; btn.textContent='처리 중...';
   var res = await deleteMember(code);
   btn.disabled=false; btn.textContent='계정 탈퇴 처리';

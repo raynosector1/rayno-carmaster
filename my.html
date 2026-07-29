@@ -1222,12 +1222,13 @@ const S = { name:'', code:'', org:'' };
       var sh=document.createElement('div'); sh.style.cssText='width:100%;background:#fff;border-radius:22px 22px 0 0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));';
       sh.innerHTML='<div style="font-size:19px;font-weight:800;color:#111;">정말 탈퇴하시겠어요?</div>'+
         '<div style="margin-top:10px;font-size:13.5px;line-height:1.7;color:#6A6A6E;">'+
-        '탈퇴하시면 <b style="color:#111;">회원 정보가 모두 삭제</b>됩니다.<br>'+
+        '탈퇴하시면 이름·연락처 등 <b style="color:#D64545;">회원 정보가 즉시 삭제</b>되며,<br>'+
+        '<b style="color:#D64545;">어떠한 사유로도 복구할 수 없습니다.</b><br><br>'+
         '· 보유 중인 <b style="color:#111;">쿠폰</b>과 미지급 <b style="color:#111;">리워드</b>는 즉시 소멸됩니다.<br>'+
-        '· 누적 시공 실적은 복구할 수 없습니다.<br>'+
-        '· 탈퇴 후 <b style="color:#111;">7일 이내</b>에는 회원 정보가 보관됩니다.<br>'+
-        '&nbsp;&nbsp;복구를 원하시면 <b style="color:#111;">레이노 고객센터(1588-8695)</b>로 문의해 주세요.<br>'+
-        '· 7일이 지나면 이름·연락처 등 개인정보가 삭제되며 되돌릴 수 없습니다.<br>'+'&nbsp;&nbsp;중복 가입 방지를 위한 기록만 남습니다.'+
+        '· 같은 명의로 <b style="color:#111;">바로 다시 가입</b>하실 수 있고, 쓰시던 아이디도 다시 쓸 수 있습니다.<br>'+
+        '· 다시 가입하시면 <b style="color:#111;">누적 시공 실적은 그대로 이어집니다.</b><br>'+
+        '· 다만 <b style="color:#111;">웰컴기프트는 최초 가입 시 1회</b>만 드리므로 다시 지급되지 않습니다.<br>'+
+        '· 중복 가입 확인을 위한 기록만 남습니다.'+
         '</div>'+
         '<div style="margin-top:22px;display:flex;gap:10px;">'+
         '<button data-lv="cancel" style="flex:1;padding:15px 0;border:1.5px solid #E7E7E9;background:#fff;color:#111;font-size:15px;font-weight:700;border-radius:14px;cursor:pointer;">취소</button>'+
@@ -1247,7 +1248,7 @@ const S = { name:'', code:'', org:'' };
           }
           ov.remove();
           try{ sessionStorage.removeItem('cm_token'); }catch(err){}
-          alert('탈퇴가 완료되었습니다.\n\n회원 정보는 7일간 보관되며, 복구를 원하시면 레이노 고객센터(1588-8695)로 문의해 주세요.');
+          alert('탈퇴가 완료되었습니다.\n\n회원 정보는 즉시 삭제되었습니다.\n같은 명의로 다시 가입하시면 시공 실적은 그대로 이어집니다.\n\n문의: 레이노 고객센터 1588-8695');
           location.href='index.html';
         });
       });
