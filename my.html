@@ -293,6 +293,24 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
       <a href="tel:1588-8695" style="display:flex;align-items:center;justify-content:space-between;padding:15px 14px;border-top:1px solid #F5F5F6;text-decoration:none;"><span style="font-size:15px;color:#111;font-weight:600;">문의하기</span><span style="font-size:13px;color:#8A8A8E;font-weight:700;">1588-8695</span></a>
     </div>
 
+    <div class="card" style="margin-top:12px;padding:16px 16px 14px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;">
+        <div style="flex:1;">
+          <div style="font-size:14.5px;font-weight:700;color:#111;">광고 문자 받기</div>
+          <div id="smsHint" style="margin-top:4px;font-size:12.5px;color:#8A8A8E;line-height:1.65;">불러오는 중…</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:48px;height:28px;flex:0 0 auto;margin-top:2px;">
+          <input type="checkbox" id="smsSw" style="opacity:0;width:0;height:0;position:absolute;">
+          <span id="smsTk" style="position:absolute;inset:0;background:#D9D9DE;border-radius:99px;transition:background .18s;cursor:pointer;"></span>
+          <span id="smsKn" style="position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,.2);pointer-events:none;"></span>
+        </label>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #F5F5F6;font-size:12px;color:#A0A0A6;line-height:1.7;">
+        끄시면 가입 안내·이벤트 등 <b style="color:#6A6A6E;">광고 문자</b>를 받지 않으십니다.<br>
+        <b style="color:#6A6A6E;">리워드 지급 안내</b>처럼 꼭 필요한 안내는 계속 보내드립니다.
+      </div>
+    </div>
+
     <div style="margin-top:12px;display:flex;gap:10px;">
       <button data-act="logout" style="flex:1;padding:15px 0;border:1.5px solid #E7E7E9;background:#fff;color:#111;font-size:14px;font-weight:700;border-radius:14px;">로그아웃</button>
       <button data-act="leave" style="flex:1;padding:15px 0;border:1.5px solid #F2D5D5;background:#fff;color:#D64545;font-size:14px;font-weight:700;border-radius:14px;">회원 탈퇴</button>
@@ -1003,10 +1021,63 @@ async function loadMyStats(){
       prev_month_count: Number(me.prev_month_count || 0),
       /* 목표가 없으면 없는 대로 넘긴다. 예전에 여기서 10으로 바꿔치기하고 있었다 */
       reward_progress: { current: me.total_count||0, goal: (me.goal==null ? 0 : Number(me.goal)), name: me.goal_name||'' },
-      profile: { loginId: me.login_id||'—', phone: me.phone_masked||'—' }
+      profile: { loginId: me.login_id||'—', phone: me.phone_masked||'—' },
+      /* 광고 문자 수신 여부. null 이면 확인하지 못한 것 */
+      smsOptout: (me.sms_optout===null || me.sms_optout===undefined) ? null : !!me.sms_optout
     };
   }catch(e){ return {}; }
 }
+
+/* ── 광고 문자 수신 설정 ──
+   고치는 곳은 관리자 화면·수신거부 페이지와 같은 곳이다.
+   끄면 광고 문자만 안 받고, 리워드 지급 안내 같은 꼭 필요한 안내는 계속 받는다. */
+function smsSwPaint(on, busy){
+  var tk=_gid('smsTk'), kn=_gid('smsKn'), sw=_gid('smsSw'), h=_gid('smsHint');
+  if(!tk) return;
+  tk.style.background = on ? '#FF5A00' : '#D9D9DE';
+  kn.style.transform  = on ? 'translateX(20px)' : 'translateX(0)';
+  if(sw) sw.checked = on;
+  if(h) h.textContent = busy ? '변경 중…'
+    : (on ? '광고 문자를 받고 있습니다' : '광고 문자를 받지 않습니다');
+}
+
+function smsSwInit(state){
+  var sw=_gid('smsSw'), h=_gid('smsHint');
+  if(!sw) return;
+  if(state===null){
+    smsSwPaint(false);
+    if(h) h.textContent='지금은 확인할 수 없습니다';
+    sw.disabled=true;
+    _gid('smsTk').style.cursor='default';
+    return;
+  }
+  sw.disabled=false;
+  smsSwPaint(!state);          /* state=수신거부 여부 → 스위치는 '받기' 기준 */
+}
+
+async function smsSwToggle(){
+  var sw=_gid('smsSw');
+  if(!sw || sw.disabled) return;
+  var want = !sw.checked;                  /* 누른 뒤의 '받기' 상태 */
+  smsSwPaint(want, true);
+  sw.disabled = true;
+  try{
+    var r = await api('/v1/me/sms-optout', { method:'POST', body:{ optout: !want } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '변경에 실패했습니다.');
+    smsSwPaint(want);
+    T(want ? '광고 문자를 받습니다.' : '광고 문자를 받지 않습니다.');
+  }catch(e){
+    smsSwPaint(!want);                     /* 실패하면 되돌린다 */
+    T((e && e.message) || '변경에 실패했습니다.');
+  }
+  sw.disabled = false;
+}
+
+(function(){
+  var tk=_gid('smsTk'), sw=_gid('smsSw');
+  if(tk) tk.addEventListener('click', function(e){ e.preventDefault(); smsSwToggle(); });
+  if(sw) sw.addEventListener('change', function(e){ e.preventDefault(); });
+})();
 
 async function logout(){
   try{ sessionStorage.removeItem('cm_token'); }catch(e){}
@@ -1381,6 +1452,7 @@ const S = { name:'', code:'', org:'' };
     if(res.month_count!=null){ countUp(id('monthCount'), res.month_count); }
     if(res.total_count!=null){ countUp(id('totalCount'), res.total_count); }
     fillRewardGoal(res.total_count || 0);
+    smsSwInit(res.smsOptout === undefined ? null : res.smsOptout);
     /* 리워드 뱃지는 loadRewardList()가 '받을 수 있는 개수'로 채운다 */
     fillMonthCard(res.monthly, res.prev_month_count);
 
