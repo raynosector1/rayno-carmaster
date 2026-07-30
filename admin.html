@@ -349,7 +349,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         </div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">
+          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">
             <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
           </div>
           <div id="membersRows"></div>
@@ -568,25 +568,6 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           <div id="smsRows"></div>
         </div>
 
-        <div style="margin-top:14px;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;">
-          <div style="font-size:13.5px;font-weight:800;color:var(--ink);">시험 발송</div>
-          <div style="margin-top:4px;font-size:12px;color:var(--muted);line-height:1.6;">
-            등록한 허용 번호로만 나갑니다. 실제 요금이 발생합니다.
-          </div>
-          <div style="margin-top:12px;display:grid;grid-template-columns:200px 1fr;gap:9px;">
-            <input class="finp" id="stPhone" placeholder="받는 번호 (010-0000-0000)" maxlength="20" style="padding:11px 13px;font-size:13px;">
-            <input class="finp" id="stSubject" placeholder="제목 (장문일 때 표시)" maxlength="30" style="padding:11px 13px;font-size:13px;">
-          </div>
-          <div style="margin-top:9px;display:flex;gap:9px;align-items:center;">
-            <select class="finp selc" id="stPick" style="flex:1;padding:11px 13px;font-size:13px;"><option value="">템플릿에서 불러오기</option></select>
-          </div>
-          <textarea class="finp" id="stBody" rows="9" placeholder="보낼 내용" style="margin-top:9px;resize:vertical;line-height:1.75;min-height:200px;"></textarea>
-          <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-            <span id="stKind" class="badge b-off">단문 (SMS)</span>
-            <span id="stBytes" style="font-size:12px;font-weight:700;color:var(--muted);">0 / 2,000 바이트</span>
-          </div>
-          <button class="btn btn-primary" id="stSend" style="margin-top:12px;width:100%;padding:13px 0;font-size:14px;font-weight:800;opacity:.45;pointer-events:none;">시험 발송</button>
-        </div>
 
         <div class="card" style="padding:22px 24px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -1379,7 +1360,7 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending') }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending'), rejoin:!!m.stats_from, rejoinN:Number(m.rejoin_count||0) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
@@ -1402,6 +1383,7 @@ async function getMember(code){
       suspAt: m.suspended_at?_date(m.suspended_at):'-', suspReason: m.suspend_reason||'-',
       suspAtRaw: m.suspended_at || null,
       withdrawnAt: m.withdrawn_at || null,
+      rejoinAt: m.stats_from || null, rejoinN: Number(m.rejoin_count||0),
       pending: (m.office_approval === 'pending'), officeId: m.office_id || null,
       brandRaw: m.brand || '', regionRaw: m.region || '',
       brandEtc: m.brand_etc || '', officeEtc: m.office_etc || '',
@@ -1515,7 +1497,7 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px');
+  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -1566,7 +1548,7 @@ function applyMemberFilters(){
   if($('mTotal')) $('mTotal').textContent=rows.length;
   var badge=function(st){ return st==='일반'?'<span class="badge b-ok">일반</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':st==='탈퇴'?'<span class="badge b-off">탈퇴</span>':'<span class="badge b-off">정지</span>'; };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(72px,0.6fr) 58px;">'+
+    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
@@ -1575,7 +1557,7 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       '<span style="color:#8A8A8E;">'+m.join+'</span>'+
-      '<span>'+badge(m.status)+'</span>'+
+      '<span>'+badge(m.status)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+'</span>'+
       '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
@@ -1627,6 +1609,13 @@ function fillStateBox(m){
     html = _srow('탈퇴 일시', esc(_dtm(m.withdrawnAt)))
          + _srow('개인정보', '파기 완료', 'var(--muted)')
          + _srow('복구', '불가', 'var(--err)');
+  }
+
+  /* 재가입 회원 표시. 정지·탈퇴와 무관하게 해당되면 항상 보여준다.
+     실적 기준일이 있다는 것 자체가 재가입했다는 뜻이다. */
+  if(m.rejoinAt){
+    html += _srow('재가입', esc(_dtm(m.rejoinAt)) + (m.rejoinN>1 ? (' · '+m.rejoinN+'회') : ''), 'var(--warn)')
+          + _srow('이전 실적', '승계 안 됨', 'var(--muted)');
   }
 
   if(html){
@@ -2908,6 +2897,7 @@ async function loadServices(){
         film:   w.product||'',            /* 제품명 */
         filmCd: w.product_code||'',       /* 제품 코드 */
         filmNew: !!w.product_unknown,     /* 코드표에 없는 제품 */
+        noInherit: !!w.not_inherited,     /* 재가입 이전 시공 — 실적에서 빠짐 */
         wr:     (w.warranty_no||w.wr_no||''),
         status: st
       };
@@ -2960,7 +2950,9 @@ function svDraw(){
           '<span style="color:var(--muted);font-size:13px;">' + esc(r.date) + '</span>' +
           svCell(esc(r.carNo), esc(r.model)) +
           svCell(esc(r.shop), esc(r.shopArea)) +
-          svCell(esc(r.cm), esc(r.code)) +
+          svCell(esc(r.cm) + (r.noInherit
+          ? ' <span class="badge b-off" title="이 회원이 탈퇴 후 다시 가입하기 전의 시공입니다. 실적으로 세지 않습니다.">승계 안 됨</span>'
+          : ''), esc(r.code)) +
           svCell(esc(r.film) + (r.filmNew
           ? ' <span class="badge b-warn" title="제품 코드표에 없는 코드입니다. 설정 화면의 코드 점검을 확인해 주세요.">미등록</span>'
           : ''), esc(r.parts)) +
@@ -3524,7 +3516,6 @@ async function renderSms(){
   $('smsCount').textContent = SMS_T.length;
   var opts = '<option value="">템플릿에서 불러오기</option>'
     + SMS_T.map(function(t){ return '<option value="'+esc(t.id)+'">'+esc(t.name||'(이름 없음)')+'</option>'; }).join('');
-  var pick=$('stPick');  if(pick) pick.innerHTML = opts;
   var pick2=$('sdPick'); if(pick2) pick2.innerHTML = opts;
   var all = $('smsAll'); if(all) all.checked = false;
 
@@ -3681,49 +3672,12 @@ async function renderSmsStatus(){
       + '· 모드 : ' + mode + '<br>'
       + '· 발신번호 : ' + (st.send_no ? esc(st.send_no) : '<span style="color:var(--err);">미등록</span>') + '<br>'
       + '· 허용 번호 : ' + (st.test_numbers||0) + '개';
-    stValidate();
   }catch(e){
     badge.textContent='확인 실패'; badge.className='badge b-err';
     box.textContent = (e && e.message) || '상태를 불러오지 못했습니다.';
   }
 }
 $('smsStatBtn').addEventListener('click', renderSmsStatus);
-
-/* ── 시험 발송 ── */
-function stValidate(){
-  var body=$('stBody').value||'';
-  var n=smBytes(body), isLong=n>SMS_SHORT;
-  $('stBytes').textContent = n.toLocaleString()+' / '+SMS_MAX.toLocaleString()+' 바이트';
-  $('stBytes').style.color = (n>SMS_MAX) ? 'var(--err)' : 'var(--muted)';
-  $('stKind').textContent = isLong ? '장문 (LMS)' : '단문 (SMS)';
-  $('stKind').className = 'badge ' + (isLong ? 'b-warn' : 'b-off');
-  var ok = !!(($('stPhone').value||'').replace(/\D/g,'').length>=9) && !!body.trim() && n<=SMS_MAX;
-  var b=$('stSend');
-  b.style.opacity = ok ? '1' : '.45';
-  b.style.pointerEvents = ok ? 'auto' : 'none';
-}
-['stPhone','stBody'].forEach(function(i){ $(i).addEventListener('input', stValidate); });
-
-$('stPick').addEventListener('change', function(){
-  var t = SMS_T.find(function(x){ return x.id===this.value; }.bind(this));
-  if(!t) return;
-  $('stSubject').value = t.subject || '';
-  $('stBody').value = t.body || '';
-  stValidate();
-});
-
-$('stSend').addEventListener('click', async function(){
-  var phone=$('stPhone').value.trim();
-  if(!confirm(phone+' 으로 실제 문자를 보냅니다.\n\n요금이 발생합니다. 계속하시겠습니까?')) return;
-  this.style.pointerEvents='none'; this.textContent='보내는 중…';
-  try{
-    var r = await admApi('/v1/admin/sms/test', { method:'POST', body:{
-      phone: phone, subject: $('stSubject').value.trim(), body: $('stBody').value } });
-    if(!r || !r.ok) throw new Error((r && r.message) || '발송에 실패했습니다.');
-    toast('발송 요청을 보냈습니다. 실제 도착까지 몇 초 걸립니다.');
-  }catch(e){ toast((e && e.message) || '발송에 실패했습니다.'); }
-  this.textContent='시험 발송'; stValidate();
-});
 
 /* ══════════════════════════════════════════════════════
    문자 발송 (대량 · 직접 입력)
