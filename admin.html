@@ -524,6 +524,20 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
         <div class="card" style="padding:22px 24px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div class="section-h">발송 이력</div>
+            <button class="btn btn-line" id="slRefresh" style="padding:7px 14px;font-size:12.5px;">새로고침</button>
+          </div>
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:13px;">
+            한 번의 발송을 <b style="color:var(--ink);">하나의 묶음</b>으로 기록합니다.
+            대행사 응답은 &lsquo;접수했다&rsquo;는 뜻이라, 실제 도달 결과는 나중에 따로 확인해 채웁니다.<br>
+            연락처는 저장하지 않고 <b style="color:var(--ink);">뒤 4자리만</b> 남깁니다.
+          </div>
+          <div id="slRows"></div>
+          <div id="slDetail" style="display:none;margin-top:16px;"></div>
+        </div>
+
+        <div class="card" style="padding:22px 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
             <div class="section-h">수신거부 관리 <span id="ooCount" class="badge b-off">0건</span></div>
             <button class="btn btn-line" id="ooRefresh" style="padding:7px 14px;font-size:12.5px;">현황 새로고침</button>
           </div>
@@ -3684,6 +3698,93 @@ async function ooLoad(){
   }
 }
 
+/* ══════════════════════════════════════════════════════
+   발송 이력
+
+   묶음(batch) 하나가 '한 번의 발송'이다.
+   상태는 세 가지 — 대기(queued) · 접수(sent) · 실패(failed).
+   '접수'는 대행사가 받아 줬다는 뜻이고, 실제 도달은 결과 조회로 나중에 채운다.
+   ══════════════════════════════════════════════════════ */
+function slBadge(st){
+  if(st==='sent')   return '<span class="badge b-ok">접수</span>';
+  if(st==='failed') return '<span class="badge b-err">실패</span>';
+  return '<span class="badge b-warn">대기</span>';
+}
+
+async function slLoad(){
+  var box=$('slRows');
+  try{
+    var r=await admApi('/v1/admin/sms/log');
+    if(!r || !r.ok) throw new Error((r && r.message) || '이력을 읽지 못했습니다.');
+    var rows=r.batches||[];
+    $('slDetail').style.display='none';
+    if(!rows.length){
+      box.innerHTML='<div style="padding:16px;background:#F7F7F8;border-radius:10px;'
+        +'font-size:12.5px;color:var(--muted);text-align:center;">아직 발송한 기록이 없습니다.</div>';
+      return;
+    }
+    var cols='grid-template-columns:150px 70px 1fr 1fr 1fr 80px;';
+    box.innerHTML='<div class="table" style="border:1px solid var(--line);">'
+      + '<div class="tr th" style="'+cols+'"><span>발송 시각</span><span>유형</span>'
+      + '<span style="text-align:right;">전체</span><span style="text-align:right;">접수</span>'
+      + '<span style="text-align:right;">실패</span><span></span></div>'
+      + rows.map(function(x){
+          var fail=Number(x.failed||0), wait=Number(x.queued||0);
+          return '<div class="tr td" style="'+cols+'">'
+            + '<span>'+esc(x.at_kst||'-')+'</span>'
+            + '<span>'+esc(x.msg_type||'-')+'</span>'
+            + '<span style="text-align:right;font-weight:700;">'+Number(x.n||0).toLocaleString()+'</span>'
+            + '<span style="text-align:right;color:var(--ok);font-weight:700;">'+Number(x.sent||0).toLocaleString()+'</span>'
+            + '<span style="text-align:right;'+(fail?'color:var(--err);font-weight:800;':'color:var(--muted);')+'">'
+            + fail.toLocaleString()+(wait?(' <span style="color:var(--orange);">+대기 '+wait+'</span>'):'')+'</span>'
+            + '<span style="text-align:right;"><span class="linklike" data-batch="'+esc(x.batch_id)+'">보기</span></span>'
+            + '</div>';
+        }).join('')
+      + '</div>';
+    box.querySelectorAll('[data-batch]').forEach(function(el){
+      el.addEventListener('click', function(){ slDetailLoad(el.getAttribute('data-batch')); });
+    });
+  }catch(e){
+    box.innerHTML='<div style="font-size:12.5px;color:var(--err);font-weight:700;">'
+      + esc((e&&e.message)||'이력을 읽지 못했습니다.')+'</div>';
+  }
+}
+
+async function slDetailLoad(batch){
+  var box=$('slDetail');
+  box.style.display='';
+  box.innerHTML='<div style="font-size:12.5px;color:var(--muted);">불러오는 중…</div>';
+  try{
+    var r=await admApi('/v1/admin/sms/log?batch='+encodeURIComponent(batch));
+    if(!r || !r.ok) throw new Error((r && r.message) || '내역을 읽지 못했습니다.');
+    var rows=r.items||[];
+    var cols='grid-template-columns:90px 70px 80px 90px 1fr 1fr;';
+    box.innerHTML='<div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:9px;">'
+      + '건별 내역 <span style="color:var(--muted);font-weight:600;">('+rows.length.toLocaleString()+'건)</span></div>'
+      + '<div class="table" style="border:1px solid var(--line);">'
+      + '<div class="tr th" style="'+cols+'"><span>연락처</span><span>유형</span><span>상태</span>'
+      + '<span>결과코드</span><span>접수 시각</span><span>결과 시각</span></div>'
+      + rows.map(function(x){
+          return '<div class="tr td" style="'+cols+'">'
+            + '<span>****'+esc(x.phone_last4||'')+'</span>'
+            + '<span>'+esc(x.msg_type||'-')+'</span>'
+            + '<span>'+slBadge(x.status)+'</span>'
+            + '<span style="font-family:monospace;font-size:12px;'
+            + (x.result_code && x.result_code!=='' ? 'color:var(--err);font-weight:700;' : 'color:var(--muted);')
+            + '">'+esc(x.result_code||'-')+'</span>'
+            + '<span style="color:var(--muted);">'+esc(x.sent_kst||'-')+'</span>'
+            + '<span style="color:var(--muted);">'+esc(x.reported_kst||'-')+'</span></div>';
+        }).join('')
+      + '</div>'
+      + '<div style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.7;">'
+      + '결과 시각은 대행사에서 최종 전송 결과를 받아온 시점입니다. 아직 비어 있으면 접수만 된 상태입니다.</div>';
+  }catch(e){
+    box.innerHTML='<div style="font-size:12.5px;color:var(--err);font-weight:700;">'
+      + esc((e&&e.message)||'내역을 읽지 못했습니다.')+'</div>';
+  }
+}
+
+$('slRefresh').addEventListener('click', slLoad);
 $('ooRefresh').addEventListener('click', ooLoad);
 
 $('ooCheck').addEventListener('click', async function(){
@@ -3800,10 +3901,12 @@ $('sdSend').addEventListener('click', async function(){
   try{
     var r=await admApi('/v1/admin/sms/send', { method:'POST', body:{
       items: SD.rows, subject: $('sdSubject').value.trim(),
-      body: $('sdBody').value, n: SD.rows.length } });
+      body: $('sdBody').value, n: SD.rows.length,
+      template_id: $('sdPick').value || '' } });
     if(!r || !r.ok) throw new Error((r && r.message) || '발송에 실패했습니다.');
     toast((r.sent||0).toLocaleString()+'건 발송 완료'+(r.message ? (' · '+r.message) : ''));
     closeSendDrawer();
+    if(typeof slLoad === 'function') slLoad();   /* 발송 이력 갱신 */
   }catch(e){ toast((e && e.message) || '발송에 실패했습니다.'); }
   this.textContent='문자 발송';
   sdValidate();
@@ -3941,7 +4044,7 @@ function admAudit(what, n){
   }catch(e){}
 }
 
-function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); }catch(e){ console.error(e); } }
+function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); slLoad(); }catch(e){ console.error(e); } }
 (function(){
   var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
