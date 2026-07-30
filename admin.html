@@ -541,75 +541,76 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       </section>
 
       <section class="view" id="view-sms">
-        <div id="smsGate" style="background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:16px 18px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:13.5px;font-weight:800;color:var(--ink);">발송 설정 <span id="smsStatBadge" class="badge b-off" style="margin-left:6px;">확인 중</span></div>
-            <button class="btn btn-line" id="smsStatBtn" style="padding:7px 14px;font-size:12.5px;">다시 확인</button>
-          </div>
-          <div id="smsStatBody" style="margin-top:10px;font-size:12.5px;color:var(--muted);line-height:1.8;">불러오는 중…</div>
-        </div>
 
-
-        <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div style="font-size:15px;font-weight:800;color:var(--ink);">템플릿 <span id="smsCount">0</span>건</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-line" id="smsCopyBtn">복사</button>
-            <button class="btn" id="smsDelBtn" style="border:1.5px solid var(--err);color:var(--err);">삭제</button>
-            <button class="btn btn-primary" id="smsNewBtn" style="font-weight:800;">＋ 템플릿 등록</button>
-            <button class="btn btn-primary" id="smsSendBtn" style="font-weight:800;opacity:.45;">문자 발송</button>
+        <div id="smsGate" class="card" style="padding:15px 22px;">
+          <div style="display:flex;align-items:center;gap:13px;flex-wrap:wrap;">
+            <span id="smsStatBadge" class="badge b-off">확인 중</span>
+            <div id="smsStatBody" style="flex:1;min-width:200px;font-size:12.5px;color:var(--muted);line-height:1.6;">불러오는 중…</div>
+            <button class="btn btn-soft" id="smsStatBtn" style="padding:8px 15px;font-size:12.5px;">다시 확인</button>
           </div>
         </div>
-
-        <div class="table" style="margin-top:12px;">
-          <div class="tr th" style="grid-template-columns:40px 48px 220px 1fr 116px;">
-            <span><input type="checkbox" id="smsAll" style="cursor:pointer;"></span>
-            <span>No</span><span>템플릿명</span><span>템플릿 내용</span><span>등록일시</span>
-          </div>
-          <div id="smsRows"></div>
-        </div>
-
 
         <div class="card" style="padding:22px 24px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div class="section-h">발송 이력</div>
-            <button class="btn btn-line" id="slRefresh" style="padding:7px 14px;font-size:12.5px;">새로고침</button>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+            <div>
+              <div class="section-h">문자 템플릿 <span id="smsCount" style="color:var(--muted);">0</span></div>
+              <div style="margin-top:4px;font-size:12.5px;color:var(--muted);">보낼 문안을 하나 골라 <b style="color:var(--ink);">문자 발송</b>을 누르세요.</div>
+            </div>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-soft" id="smsCopyBtn" style="padding:9px 15px;font-size:12.5px;">복사</button>
+              <button class="btn btn-soft" id="smsDelBtn" style="padding:9px 15px;font-size:12.5px;color:var(--err);">삭제</button>
+              <button class="btn btn-line" id="smsNewBtn" style="padding:9px 15px;font-size:12.5px;">＋ 템플릿</button>
+              <button class="btn btn-primary" id="smsSendBtn" style="padding:9px 20px;font-size:12.5px;opacity:.45;">문자 발송</button>
+            </div>
           </div>
-          <div style="font-size:12.5px;color:var(--muted);line-height:1.75;margin-bottom:13px;">
-            한 번의 발송을 <b style="color:var(--ink);">하나의 묶음</b>으로 기록합니다.
-            대행사 응답은 &lsquo;접수했다&rsquo;는 뜻이라, 실제 도달 결과는 나중에 따로 확인해 채웁니다.<br>
-            연락처는 저장하지 않고 <b style="color:var(--ink);">뒤 4자리만</b> 남깁니다.
+
+          <div class="table" style="margin-top:16px;border:1px solid var(--line);">
+            <div class="tr th" style="grid-template-columns:40px 48px 220px 1fr 116px;">
+              <span><input type="checkbox" id="smsAll" style="cursor:pointer;"></span>
+              <span>No</span><span>템플릿명</span><span>템플릿 내용</span><span>등록일시</span>
+            </div>
+            <div id="smsRows"></div>
           </div>
-          <div id="slRows"></div>
+        </div>
+
+        <div class="card" style="padding:22px 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+            <div>
+              <div class="section-h">발송 이력</div>
+              <div style="margin-top:4px;font-size:12.5px;color:var(--muted);">한 번의 발송이 한 줄입니다. 연락처는 뒤 4자리만 남습니다.</div>
+            </div>
+            <button class="btn btn-soft" id="slRefresh" style="padding:8px 15px;font-size:12.5px;">새로고침</button>
+          </div>
+          <div id="slRows" style="margin-top:16px;"></div>
           <div id="slDetail" style="display:none;margin-top:16px;"></div>
         </div>
 
         <div class="card" style="padding:22px 24px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div class="section-h">수신거부 관리 <span id="ooCount" class="badge b-off">0건</span></div>
-            <button class="btn btn-line" id="ooRefresh" style="padding:7px 14px;font-size:12.5px;">현황 새로고침</button>
-          </div>
-          <div style="font-size:12.5px;color:var(--muted);line-height:1.75;">
-            문자 하단의 무료수신거부 링크를 누르면 자동으로 등록됩니다.
-            전화로 요청을 받으신 경우 여기서 직접 등록하실 수 있습니다.<br>
-            <b style="color:var(--ink);">연락처 원문은 저장하지 않습니다.</b> 되돌릴 수 없게 변환한 값만 보관하므로
-            아래 목록으로는 누구의 번호인지 알 수 없습니다. 번호를 입력해 상태를 조회하는 방식으로 확인해 주세요.
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+            <div>
+              <div class="section-h">수신거부 관리 <span id="ooCount" class="badge b-off">0건</span></div>
+              <div style="margin-top:4px;font-size:12.5px;color:var(--muted);">문자 하단 링크로 자동 등록됩니다. 전화로 요청받으면 여기서 직접 처리하세요.</div>
+            </div>
+            <button class="btn btn-soft" id="ooRefresh" style="padding:8px 15px;font-size:12.5px;">새로고침</button>
           </div>
 
-          <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <input class="finp" id="ooPhone" placeholder="010-0000-0000" maxlength="20"
-                   style="flex:1;min-width:180px;padding:11px 13px;font-size:13px;">
-            <input class="finp" id="ooMemo" placeholder="메모 (선택 · 예: 고객센터 전화 요청)" maxlength="100"
-                   style="flex:1.4;min-width:200px;padding:11px 13px;font-size:13px;">
-          </div>
-          <div style="margin-top:9px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-line" id="ooCheck" style="flex:1;padding:11px 0;font-size:13px;font-weight:800;">상태 조회</button>
-            <button class="btn" id="ooAdd" style="flex:1;padding:11px 0;font-size:13px;font-weight:800;border:1.5px solid var(--err);color:var(--err);">수신거부 등록</button>
-            <button class="btn btn-soft" id="ooRemove" style="flex:1;padding:11px 0;font-size:13px;font-weight:800;">해제</button>
+          <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input class="finp" id="ooPhone" placeholder="010-0000-0000" maxlength="20" style="flex:0 1 190px;padding:11px 13px;font-size:13px;">
+            <input class="finp" id="ooMemo" placeholder="메모 (선택 · 예: 고객센터 전화 요청)" maxlength="100" style="flex:1 1 220px;padding:11px 13px;font-size:13px;">
+            <button class="btn btn-soft" id="ooCheck" style="padding:11px 16px;font-size:12.5px;">조회</button>
+            <button class="btn btn-soft" id="ooAdd" style="padding:11px 16px;font-size:12.5px;color:var(--err);">거부 등록</button>
+            <button class="btn btn-soft" id="ooRemove" style="padding:11px 16px;font-size:12.5px;">해제</button>
           </div>
           <div id="ooResult" style="display:none;margin-top:11px;padding:13px 15px;border-radius:10px;font-size:13px;line-height:1.7;"></div>
 
-          <div style="margin-top:20px;font-size:12.5px;font-weight:800;color:var(--ink);">최근 등록 (최대 100건)</div>
-          <div id="ooRows" style="margin-top:9px;"></div>
+          <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line);">
+            <div style="font-size:12.5px;color:var(--muted);line-height:1.7;">
+              <b style="color:var(--ink);">연락처 원문은 저장하지 않습니다.</b> 되돌릴 수 없게 변환한 값만 보관하므로
+              아래 목록으로는 누구의 번호인지 알 수 없습니다. 번호를 넣어 조회해 주세요.
+            </div>
+            <div style="margin-top:13px;font-size:12.5px;font-weight:800;color:var(--ink);">최근 등록 <span style="color:var(--muted);font-weight:700;">(최대 100건)</span></div>
+            <div id="ooRows" style="margin-top:9px;"></div>
+          </div>
         </div>
 
       </section>
@@ -3664,14 +3665,17 @@ async function renderSmsStatus(){
     SMS_ST = st;
     badge.textContent = st.connected ? '연결됨' : '준비 안 됨';
     badge.className = 'badge ' + (st.connected ? 'b-ok' : 'b-err');
+    /* 한 줄로 읽히게 한다. '지금 보낼 수 있나'는 배지가, 나머지는 이 줄이 답한다. */
+    var sep = '<span style="color:var(--line);margin:0 9px;">|</span>';
+    var no = st.send_no
+      ? '발신번호 <b style="color:var(--ink);">' + esc(st.send_no) + '</b>'
+      : '<b style="color:var(--err);">발신번호 미등록</b>';
     var mode = (st.mode==='live')
-      ? '<b style="color:var(--err);">운영</b> — 실제 대상에게 발송됩니다'
-      : '<b style="color:var(--orange);">시험</b> — 등록한 번호로만, 한 번에 5건까지';
-    box.innerHTML =
-        '· 상태 : ' + esc(st.message||'-') + '<br>'
-      + '· 모드 : ' + mode + '<br>'
-      + '· 발신번호 : ' + (st.send_no ? esc(st.send_no) : '<span style="color:var(--err);">미등록</span>') + '<br>'
-      + '· 허용 번호 : ' + (st.test_numbers||0) + '개';
+      ? '<b style="color:var(--ink);">운영 모드</b> — 올린 대상 전체에게 나갑니다'
+      : '<b style="color:var(--orange);">시험 모드</b> — 등록한 ' + (st.test_numbers||0) + '개 번호로만, 한 번에 5건까지';
+    box.innerHTML = st.connected
+      ? (no + sep + mode)
+      : '<b style="color:var(--err);">' + esc(st.message || '발송 설정이 준비되지 않았습니다') + '</b>';
   }catch(e){
     badge.textContent='확인 실패'; badge.className='badge b-err';
     box.textContent = (e && e.message) || '상태를 불러오지 못했습니다.';
