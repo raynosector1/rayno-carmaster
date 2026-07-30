@@ -209,6 +209,44 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 .skel{display:block;height:13px;border-radius:5px;background:linear-gradient(90deg,#ECECEE 25%,#F5F5F7 50%,#ECECEE 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;}
 
 @media(max-width:900px){ .search{width:180px;} }
+
+/* ═══ 프로모션·리워드 통합 화면 ═══ */
+/* 표 칸 폭을 한 곳에서만 정한다 → 머리글과 본문이 어긋날 수 없다 */
+:root{ --pgcols: 180px 132px minmax(170px,1fr) 88px 168px 100px 112px; }
+.pgtab .tr{ display:grid; grid-template-columns:var(--pgcols); align-items:center; column-gap:12px; }
+.num{ font-variant-numeric:tabular-nums; font-feature-settings:'tnum'; }
+.rt-r{ text-align:right; } .rt-c{ text-align:center; }
+.pgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:13px; align-items:stretch; }
+.pcard{ background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px 19px 0;
+        display:flex; flex-direction:column; cursor:pointer; transition:border-color .15s; }
+.pcard:hover{ border-color:#C8C8CE; }
+.pcard.sel{ border:1.5px solid var(--ink); padding:17.5px 18.5px 0; }
+.pcard .nm{ font-size:15px; font-weight:800; line-height:1.4; letter-spacing:-.35px; }
+.pcard .rng{ margin-top:6px; font-size:12px; color:var(--muted); font-weight:600; }
+.pcard .rows{ margin-top:14px; padding-top:13px; border-top:1px solid #F2F2F2;
+              display:grid; grid-template-columns:44px 1fr; row-gap:8px; column-gap:10px; align-items:baseline; }
+.pcard .rows .k{ font-size:12.5px; color:var(--muted); font-weight:600; }
+.pcard .rows .v{ font-size:12.5px; font-weight:700; line-height:1.5; }
+.pcard .foot{ margin-top:auto; padding:12px 0; border-top:1px solid #F2F2F2;
+              display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.pcard .foot .st{ font-size:12.5px; color:var(--muted); font-weight:600; }
+.pcard .foot .st b{ color:var(--ink); font-weight:800; }
+.pcard .foot .ac{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+/* 칸 게이지 — 건수는 소수점이 없는 값이라 칸으로 센다. 목표가 크면 막대로 바뀐다 */
+.gauge{ display:flex; align-items:center; gap:3px; }
+.gauge i{ width:11px; height:9px; border-radius:2px; background:#E9E9EC; flex-shrink:0; }
+.gauge i.on{ background:var(--orange); }
+.gauge i.full{ background:var(--ok); }
+.gauge .bar{ flex:1; height:8px; border-radius:99px; background:#E9E9EC; overflow:hidden; min-width:60px; }
+.gauge .bar em{ display:block; height:100%; background:var(--orange); border-radius:99px; }
+.gauge .pct{ margin-left:8px; font-size:11.5px; font-weight:800; color:var(--muted);
+             min-width:36px; text-align:right; font-variant-numeric:tabular-nums; }
+.gauge .pct.done{ color:var(--ok); }
+.sumline{ padding:14px 22px; border-bottom:1px solid #F2F2F2; font-size:13px; font-weight:600; color:var(--muted); }
+.sumline b{ color:var(--ink); font-weight:800; }
+.sumline b.ok{ color:var(--ok); } .sumline b.wait{ color:var(--orange); }
+.pghead{ padding:18px 22px; border-bottom:1px solid #EEE; display:flex; align-items:center;
+         justify-content:space-between; gap:16px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -222,8 +260,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     <nav class="nav" id="nav">
       <button class="nav-item active" data-view="dashboard" data-title="대시보드">대시보드</button>
       <button class="nav-item" data-view="members" data-title="회원 관리">회원 관리</button>
-      <button class="nav-item" data-view="promotions" data-title="프로모션 관리">프로모션 관리</button>
-      <button class="nav-item" data-view="rewards" data-title="리워드 관리">리워드 관리</button>
+      <button class="nav-item" data-view="promotions" data-title="프로모션 · 리워드">프로모션 · 리워드</button>
       <button class="nav-item" data-view="services" data-title="시공 내역 관리">시공 내역 관리</button>
       <button class="nav-item" data-view="offices" data-title="영업소 관리">영업소 관리</button>
       <button class="nav-item" data-view="settings" data-title="공지사항·설정">공지사항·설정</button>
@@ -324,34 +361,63 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       </section>
 
       <!-- ===== 리워드 지급 ===== -->
-      <section class="view" id="view-rewards">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div class="tabs">
-            <button class="tab on" data-tab="pending">지급 전 <span class="n" id="pendingCount">0</span></button>
-            <button class="tab" data-tab="done">지급 완료</button>
-          </div>
-          <div style="display:flex;gap:10px;"><button class="btn btn-line" id="exportRewards">↓ 엑셀 다운로드</button><button class="btn btn-primary" id="newReward" style="font-weight:800;">＋ 리워드 생성</button></div>
-        </div>
-        <div class="info"><span class="i">i</span><span>리워드는 조건 충족 시 <b style="color:var(--ink);">자동 산정</b>되어 ‘지급 전’에 쌓입니다. <b style="color:var(--ink);">비즈콘에서 상품권을 수기 발송한 뒤</b> [지급 완료] 처리해 주세요.</span></div>
-        <div class="table">
-          <div class="tr th" style="grid-template-columns:40px 1fr 120px 100px 190px 150px 100px 140px;">
-            <span></span><span>카마스터</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
-          </div>
-          <div id="rewardsRows"></div>
-        </div>
-        <div class="bulk"><span class="t">선택된 <b id="selCount">0</b>건을 <b>지급 완료</b>로 일괄 처리합니다</span><button class="btn btn-primary" id="bulkApprove" style="font-weight:800;">선택 지급 완료 처리</button></div>
-      </section>
+      <!-- 리워드 화면은 아래 view-promotions 에 합쳤다 -->
 
       <!-- ===== 프로모션 ===== -->
       <section class="view" id="view-promotions">
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <div class="info" style="flex:1;margin-right:16px;"><span class="i">i</span><span>누적 시공 건수 등 <b style="color:var(--ink);">달성 조건</b>을 설정하면, 조건을 충족한 카마스터에게 해당 혜택이 <b style="color:var(--ink);">자동 산정</b>됩니다.</span></div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+          <div class="info" style="flex:1;"><span class="i">i</span><span>조건을 걸면 달성한 카마스터에게 리워드가 <b style="color:var(--ink);">자동 산정</b>되어 ‘지급 대기’에 쌓입니다. <b style="color:var(--ink);">비즈콘에서 상품권을 발송한 뒤</b> [지급 완료] 처리해 주세요.</span></div>
           <div style="display:flex;gap:10px;flex-shrink:0;">
             <button class="btn btn-line" id="runPromo">↻ 지금 산정하기</button>
-            <button class="btn btn-primary" id="newPromo" style="font-weight:800;">＋ 프로모션 생성</button>
+            <button class="btn btn-primary" id="newPromo" style="font-weight:800;">＋ 조건 만들기</button>
           </div>
         </div>
-        <div id="promoList" style="display:flex;flex-direction:column;gap:14px;"></div>
+
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;">
+            <div class="section-h">운영 중인 조건 <span class="num" id="pmCount" style="color:var(--muted);font-weight:700;"></span></div>
+            <div style="font-size:12.5px;color:var(--muted);font-weight:600;">카드를 누르면 아래 목록이 그 조건으로 바뀝니다</div>
+          </div>
+          <div id="promoList" class="pgrid"></div>
+        </div>
+
+        <div class="table pgtab">
+          <div class="pghead">
+            <div style="min-width:0;">
+              <div class="section-h" id="pgName">조건을 선택해 주세요</div>
+              <div id="pgCond" style="margin-top:5px;font-size:12.5px;color:var(--muted);font-weight:600;"></div>
+            </div>
+            <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
+              <div class="tabs" id="pgTabs">
+                <button class="tab on" data-tab="prog">달성 현황</button>
+                <button class="tab" data-tab="pending">지급 대기 <span class="n num" id="pendingCount">0</span></button>
+                <button class="tab" data-tab="done">지급 완료</button>
+              </div>
+              <button class="btn btn-soft" id="exportRewards">↓ 엑셀</button>
+              <button class="btn btn-soft" id="newReward">＋ 직접 지급</button>
+            </div>
+          </div>
+
+          <div class="sumline" id="pgSum">불러오는 중…</div>
+
+          <div id="pgWrap">
+            <div class="tr th">
+              <span>카마스터</span><span>연락처</span><span>소속 · 영업소</span>
+              <span class="rt-r">건수</span><span>진행</span><span>최근 시공</span><span class="rt-c">상태</span>
+            </div>
+            <div id="pgRows"></div>
+          </div>
+
+          <div id="rwWrap" style="display:none;">
+            <div class="tr th" style="grid-template-columns:40px 1fr 120px 100px 190px 150px 100px 140px;">
+              <span></span><span>카마스터</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
+            </div>
+            <div id="rewardsRows"></div>
+          </div>
+        </div>
+
+        <div class="bulk" id="rwBulk" style="display:none;"><span class="t">선택된 <b id="selCount" class="num">0</b>건을 <b>지급 완료</b>로 일괄 처리합니다</span><button class="btn btn-primary" id="bulkApprove" style="font-weight:800;">선택 지급 완료 처리</button></div>
       </section>
 
       <!-- ===== 시공 내역 / 공지·설정 (플레이스홀더) ===== -->
@@ -1977,10 +2043,148 @@ function bindRewardRows(){
 }
 function updateSel(){ const n=$('rewardsRows').querySelectorAll('.rchk.on').length; $('selCount').textContent=n; }
 function refreshPendingCount(){ const n=$('rewardsRows').querySelectorAll('[data-id]').length; if(S.rewardTab==='pending') $('pendingCount').textContent=n; }
-document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=>{
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on')); t.classList.add('on');
-  S.rewardTab = t.dataset.tab; renderRewards();
-}));
+/* ══════════ 달성 현황 ══════════
+   전에는 document 전체에서 .tab 을 잡고 있었다. 그래서 공지 서랍이나
+   영업소 필터의 탭을 눌러도 이쪽 탭 표시가 흐트러지고 리워드 목록이
+   쓸데없이 다시 불렸다. 이 묶음(#pgTabs) 안으로 좁힌다.
+   다른 탭들은 각자 처리 코드를 이미 갖고 있다. */
+var PG = { id:null, tab:'prog', off:0 };
+var PG_SKEL = '180px 132px 170px 88px 168px 100px 112px';
+
+$('pgTabs').querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    $('pgTabs').querySelectorAll('.tab').forEach(function(x){ x.classList.remove('on'); });
+    t.classList.add('on');
+    pgTabApply(t.dataset.tab);
+  });
+});
+
+function pgTabApply(tab){
+  PG.tab = tab;
+  var prog = tab === 'prog';
+  $('pgWrap').style.display = prog ? '' : 'none';
+  $('rwWrap').style.display = prog ? 'none' : '';
+  $('rwBulk').style.display = (tab === 'pending') ? 'flex' : 'none';
+  $('pgSum').style.display  = prog ? '' : 'none';
+  if(prog){ pgShow(); return; }
+  /* 지급 목록은 조건과 상관없이 전체를 보여 준다. 머리글에 조건 이름을 그대로 두면
+     그 조건만 걸러진 목록으로 오해한다. */
+  $('pgName').textContent = (tab === 'done') ? '지급 완료' : '지급 대기';
+  $('pgCond').textContent = '모든 조건에서 산정된 리워드를 함께 보여 줍니다.';
+  S.rewardTab = tab;
+  renderRewards();
+}
+
+function pgMark(){
+  $('promoList').querySelectorAll('.pcard').forEach(function(c){
+    c.classList.toggle('sel', c.dataset.id === PG.id);
+  });
+}
+
+function pgSelect(id){
+  PG.id = id || null; PG.off = 0;
+  pgMark();
+  if(PG.tab === 'prog') pgShow();
+}
+
+/* 건수는 소수점이 없는 값이라 칸으로 센다.
+   목표가 12건을 넘으면 칸이 너무 잘게 쪼개져 셀 수 없으므로 막대로 바꾼다. */
+function pgGauge(nCnt, goal){
+  var g = Number(goal) || 0, v = Number(nCnt) || 0;
+  var pct = g > 0 ? Math.min(100, Math.round(v * 100 / g)) : 0;
+  var done = g > 0 && v >= g;
+  var h = '<span class="gauge">';
+  if(g > 0 && g <= 12){
+    for(var i = 0; i < g; i++) h += '<i class="' + (i < v ? (done ? 'full' : 'on') : '') + '"></i>';
+  }else{
+    h += '<span class="bar"><em style="width:' + pct + '%;' + (done ? 'background:var(--ok);' : '') + '"></em></span>';
+  }
+  return h + '<span class="pct' + (done ? ' done' : '') + '">' + pct + '%</span></span>';
+}
+
+var PG_STATE = {
+  done: ['b-ok',   '지급 완료'],
+  wait: ['b-warn', '지급 대기'],
+  hit:  ['b-warn', '달성 · 산정 전'],
+  run:  ['b-off',  '']
+};
+
+function pgRowsHtml(items, goal){
+  return items.map(function(x){
+    var st = PG_STATE[x.state] || PG_STATE.run;
+    var label = (x.state === 'run') ? (x.remain + '건 남음') : st[1];
+    var org = [x.office, x.region].filter(Boolean).join(' · ');
+    return '<div class="tr td">'
+      + '<span><b style="font-weight:800;">' + esc(x.name || '-') + '</b><div class="sub">' + esc(x.code || '') + '</div></span>'
+      + '<span class="num" style="font-size:12.5px;">' + esc(x.phone || '-') + '</span>'
+      + '<span>' + esc(x.brand || '-') + '<div class="sub">' + esc(org || '-') + '</div></span>'
+      + '<span class="rt-r num"><b style="font-weight:800;' + (x.n >= goal ? 'color:var(--ok);' : '') + '">' + x.n + '</b>'
+      +   '<span style="color:var(--muted);"> / ' + goal + '</span></span>'
+      + '<span>' + pgGauge(x.n, goal) + '</span>'
+      + '<span class="num" style="font-size:12.5px;color:var(--muted);font-weight:600;">' + esc(x.last_date || '-') + '</span>'
+      + '<span class="rt-c"><span class="badge ' + st[0] + '">' + esc(label) + '</span></span>'
+      + '</div>';
+  }).join('');
+}
+
+function pgRender(r, append){
+  var goal = Number(r.goal) || 0;
+  var more = $('pgMoreWrap'); if(more) more.remove();
+
+  if(r.kind === 'signup'){
+    $('pgSum').textContent = r.message || '';
+    $('pgRows').innerHTML = EMPTY('가입 즉시 지급이라 시공 실적 목록이 없습니다');
+    return;
+  }
+  var pct = r.total ? Math.round((r.achieved || 0) * 100 / r.total) : 0;
+  $('pgSum').innerHTML = '시공한 사람 <b class="num">' + (r.total || 0).toLocaleString() + '</b>명 중 '
+    + '<b class="ok num">' + (r.achieved || 0).toLocaleString() + '</b>명 달성'
+    + (r.total ? ' <span style="font-weight:600;">(' + pct + '%)</span>' : '')
+    + ' · 지급 대기 <b class="wait num">' + (r.pending || 0).toLocaleString() + '</b>건'
+    + ' · 지급 완료 <b class="num">' + (r.sent || 0).toLocaleString() + '</b>건';
+
+  var items = r.items || [];
+  if(!items.length && !append){
+    $('pgRows').innerHTML = EMPTY('이 조건으로 시공한 카마스터가 아직 없습니다');
+    return;
+  }
+  var html = pgRowsHtml(items, goal);
+  if(append) $('pgRows').insertAdjacentHTML('beforeend', html);
+  else       $('pgRows').innerHTML = html;
+
+  /* 더 보기 — 한 번에 50명씩 */
+  var shown = (Number(r.offset) || 0) + items.length;
+  if(shown < r.total){
+    $('pgRows').insertAdjacentHTML('afterend',
+      '<div id="pgMoreWrap" style="padding:14px 22px;border-top:1px solid #F2F2F2;text-align:center;">'
+      + '<button class="btn btn-soft" id="pgMore">더 보기 (' + shown + ' / ' + r.total + '명)</button></div>');
+    var mb = $('pgMore');
+    if(mb) mb.addEventListener('click', function(){ PG.off = shown; pgShow(true); });
+  }
+}
+
+async function pgShow(append){
+  var p = (S.promos || []).find(function(x){ return x.id === PG.id; });
+  $('pgName').textContent = p ? p.name : '조건을 선택해 주세요';
+  $('pgCond').textContent = p ? condLabel(p) : '';
+  $('pgSum').style.display = '';
+  if(!PG.id){
+    $('pgSum').textContent = '위에서 조건을 선택해 주세요.';
+    $('pgRows').innerHTML = '';
+    var m0 = $('pgMoreWrap'); if(m0) m0.remove();
+    return;
+  }
+  if(!append){ PG.off = 0; $('pgRows').innerHTML = skelRows(4, PG_SKEL); $('pgSum').textContent = '세는 중…'; }
+  try{
+    var r = await admApi('/v1/admin/promotions/progress?id=' + encodeURIComponent(PG.id)
+                         + '&limit=50&offset=' + PG.off);
+    if(!r || !r.ok) throw new Error((r && r.message) || '불러오지 못했습니다.');
+    pgRender(r, append);
+  }catch(e){
+    $('pgSum').textContent = (e && e.message) || '불러오지 못했습니다.';
+    if(!append) $('pgRows').innerHTML = '';
+  }
+}
 $('bulkApprove').addEventListener('click', async ()=>{
   const checked = Array.from($('rewardsRows').querySelectorAll('.rchk.on')).map(c=>c.closest('[data-id]'));
   if(!checked.length){ toast('처리할 항목을 선택해 주세요.'); return; }
@@ -2068,7 +2272,7 @@ $('rwCreate').addEventListener('click', async ()=>{
   } else {
     S.extraPending.unshift({ id:res.id, name:c.name, code:c.code, type:'manual', delivery:(S.delivery||'external'), reward:type, reason:(reason||'수동 지급'), date });
     toast(c.name+' 카마스터 리워드를 ‘지급 전’에 추가했습니다.');
-    if(S.view==='rewards' && S.rewardTab==='pending'){ await renderRewards(); }
+    if(S.view==='promotions' && PG.tab==='pending'){ await renderRewards(); }
   }
   closeRewardDrawer();
 });
@@ -2123,21 +2327,29 @@ async function updatePromotion(id, data){
 }
 async function renderPromos(){
   if(!S.promos) S.promos = await loadPromotions();
-  $('promoList').innerHTML = !S.promos.length ? EMPTY('등록된 프로모션이 없습니다') : S.promos.map(p=>
-    `<div class="card" style="padding:20px 24px;display:flex;align-items:center;gap:20px;" data-id="${esc(p.id)}">
-       <div class="promo-ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S9.5 3 7.5 4 8 7 12 7Zm0 0s2.5-4 4.5-3-.5 3-4.5 3Z"/></svg></div>
-       <div style="flex:1;min-width:0;">
-         <div style="display:flex;align-items:center;gap:10px;">${p.stage==='teaser'?'<span class="badge b-warn">예고</span>':(p.active?'<span class="badge b-ok">진행중</span>':'<span class="badge b-off">중지</span>')}<span style="font-size:16px;font-weight:800;">${esc(p.name)}</span>${(p.stage!=='teaser'&&p.auto)?'<span class="badge b-warn">자동 지급</span>':''}${p.stage==='teaser'?'<span style="font-size:12px;color:var(--muted);">목표에 잡히지 않음</span>':''}</div>
-         <div style="margin-top:12px;display:flex;gap:36px;flex-wrap:wrap;">
-           <div><div class="pk">달성 조건</div><div class="pv">${esc(condLabel(p))}</div></div>
-           <div><div class="pk">지급 혜택</div><div class="pv" style="color:var(--orange);">${esc(p.reward)}</div><div style="font-size:11px;color:var(--muted);margin-top:2px;">${p.delivery==='coupon'?'앱 쿠폰 발급':'비즈콘 발송'}</div></div>
-           <div><div class="pk">기간</div><div class="pv">${esc(periodLabel(p))}</div></div>
-           <div><div class="pk">달성자</div><div class="pv">${p.achieved.toLocaleString()}명</div></div>
-         </div>
+  var _pl = S.promos;
+  $('pmCount').textContent = _pl.length ? (_pl.length + '개') : '';
+  $('promoList').innerHTML = !_pl.length
+    ? '<div style="grid-column:1/-1;">' + EMPTY('등록된 조건이 없습니다') + '</div>'
+    : _pl.map(p=>
+    `<div class="pcard${p.id===PG.id?' sel':''}" data-id="${esc(p.id)}">
+       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:9px;">
+         <div class="nm">${esc(p.name)}</div>
+         ${p.stage==='teaser'?'<span class="badge b-off">예고</span>':(p.active?'<span class="badge b-warn">진행 중</span>':'<span class="badge b-off">중지</span>')}
        </div>
-       <button class="btn btn-soft pmEdit" style="padding:9px 16px;font-size:13px;font-weight:700;flex-shrink:0;">수정</button>
-       <button class="btn pmDel" style="padding:9px 14px;font-size:13px;font-weight:700;flex-shrink:0;border:1.5px solid var(--err);color:var(--err);background:#fff;">삭제</button>
-       <label class="switch"><input type="checkbox" class="pmToggle" ${p.active?'checked':''}><span class="tk"></span></label>
+       <div class="rng num">${esc(periodLabel(p))}</div>
+       <div class="rows">
+         <span class="k">조건</span><span class="v">${esc(condLabel(p))}</span>
+         <span class="k">경품</span><span class="v">${esc(p.reward||'-')}${(p.amount==null||p.amount==='')?'':' '+Number(p.amount).toLocaleString('ko-KR')+'원'}</span>
+       </div>
+       <div class="foot">
+         <span class="st">달성 <b class="num">${(p.achieved||0).toLocaleString()}</b>명</span>
+         <span class="ac">
+           <button class="btn btn-soft pmEdit" style="padding:6px 11px;font-size:12.5px;font-weight:700;border-radius:8px;">수정</button>
+           <button class="btn pmDel" style="padding:6px 10px;font-size:12.5px;font-weight:700;border-radius:8px;border:1.5px solid var(--err);color:var(--err);background:#fff;">삭제</button>
+           <label class="switch" title="진행 / 중지"><input type="checkbox" class="pmToggle" ${p.active?'checked':''}><span class="tk"></span></label>
+         </span>
+       </div>
      </div>`).join('');
   $('promoList').querySelectorAll('.pmToggle').forEach(t=> t.addEventListener('change', async ()=>{
     var id = t.closest('[data-id]').dataset.id; var p = S.promos.find(x=>x.id===id);
@@ -2156,7 +2368,7 @@ async function renderPromos(){
       await admWrite('promotions?id=eq.'+encodeURIComponent(id),'DELETE');
       toast('‘'+nm+'’ 프로모션을 삭제했습니다.');
       S.promos = null; await renderPromos();
-      if(S.view==='rewards') await renderRewards();
+      if(S.view==='promotions' && PG.tab !== 'prog') await renderRewards();
     }catch(e){
       b.disabled=false; b.textContent='삭제';
       toast((e&&e.message)||'삭제에 실패했습니다.');
@@ -2167,6 +2379,17 @@ async function renderPromos(){
     var p = S.promos.find(x=>x.id===id);
     if(p) openPromoDrawer(p);
   }));
+  /* 카드를 누르면 아래 목록이 그 조건으로 바뀐다. 버튼·토글을 누른 것은 제외한다. */
+  $('promoList').querySelectorAll('.pcard').forEach(function(c){
+    c.addEventListener('click', function(e){
+      if(e.target.closest('button,label,input')) return;
+      pgSelect(c.dataset.id);
+    });
+  });
+  /* 고른 조건이 없거나 지워졌으면 첫 번째를 고른다 */
+  var live = _pl.map(function(x){ return x.id; });
+  if(!PG.id || live.indexOf(PG.id) < 0) pgSelect(live.length ? live[0] : null);
+  else pgMark();
 }
 
 /* ── 프로모션 생성/수정 드로어 ── */
@@ -2277,7 +2500,7 @@ $('runPromo').addEventListener('click', async function(){
             r.errors.map(function(e){ return '· ' + e.promo + ' — ' + e.message; }).join('\n'));
     }
     S.promos = null; await renderPromos();
-    if(S.view==='rewards') await renderRewards();
+    if(S.view==='promotions' && PG.tab !== 'prog') await renderRewards();
   }catch(e){ toast((e&&e.message)||'산정에 실패했습니다.'); }
   b.disabled=false; b.textContent=pv;
 });
@@ -4165,7 +4388,7 @@ function admAudit(what, n){
   }catch(e){}
 }
 
-function initAdmin(){ try{ renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); slLoad(); }catch(e){ console.error(e); } }
+function initAdmin(){ try{ pgTabApply('prog'); renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); slLoad(); }catch(e){ console.error(e); } }
 (function(){
   var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
