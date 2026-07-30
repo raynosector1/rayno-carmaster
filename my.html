@@ -1472,6 +1472,17 @@ const S = { name:'', code:'', org:'' };
     }
     if(res.name){ var pn=id('pfName'); if(pn)pn.textContent=res.name; }
     if(res.profile){ var pf=res.profile; if(pf.loginId)id('pfLoginId').textContent=pf.loginId; if(pf.phone)id('pfPhone').textContent=pf.phone; }
+
+    /* 회원정보 수정 화면의 '본인인증 완료' 밑줄(evInfo) — 이름과 휴대폰을 함께 보여 준다.
+       그동안 채우는 코드가 없어서 계속 '—' 로 남아 있었다.
+       값은 textContent 로 넣는다(태그가 섞여 들어올 여지를 없앤다). */
+    var ev = id('evInfo');
+    if(ev){
+      var evName  = res.name || '';
+      var evPhone = (res.profile && res.profile.phone && res.profile.phone !== '\u2014') ? res.profile.phone : '';
+      var evTxt   = [evName, evPhone].filter(Boolean).join(' \u00b7 ');
+      if(evTxt) ev.textContent = evTxt;
+    }
   });
 })();
 </script>
