@@ -390,9 +390,9 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             </div>
             <div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;">
               <div class="tabs" id="pgTabs">
-                <button class="tab on" data-tab="prog">달성 현황</button>
-                <button class="tab" data-tab="pending">지급 대기 <span class="n num" id="pendingCount">0</span></button>
+                <button class="tab on" data-tab="pending">지급 대기 <span class="n num" id="pendingCount">0</span></button>
                 <button class="tab" data-tab="done">지급 완료</button>
+                <button class="tab" data-tab="prog">달성 현황</button>
               </div>
               <button class="btn btn-soft" id="exportRewards">↓ 엑셀</button>
               <button class="btn btn-soft" id="newReward">＋ 직접 지급</button>
@@ -411,7 +411,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
           <div id="rwWrap" style="display:none;">
             <div class="tr th" style="grid-template-columns:40px 1fr 120px 100px 190px 150px 100px 140px;">
-              <span></span><span>카마스터</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
+              <span><span id="rwAll" title="이 쪽의 지급 대기 건을 모두 선택합니다" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span></span><span>카마스터</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
             </div>
             <div id="rewardsRows"></div>
           </div>
@@ -542,14 +542,6 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
       <section class="view" id="view-sms">
 
-        <div id="smsGate" class="card" style="padding:15px 22px;">
-          <div style="display:flex;align-items:center;gap:13px;flex-wrap:wrap;">
-            <span id="smsStatBadge" class="badge b-off">확인 중</span>
-            <div id="smsStatBody" style="flex:1;min-width:200px;font-size:12.5px;color:var(--muted);line-height:1.6;">불러오는 중…</div>
-            <button class="btn btn-soft" id="smsStatBtn" style="padding:8px 15px;font-size:12.5px;">다시 확인</button>
-          </div>
-        </div>
-
         <div class="card" style="padding:22px 24px;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;">
             <div>
@@ -560,7 +552,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
               <button class="btn btn-soft" id="smsCopyBtn" style="padding:9px 15px;font-size:12.5px;">복사</button>
               <button class="btn btn-soft" id="smsDelBtn" style="padding:9px 15px;font-size:12.5px;color:var(--err);">삭제</button>
               <button class="btn btn-line" id="smsNewBtn" style="padding:9px 15px;font-size:12.5px;">＋ 템플릿</button>
-              <button class="btn btn-primary" id="smsSendBtn" style="padding:9px 20px;font-size:12.5px;opacity:.45;">문자 발송</button>
+              <button class="btn btn-primary" id="smsSendBtn" style="padding:13px 30px;font-size:14px;margin-left:4px;opacity:.45;">문자 발송</button>
             </div>
           </div>
 
@@ -1994,6 +1986,8 @@ async function renderRewards(){
   if(S.rewardTab==='pending') $('pendingCount').textContent = rows.length;
 }
 function bindRewardRows(){
+  /* 목록이 새로 그려지면 행은 전부 꺼진 상태다. 머리글도 같이 꺼 준다. */
+  _chkPaint($('rwAll'), false);
   $('rewardsRows').querySelectorAll('.rchk').forEach(c=> c.addEventListener('click', ()=>{
     const on = c.style.background===''||c.style.background==='rgb(255, 255, 255)'||!c.classList.contains('on');
     c.classList.toggle('on');
@@ -2038,14 +2032,30 @@ function bindRewardRows(){
     toast('지급 전으로 되돌렸습니다.');
   }));
 }
+/* 이 화면의 체크박스는 진짜 input 이 아니라 직접 그린 네모라서,
+   켜고 끌 때 배경·테두리·글자를 손으로 바꿔 준다. 행 쪽과 같은 모양을 쓴다. */
+function _chkPaint(el, on){
+  if(!el) return;
+  el.classList.toggle('on', !!on);
+  if(on){ el.style.background='var(--ink)'; el.style.borderColor='var(--ink)'; el.textContent='✓'; }
+  else  { el.style.background='#fff';       el.style.borderColor='#D0D0D4';   el.textContent='';  }
+}
 function updateSel(){ const n=$('rewardsRows').querySelectorAll('.rchk.on').length; $('selCount').textContent=n; }
+
+/* 머리글의 전체 선택. 지금 화면에 그려진 지급 대기 건을 한 번에 켜고 끈다. */
+$('rwAll').addEventListener('click', function(){
+  var on = !this.classList.contains('on');
+  _chkPaint(this, on);
+  $('rewardsRows').querySelectorAll('.rchk').forEach(function(c){ _chkPaint(c, on); });
+  updateSel();
+});
 function refreshPendingCount(){ const n=$('rewardsRows').querySelectorAll('[data-id]').length; if(S.rewardTab==='pending') $('pendingCount').textContent=n; }
 /* ══════════ 달성 현황 ══════════
    전에는 document 전체에서 .tab 을 잡고 있었다. 그래서 공지 서랍이나
    영업소 필터의 탭을 눌러도 이쪽 탭 표시가 흐트러지고 리워드 목록이
    쓸데없이 다시 불렸다. 이 묶음(#pgTabs) 안으로 좁힌다.
    다른 탭들은 각자 처리 코드를 이미 갖고 있다. */
-var PG = { id:null, tab:'prog', off:0 };
+var PG = { id:null, tab:'pending', off:0 };
 var PG_SKEL = '180px 132px 170px 88px 168px 100px 112px';
 
 $('pgTabs').querySelectorAll('.tab').forEach(function(t){
@@ -2062,6 +2072,9 @@ function pgTabApply(tab){
   $('pgWrap').style.display = prog ? '' : 'none';
   $('rwWrap').style.display = prog ? 'none' : '';
   $('rwBulk').style.display = (tab === 'pending') ? 'flex' : 'none';
+  /* 지급 완료 쪽에는 행 체크박스 자체가 없으므로 머리글 것도 감춘다 */
+  var _all = $('rwAll');
+  if(_all){ _all.style.display = (tab === 'pending') ? 'inline-flex' : 'none'; _chkPaint(_all, false); }
   $('pgSum').style.display  = prog ? '' : 'none';
   if(prog){ pgShow(); return; }
   /* 지급 목록은 조건과 상관없이 전체를 보여 준다. 머리글에 조건 이름을 그대로 두면
@@ -3653,35 +3666,18 @@ $('smsDelBtn').addEventListener('click', async function(){
   toast(done ? (done + '건을 삭제했습니다.') : '삭제에 실패했습니다.');
 });
 
-/* ── 발송 설정 상태 ── */
+/* ── 발송 설정 읽기 ──
+   화면의 발송 설정 카드는 없앴다(이제 전체 대상 발송이라 매번 볼 필요가 없다).
+   다만 발송 서랍의 경고 — 연결 여부 · 시험 모드 · 수신거부 표 준비 여부 — 가
+   이 값을 보고 판단하므로, 화면에 그리지는 않아도 값은 계속 읽어 둬야 한다.
+   읽지 않으면 SMS_ST 가 빈 값으로 남아 서랍이 늘 틀린 경고를 띄운다. */
 var SMS_ST = {};
 async function renderSmsStatus(){
-  var badge=$('smsStatBadge'), box=$('smsStatBody');
-  badge.textContent='확인 중'; badge.className='badge b-off';
-  box.textContent='불러오는 중…';
   try{
     var r = await admApi('/v1/admin/sms/status');
-    var st = (r && r.status) || {};
-    SMS_ST = st;
-    badge.textContent = st.connected ? '연결됨' : '준비 안 됨';
-    badge.className = 'badge ' + (st.connected ? 'b-ok' : 'b-err');
-    /* 한 줄로 읽히게 한다. '지금 보낼 수 있나'는 배지가, 나머지는 이 줄이 답한다. */
-    var sep = '<span style="color:var(--line);margin:0 9px;">|</span>';
-    var no = st.send_no
-      ? '발신번호 <b style="color:var(--ink);">' + esc(st.send_no) + '</b>'
-      : '<b style="color:var(--err);">발신번호 미등록</b>';
-    var mode = (st.mode==='live')
-      ? '<b style="color:var(--ink);">운영 모드</b> — 올린 대상 전체에게 나갑니다'
-      : '<b style="color:var(--orange);">시험 모드</b> — 등록한 ' + (st.test_numbers||0) + '개 번호로만, 한 번에 5건까지';
-    box.innerHTML = st.connected
-      ? (no + sep + mode)
-      : '<b style="color:var(--err);">' + esc(st.message || '발송 설정이 준비되지 않았습니다') + '</b>';
-  }catch(e){
-    badge.textContent='확인 실패'; badge.className='badge b-err';
-    box.textContent = (e && e.message) || '상태를 불러오지 못했습니다.';
-  }
+    SMS_ST = (r && r.status) || {};
+  }catch(e){ SMS_ST = {}; }
 }
-$('smsStatBtn').addEventListener('click', renderSmsStatus);
 
 /* ══════════════════════════════════════════════════════
    문자 발송 (대량 · 직접 입력)
@@ -3882,7 +3878,7 @@ function openSendDrawer(){
   $('sdCountNote').textContent='';
 
   var w=$('sdWarn'), msgs=[];
-  if(!SMS_ST.connected) msgs.push('발송 대행사에 연결되어 있지 않습니다. 위쪽 <b>발송 설정</b>을 먼저 확인해 주세요.');
+  if(!SMS_ST.connected) msgs.push('발송 대행사에 <b>연결되어 있지 않습니다.</b> 잠시 후 다시 시도하시거나 담당자에게 문의해 주세요.');
   if(SMS_ST.optout_ready===false) msgs.push('수신거부 목록 표가 아직 준비되지 않아 발송이 막혀 있습니다.');
   if(SMS_ST.mode!=='live') msgs.push('지금은 <b>시험 모드</b>입니다. 등록한 허용 번호로만, 한 번에 5건까지 나갑니다.');
   if(msgs.length){ w.innerHTML='· '+msgs.join('<br>· '); w.style.display=''; }
@@ -4353,7 +4349,7 @@ function admAudit(what, n){
   }catch(e){}
 }
 
-function initAdmin(){ try{ pgTabApply('prog'); renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); slLoad(); }catch(e){ console.error(e); } }
+function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); slLoad(); }catch(e){ console.error(e); } }
 (function(){
   var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
