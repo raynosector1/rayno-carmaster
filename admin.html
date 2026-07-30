@@ -1307,6 +1307,12 @@ async function admCount(path){
 async function _cmIdByCode(code){ try{ var r = await admRest('carmasters?select=id&code=eq.'+encodeURIComponent(code)+'&limit=1'); return (r&&r[0])?r[0].id:null; }catch(e){ return null; } }
 function _today(){ var d=new Date(); return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'); }
 function _csv(rows){ return '\uFEFF'+rows.map(function(r){ return r.map(function(c){ c=String(c==null?'':c); return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c; }).join(','); }).join('\n'); }
+/* 엑셀에 넣을 연락처 형식. 하이픈을 넣어야 엑셀이 글자로 읽고 앞자리 0이 살아남는다.
+   01085537531 을 그대로 넣으면 엑셀이 숫자로 보고 1085537531 로 바꿔 버린다. */
+function _phoneFmt(p){ var s=String(p||'').replace(/[^0-9]/g,'');
+  if(s.length===11) return s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7);
+  if(s.length===10) return s.slice(0,3)+'-'+s.slice(3,6)+'-'+s.slice(6);
+  return String(p||''); }
 function _download(name, text){ var b=new Blob([text],{type:'text/csv;charset=utf-8'}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=name; a.click(); setTimeout(function(){URL.revokeObjectURL(u);},1000); }
 function _ago(iso){ if(!iso)return ''; var s=(Date.now()-new Date(iso).getTime())/1000; if(s<60)return '방금'; if(s<3600)return Math.floor(s/60)+'분 전'; if(s<86400)return Math.floor(s/3600)+'시간 전'; return Math.floor(s/86400)+'일 전'; }
 /* 목록용: 가운데를 가린다 (상세 화면에서는 _full 로 전체 표시) */
@@ -1429,7 +1435,7 @@ async function searchCarmaster(q){
 }
 async function loadRewards(tab){
   try{
-    var rows = await admRest('rewards?select=*,carmasters(code,name,office)');
+    var rows = await admRest('rewards?select=*,carmasters(code,name,office,phone)');
     var filtered = rows.filter(function(r){ return tab==='done' ? _DONE_ST.indexOf(r.status)>=0 : r.status==='pending'; });
     filtered.sort(function(a,b){ return String(b.created_at||b.sent_at||'').localeCompare(String(a.created_at||a.sent_at||'')); });
     return filtered.map(function(r){
@@ -1439,6 +1445,7 @@ async function loadRewards(tab){
                  : r.type==='milestone' ? '시공 실적 달성'
                  : (r.reason || (r.type==='promotion' ? '프로모션 달성' : '관리자 수동 지급'));
       return { id:r.id, name:cm.name||'회원', code:cm.code||'-', type:r.type||'',
+               phone:cm.phone||'',
                delivery:(r.delivery==='coupon'?'coupon':'external'),
                reward:r.item_name||'리워드', reason:reason,
                date:_date(r.created_at), sentDate:(r.sent_at?_date(r.sent_at):'') };
@@ -2193,7 +2200,7 @@ $('bulkApprove').addEventListener('click', async ()=>{
   checked.forEach(r=>{ r.style.transition='.2s'; r.style.opacity='0'; setTimeout(()=>{ r.remove(); refreshPendingCount(); updateSel(); },200); });
   toast(checked.length+'건 지급 완료 처리했습니다.');
 });
-$('exportRewards').addEventListener('click', async ()=>{ try{ var rows=await loadRewards(S.rewardTab); var csv=_csv([['카마스터','코드','리워드','산정사유','산정일','지급일']].concat(rows.map(function(r){return [r.name,r.code,r.reward,r.reason,r.date,r.sentDate||''];}))); _download('리워드_'+(S.rewardTab==='done'?'지급완료':'지급전')+'_'+_today()+'.csv', csv); admAudit('rewards', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
+$('exportRewards').addEventListener('click', async ()=>{ try{ var rows=await loadRewards(S.rewardTab); var csv=_csv([['이름','연락처','코드','리워드','산정사유','산정일','지급일']].concat(rows.map(function(r){return [r.name,_phoneFmt(r.phone),r.code,r.reward,r.reason,r.date,r.sentDate||''];}))); _download('리워드_'+(S.rewardTab==='done'?'지급완료':'지급전')+'_'+_today()+'.csv', csv); admAudit('rewards', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 
 /* ── 리워드 생성 드로어 ── */
 function rwValidate(){
