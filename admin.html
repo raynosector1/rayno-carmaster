@@ -817,6 +817,17 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <input class="finp" id="pmN" type="tel" inputmode="numeric" value="5" style="width:120px;text-align:center;font-weight:800;font-size:16px;">
         <span id="pmNunit" style="font-size:14px;color:var(--muted);font-weight:600;">건 시공 시 지급</span>
       </div>
+      <div id="pmCondFilter" style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div class="flabel">제품</div>
+          <select class="finp" id="pmFilm"><option value="">전체 제품</option></select>
+        </div>
+        <div>
+          <div class="flabel">시공 부위</div>
+          <select class="finp" id="pmPart"><option value="">전체 부위</option></select>
+        </div>
+      </div>
+      <div id="pmCondHint" style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.65;"></div>
     </div>
 
     <div class="step-h" style="margin-top:26px;"><span class="n">2</span>지급 혜택</div>
@@ -2063,22 +2074,40 @@ $('rwCreate').addEventListener('click', async ()=>{
 });
 
 /* ── 프로모션 ── */
+/* 조건에 고를 수 있는 제품·부위 목록. 프로모션 목록을 읽을 때 서버가 함께 보내 준다.
+   화면에서 따로 만들지 않는 이유 — 코드표는 서버에만 있고, 두 곳에 두면 어긋난다. */
+var PM_FILMS = [], PM_PARTS = [];
 async function loadPromotions(){
   try{
-    var rows = await admRest('promotions?select=*&order=created_at.desc');
-    return rows.map(function(p){ return { id:p.id, name:p.name, cond:(p.cond==='signup'?'signup':'count'), n:p.threshold_n||0, amount:(p.amount==null?null:p.amount), sub:p.sub_text||'', image:p.image||'', reward:p.reward||'-', delivery:(p.delivery==='coupon'?'coupon':'external'), period:p.period||'상시', start:p.start_date||'', end:p.end_date||'', auto:!!p.auto, active:!!p.active, achieved:p.achieved||0, stage:p.stage||'live' }; });
+    /* admRest 는 items 만 꺼내 주므로 films·parts 가 버려진다. 창구를 직접 부른다. */
+    var res = await admApi('/v1/admin/promotions');
+    var rows = (res && res.items) || [];
+    if(res && Array.isArray(res.films)) PM_FILMS = res.films;
+    if(res && Array.isArray(res.parts)) PM_PARTS = res.parts;
+    return rows.map(function(p){ return { id:p.id, name:p.name, cond:(p.cond==='signup'?'signup':'count'), n:p.threshold_n||0, amount:(p.amount==null?null:p.amount), sub:p.sub_text||'', image:p.image||'', reward:p.reward||'-', delivery:(p.delivery==='coupon'?'coupon':'external'), period:p.period||'상시', start:p.start_date||'', end:p.end_date||'', auto:!!p.auto, active:!!p.active, achieved:p.achieved||0, stage:p.stage||'live', cond_film:p.cond_film||'', cond_part:p.cond_part||'' }; });
   }catch(e){ console.error('loadPromotions',e); return []; }
 }
 async function createPromotion(data){
   try{
-    var res = await admWrite('promotions','POST',{ name:data.name, cond:data.cond, threshold_n:data.n||0, reward:data.reward, amount:data.amount, sub_text:data.sub_text||'', image:data.image||'', delivery:data.delivery||'external', period:data.period, start_date:data.start_date||'', end_date:data.end_date||'', auto:!!data.auto, active:true, stage:data.stage||'live' });
+    var res = await admWrite('promotions','POST',{ name:data.name, cond:data.cond, threshold_n:data.n||0, reward:data.reward, amount:data.amount, sub_text:data.sub_text||'', image:data.image||'', delivery:data.delivery||'external', period:data.period, start_date:data.start_date||'', end_date:data.end_date||'', auto:!!data.auto, active:true, stage:data.stage||'live', cond_film:data.cond_film||'', cond_part:data.cond_part||'' });
     var row = Array.isArray(res)?res[0]:res;
     return { ok:true, id:(row&&row.id) };
   }catch(e){ console.error('createPromotion',e); return { ok:false, message:(e&&e.message)||'' }; }
 }
 function condLabel(p){
   if(p.cond==='signup') return '가입 즉시';
-  return (p.start && p.end) ? ('기간 내 시공 '+p.n+'건') : ('누적 시공 '+p.n+'건');
+  var base = (p.start && p.end) ? ('기간 내 시공 '+p.n+'건') : ('누적 시공 '+p.n+'건');
+  /* 제품·부위 조건이 걸려 있으면 함께 적는다. 안 적으면 '시공 7건'으로만 보여
+     아무 시공이나 7건이면 되는 것으로 오해한다. */
+  var f = p.cond_film || '', t = pmPartLabel(p.cond_part);
+  if(!f && !t) return base;
+  return [f || '전체 제품', t || '전체 부위'].join(' · ') + ' / ' + base;
+}
+/* 부위 칸 이름을 사람이 읽는 이름으로. 목록은 서버에서 받은 것을 쓴다. */
+function pmPartLabel(col){
+  if(!col) return '';
+  for(var i=0;i<PM_PARTS.length;i++) if(PM_PARTS[i].col===col) return PM_PARTS[i].label;
+  return col;
 }
 function periodLabel(p){
   if(p.cond==='signup') return '가입 시';
@@ -2088,7 +2117,7 @@ function periodLabel(p){
 }
 async function updatePromotion(id, data){
   try{
-    await admWrite('promotions?id=eq.'+id,'PATCH',{ name:data.name, cond:data.cond, threshold_n:data.n||0, reward:data.reward, amount:data.amount, sub_text:data.sub_text||'', image:data.image||'', delivery:data.delivery||'external', period:data.period, start_date:data.start_date||'', end_date:data.end_date||'', auto:!!data.auto, stage:data.stage||'live' });
+    await admWrite('promotions?id=eq.'+id,'PATCH',{ name:data.name, cond:data.cond, threshold_n:data.n||0, reward:data.reward, amount:data.amount, sub_text:data.sub_text||'', image:data.image||'', delivery:data.delivery||'external', period:data.period, start_date:data.start_date||'', end_date:data.end_date||'', auto:!!data.auto, stage:data.stage||'live', cond_film:data.cond_film||'', cond_part:data.cond_part||'' });
     return { ok:true };
   }catch(e){ console.error('updatePromotion',e); return { ok:false, message:(e&&e.message)||'' }; }
 }
@@ -2159,6 +2188,8 @@ function pmReset(){
   $('pmAmount').value=''; $('pmSubText').value=''; $('pmImgFile').value='';
   $('pmImgHint').textContent='가로 900px으로 자동으로 줄여 저장합니다. PNG·JPG·WEBP.';
   $('pmNwrap').style.display='flex';
+  pmFillFilters();
+  $('pmFilm').value=''; $('pmPart').value='';
   $('pmPeriodHint').textContent='가입 후 쌓인 전체 실적을 셉니다.';
   $('pmReward').selectedIndex=0; $('pmRewardEtc').value=''; $('pmRewardEtc').style.display='none';
   $('pmStart').value=''; $('pmEnd').value=''; $('pmRangeWrap').style.display='none';
@@ -2175,6 +2206,24 @@ function pmFill(p){
   $('pmName').value = p.name||'';
   pmCond = (p.cond === 'signup') ? 'signup' : 'count';
   $('pmN').value = p.n||0;
+  /* 저장된 시공 조건 되살리기. 목록에 없는 값이면 그 항목을 임시로 넣어
+     값이 조용히 사라지지 않게 한다(코드표가 바뀐 경우 대비). */
+  pmFillFilters();
+  var fs=$('pmFilm'), ps=$('pmPart');
+  if(p.cond_film){
+    fs.value = p.cond_film;
+    if(fs.value !== p.cond_film){
+      fs.insertAdjacentHTML('beforeend','<option value="'+esc(p.cond_film)+'">'+esc(p.cond_film)+' (목록에 없음)</option>');
+      fs.value = p.cond_film;
+    }
+  } else fs.value='';
+  if(p.cond_part){
+    ps.value = p.cond_part;
+    if(ps.value !== p.cond_part){
+      ps.insertAdjacentHTML('beforeend','<option value="'+esc(p.cond_part)+'">'+esc(p.cond_part)+' (목록에 없음)</option>');
+      ps.value = p.cond_part;
+    }
+  } else ps.value='';
   $('pmAmount').value = (p.amount==null ? '' : p.amount);
   $('pmSubText').value = p.sub || '';
   pmImage = p.image || '';
@@ -2246,10 +2295,53 @@ $('pmPeriodSeg').querySelectorAll('.sg').forEach(s=> s.addEventListener('click',
   pmValidate();
 }));
 /* 예고를 켜면 자동 지급 설정을 감추고 안내를 띄운다 */
+/* 제품·부위 선택칸을 채운다. 서버에서 받은 목록이 없으면 '전체'만 남긴다. */
+function pmFillFilters(){
+  var f = $('pmFilm'), t = $('pmPart');
+  if(!f || !t) return;
+  var fv = f.value, tv = t.value;
+  var h = '<option value="">전체 제품</option>';
+  for(var i=0;i<PM_FILMS.length;i++){
+    var c = PM_FILMS[i];
+    h += '<option value="'+esc(c.value)+'">'+esc(c.label)+'</option>';
+  }
+  f.innerHTML = h;
+  var h2 = '<option value="">전체 부위</option>';
+  for(var j=0;j<PM_PARTS.length;j++){
+    h2 += '<option value="'+esc(PM_PARTS[j].col)+'">'+esc(PM_PARTS[j].label)+'</option>';
+  }
+  t.innerHTML = h2;
+  /* 다시 채우기 전에 골라 둔 값이 있으면 되살린다 */
+  if(fv) f.value = fv;
+  if(tv) t.value = tv;
+}
+
+/* 지금 조건이면 무엇을 세는지 한 문장으로 적어 준다. */
+function pmCondHint(){
+  var box = $('pmCondHint');
+  if(!box) return;
+  if(pmCond === 'signup'){ box.textContent = ''; return; }
+  var f = $('pmFilm').value, t = $('pmPart').value;
+  var n = (+$('pmN').value || 0);
+  var when = (pmPeriod === 'range' && $('pmStart').value && $('pmEnd').value)
+    ? ($('pmStart').value.replace(/-/g,'.') + ' ~ ' + $('pmEnd').value.replace(/-/g,'.') + ' 사이에 발급된 보증서')
+    : '가입 후 발급된 모든 보증서';
+  var tail = (n > 0 ? n + '건' : '목표 건수') + ' 이상이면 지급 대상이 됩니다.';
+  if(!f && !t){ box.textContent = when + '를 세어, ' + tail; return; }
+  var what;
+  if(f && t)      what = pmPartLabel(t) + '에 ' + f + ' 시공 건만 세어';
+  else if(f)      what = f + ' 시공 건만 세어 (부위는 가리지 않음)';
+  else            what = pmPartLabel(t) + ' 시공 건만 세어 (제품은 가리지 않음)';
+  box.textContent = when + ' 중 ' + what + ', ' + tail;
+}
+
 function pmApplyCond(){
   var signup = pmCond === 'signup';
   $('pmCondSeg').querySelectorAll('.sg').forEach(function(x){ x.classList.toggle('on', x.dataset.cond===pmCond); });
   $('pmNwrap').style.display = signup ? 'none' : 'flex';
+  /* 가입 즉시 지급은 시공 실적과 무관하므로 시공 조건을 감춘다 */
+  $('pmCondFilter').style.display = signup ? 'none' : 'grid';
+  pmCondHint();
   /* 가입 즉시는 기간 개념이 없으므로 진행 기간 단계를 숨긴다 */
   $('pmPeriodHead').style.display  = signup ? 'none' : '';
   $('pmPeriodBlock').style.display = signup ? 'none' : 'block';
@@ -2422,7 +2514,10 @@ function pmPvBody(){
     cond: pmCond,
     threshold_n: pmCond==='signup' ? 0 : (+$('pmN').value||0),
     start_date: useRange ? $('pmStart').value : '',
-    end_date:   useRange ? $('pmEnd').value   : ''
+    end_date:   useRange ? $('pmEnd').value   : '',
+    /* 저장 전 확인도 실제 산정과 같은 조건으로 세야 한다 */
+    cond_film: pmCond==='signup' ? '' : $('pmFilm').value,
+    cond_part: pmCond==='signup' ? '' : $('pmPart').value
   };
 }
 
@@ -2484,6 +2579,15 @@ $('pmPvRun').addEventListener('click', async function(){
 ['pmN','pmStart','pmEnd'].forEach(function(id){
   var el=$(id); if(el) el.addEventListener('input', pmPvClear);
 });
+/* 조건을 바꾸면 앞서 세어 본 결과는 더 이상 맞지 않으므로 지운다 */
+['pmFilm','pmPart'].forEach(function(id){
+  var el=$(id);
+  if(el) el.addEventListener('change', function(){ pmPvClear(); pmCondHint(); });
+});
+['pmN','pmStart','pmEnd'].forEach(function(id){
+  var el=$(id); if(el) el.addEventListener('input', pmCondHint);
+});
+$('pmPeriodSeg').addEventListener('click', pmCondHint);
 ['pmCondSeg','pmPeriodSeg'].forEach(function(id){
   var el=$(id); if(el) el.addEventListener('click', pmPvClear);
 });
@@ -2530,7 +2634,9 @@ $('pmCreate').addEventListener('click', async ()=>{
                  reward: teaser ? (reward || '') : reward,
                  period, start_date:startD, end_date:endD, delivery:pmDelivery,
                  auto: teaser ? false : $('pmAuto').checked,
-                 stage: teaser ? 'teaser' : 'live' };
+                 stage: teaser ? 'teaser' : 'live',
+                 cond_film: pmCond==='signup' ? '' : $('pmFilm').value,
+                 cond_part: pmCond==='signup' ? '' : $('pmPart').value };
   if(pmEditId){
     const res = await updatePromotion(pmEditId, data);
     if(!res || !res.ok){ toast((res&&res.message)||'프로모션 수정에 실패했습니다.'); return; }
