@@ -1031,8 +1031,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     </div>
     <div style="margin-top:7px;font-size:11.5px;color:var(--muted);line-height:1.6;">
       내용에 <b>{이름}</b> 이라고 적으면 받는 사람 성함이 들어갑니다. (예: {이름}님 안녕하세요)<br>
-      <b>{수신거부}</b> 라고 적으면 <b style="color:var(--ink);">받는 사람마다 다른 수신거부 주소</b>가 들어갑니다.
-      문안은 하나만 쓰시면 됩니다. (예: 무료수신거부 {수신거부})
+      <b>{수신거부}</b> 라고 적으면 수신거부 주소가 들어갑니다. (예: 무료수신거부 {수신거부})<br>
+      단축 URL을 쓰시려면 문안에 단축 주소를 직접 적으셔도 됩니다.
     </div>
 
     <div style="margin-top:16px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
@@ -3395,10 +3395,10 @@ $('stSend').addEventListener('click', async function(){
    보내기 전에 반드시 '발송 대상 점검'을 거치게 했다.
    실제로 몇 건이 나가는지 눈으로 확인한 뒤 누르도록 하기 위함이다.
    ══════════════════════════════════════════════════════ */
-/* 수신거부 주소는 사람마다 다르게 채워진다.
-   글자 수를 셀 때는 실제와 같은 길이의 예시로 바꿔서 세야 한다.
-   {수신거부} 는 6글자지만 실제 주소는 58바이트다. */
-var SMS_OPTOUT_SAMPLE = 'https://carmaster-auth.raynofilm.co.kr/o?c=A1b2C3d4E5f6G7h8';
+/* 수신거부 주소는 모두 같다. 문안의 {수신거부} 자리에 이 주소가 들어간다.
+   글자 수를 셀 때도 이 주소로 바꿔서 세야 한다 — {수신거부}는 10바이트지만 주소는 40바이트다.
+   단축 URL을 쓰시려면 문안에 단축 주소를 직접 적으면 된다. */
+var SMS_OPTOUT_SAMPLE = 'https://carmaster-auth.raynofilm.co.kr/o';
 
 /** 자리표시자를 실제와 같은 길이로 채운 글 (미리보기·길이 계산용) */
 function smsFillPreview(text, name){
