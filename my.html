@@ -1011,7 +1011,14 @@ async function loadMyStats(){
       monthly: Array.isArray(me.monthly) ? me.monthly : [],
       prev_month_count: Number(me.prev_month_count || 0),
       /* 목표가 없으면 없는 대로 넘긴다. 예전에 여기서 10으로 바꿔치기하고 있었다 */
-      reward_progress: { current: me.total_count||0, goal: (me.goal==null ? 0 : Number(me.goal)), name: me.goal_name||'' },
+      /* 진행 건수는 전체 시공 건수가 아니라 '그 프로모션 조건에 맞는 건수'다.
+         조건이 걸린 프로모션을 전체 건수로 재면 다른 제품만 시공했는데도
+         달성한 것처럼 보인다. 서버가 goal_count 로 보내 준다. */
+      reward_progress: { current: (me.goal_count==null ? (me.total_count||0) : Number(me.goal_count)),
+                         goal: (me.goal==null ? 0 : Number(me.goal)),
+                         name: me.goal_name||'', cond: me.goal_cond||'' },
+      /* 프로모션별 진행 건수 { id: 건수 | null } — 예고 카드가 쓴다 */
+      promoProgress: (me.progress && typeof me.progress === 'object') ? me.progress : {},
       profile: { loginId: me.login_id||'—', phone: me.phone_masked||'—' },
       /* 광고 문자 수신 여부. null 이면 확인하지 못한 것 */
       smsOptout: (me.sms_optout===null || me.sms_optout===undefined) ? null : !!me.sms_optout
@@ -1359,7 +1366,18 @@ const S = { name:'', code:'', org:'' };
      - 관리자가 프로모션을 바꾸면 화면도 따라 바뀐다 (문구를 코드에 박아두지 않는다) */
   /* 리워드 목표 카드 — 관리자 프로모션 설정과 연동 */
   /* 곧 만나보실 혜택 — 아직 혜택이 공개되지 않은 예고 프로모션 */
-  function fillSoonList(list, total){
+  /* 이 프로모션에서 내가 몇 건인지.
+     조건이 걸린 프로모션은 전체 건수가 아니라 조건에 맞는 건수를 봐야 한다.
+     서버가 못 세어 null 을 보냈으면 남은 건수를 적지 않는다(틀린 숫자보다 없는 게 낫다). */
+  function _myCount(p, prog, total){
+    if(prog && Object.prototype.hasOwnProperty.call(prog, String(p.id))){
+      var v = prog[String(p.id)];
+      return (v === null || v === undefined) ? null : Number(v);
+    }
+    return (p.cond_film || p.cond_part) ? null : Number(total||0);
+  }
+
+  function fillSoonList(list, total, prog){
     var wrap = _gid('rwSoonWrap'), box = _gid('rwSoonList');
     if(!wrap || !box) return;
     var soon = (list||[])
@@ -1369,11 +1387,15 @@ const S = { name:'', code:'', org:'' };
     if(!soon.length){ wrap.style.display='none'; return; }
     box.innerHTML = soon.map(function(p){
       var n    = Number(p.threshold_n||0);
-      var cond = n > 0 ? ('누적 시공 ' + n + '건') : '조건 준비 중';
+      /* 조건이 걸려 있으면 '누적 시공 N건'이 아니라 조건을 그대로 적는다 */
+      var cond = n > 0
+        ? ((p.cond_text ? (p.cond_text + ' · ') : '') + n + '건')
+        : '조건 준비 중';
       var when = (p.period && p.period !== '상시') ? String(p.period) : '';
       var meta = cond + (when ? (' · ' + when) : '');
       var body = (p.reward && String(p.reward).trim()) ? String(p.reward).trim() : '혜택은 곧 공개됩니다';
-      var left = (n > 0 && n > Number(total||0)) ? ((n - Number(total||0)) + '건 남음') : '';
+      var mine = _myCount(p, prog, total);
+      var left = (n > 0 && mine !== null && n > mine) ? ((n - mine) + '건 남음') : '';
       return '<div class="rw-soon">' +
                (left ? '<span class="rw-soon-n">' + _esch(left) + '</span>' : '') +
                '<div class="rw-soon-t">' + _esch(p.name || '준비 중인 혜택') + '</div>' +
@@ -1383,7 +1405,7 @@ const S = { name:'', code:'', org:'' };
     wrap.style.display = 'block';
   }
 
-  function fillRewardGoal(total){
+  function fillRewardGoal(total, prog){
     var card=_gid('rwGoalCard');
     if(!card) return;
     fetch(API + '/v1/promotions')
@@ -1392,19 +1414,30 @@ const S = { name:'', code:'', org:'' };
         var list = (res && res.items) || [];
         /* 예고(stage='teaser')는 혜택이 아직 정해지지 않았으므로 목표로 삼지 않는다.
            목표 카드에 '추후 공개 예정'이 뜨면 동기부여가 되지 않는다. */
-        fillSoonList(list, total);
+        fillSoonList(list, total, prog);
+        /* 아직 못 채운 것 중 목표가 가장 낮은 것.
+           건수는 프로모션마다 조건에 맞는 것으로 센다(전체 건수로 재면 틀린다).
+           세지 못한 프로모션은 목표로 삼지 않는다. */
         var next = list
-          .filter(function(p){ return p.stage !== 'teaser' && Number(p.threshold_n) > Number(total||0); })
+          .filter(function(p){
+            if(p.stage === 'teaser') return false;
+            var mine = _myCount(p, prog, total);
+            return mine !== null && Number(p.threshold_n) > mine;
+          })
           .sort(function(a,b){ return Number(a.threshold_n) - Number(b.threshold_n); })[0];
         if(!next){ card.style.display='none'; return; }
 
         var goal   = Number(next.threshold_n);
-        var cur    = Number(total||0);
+        var cur    = Number(_myCount(next, prog, total) || 0);
         var remain = Math.max(goal - cur, 0);
         var pct    = goal > 0 ? Math.min(Math.round(cur / goal * 100), 100) : 0;
 
         _gid('rwGoalName').textContent   = String(next.reward || next.name || '리워드').trim();
-        _gid('rwGoalDesc').textContent   = '시공 ' + goal + '건을 달성하면 지급됩니다';
+        /* 조건이 걸려 있으면 무엇을 시공해야 하는지 밝힌다.
+           안 밝히면 아무 시공이나 N건 하면 받는 것으로 오해한다. */
+        _gid('rwGoalDesc').textContent   = next.cond_text
+          ? (next.cond_text + ' ' + goal + '건을 달성하면 지급됩니다')
+          : ('시공 ' + goal + '건을 달성하면 지급됩니다');
         _gid('rwGoalRemain').textContent = remain + '건 남았어요';
         _gid('rwGoalCount').textContent  = cur + ' / ' + goal + '건';
         card.style.display = 'block';
@@ -1436,7 +1469,7 @@ const S = { name:'', code:'', org:'' };
     if(res.org){ id('cardOrg').textContent=res.org; }
     if(res.month_count!=null){ countUp(id('monthCount'), res.month_count); }
     if(res.total_count!=null){ countUp(id('totalCount'), res.total_count); }
-    fillRewardGoal(res.total_count || 0);
+    fillRewardGoal(res.total_count || 0, res.promoProgress || {});
     smsInit(res.smsOptout === undefined ? null : res.smsOptout);
     /* 리워드 뱃지는 loadRewardList()가 '받을 수 있는 개수'로 채운다 */
     fillMonthCard(res.monthly, res.prev_month_count);
