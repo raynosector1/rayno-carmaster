@@ -22,6 +22,15 @@ button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2.5px soli
 .cimg{opacity:0;transform:scale(1.04);transition:opacity .7s ease,transform .9s cubic-bezier(.2,.8,.3,1)}
 .cimg.on{opacity:1;transform:scale(1)}
 @media (prefers-reduced-motion:reduce){.cimg{opacity:1!important;transform:none!important}}
+
+/* ── 하단 사업자 정보 ── */
+.rk-footer{margin-top:26px;padding:20px 4px calc(22px + env(safe-area-inset-bottom));border-top:1px solid #EDEDEF;}
+.rk-links{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;font-weight:700;color:#4A4A4E;}
+.rk-links a{color:#4A4A4E;text-decoration:none;}
+.rk-links a:hover{color:#111;text-decoration:underline;}
+.rk-sep{color:#D6D6DA;font-weight:400;}
+.rk-biz{margin-top:11px;font-size:11.5px;line-height:1.85;color:#A0A0A6;font-weight:500;}
+.rk-biz a{color:#A0A0A6;text-decoration:none;}
 </style>
 </head>
 <body>
@@ -56,6 +65,23 @@ button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2.5px soli
           <button type="button" onclick="goLogin()" style="width:100%;padding:18px 0;border-radius:999px;background:#fff;border:1.5px solid #FF5A00;color:#FF5A00;font-size:17px;font-weight:800;">로그인</button>
         </div>
         <p style="margin-top:16px;margin-bottom:26px;font-size:11px;color:#B0B0B4;">※ 본 혜택은 레이노 카마스터 멤버십 대상으로 제공됩니다.</p>
+
+        <div class="rk-footer">
+          <div class="rk-links">
+            <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
+            <span class="rk-sep">|</span>
+            <a href="policy.html">개인정보 처리방침</a>
+          </div>
+          <div class="rk-biz">
+            주식회사 레이노섹터1<br>
+            대표이사 : 김현철<br>
+            사업자등록번호 : 355-81-02192<br>
+            주소 : 경기도 김포시 양촌읍 양곡우회로 155<br>
+            고객센터 : <a href="tel:1588-8695">1588-8695</a><br>
+            이메일 : <a href="mailto:raynokorea@raynofilm.com">raynokorea@raynofilm.com</a>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -74,6 +100,23 @@ button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2.5px soli
         <div style="flex:1;min-height:24px;"></div>
         <button type="button" onclick="goSignup()" style="width:100%;padding:19px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;">가입하기</button>
         <div style="margin-top:12px;margin-bottom:26px;text-align:center;font-size:11.5px;color:#B0B0B4;">가입은 무료이며, 리워드는 조건 충족 시 자동 지급됩니다.</div>
+
+        <div class="rk-footer">
+          <div class="rk-links">
+            <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
+            <span class="rk-sep">|</span>
+            <a href="policy.html">개인정보 처리방침</a>
+          </div>
+          <div class="rk-biz">
+            주식회사 레이노섹터1<br>
+            대표이사 : 김현철<br>
+            사업자등록번호 : 355-81-02192<br>
+            주소 : 경기도 김포시 양촌읍 양곡우회로 155<br>
+            고객센터 : <a href="tel:1588-8695">1588-8695</a><br>
+            이메일 : <a href="mailto:raynokorea@raynofilm.com">raynokorea@raynofilm.com</a>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
