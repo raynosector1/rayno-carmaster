@@ -212,8 +212,10 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-        <span class="rk-sep">|</span>
-        <a href="policy.html">개인정보 처리방침</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html">이용약관</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html#privacy">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -284,8 +286,10 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-        <span class="rk-sep">|</span>
-        <a href="policy.html">개인정보 처리방침</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html">이용약관</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html#privacy">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -325,8 +329,10 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-        <span class="rk-sep">|</span>
-        <a href="policy.html">개인정보 처리방침</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html">이용약관</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html#privacy">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -369,8 +375,10 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-        <span class="rk-sep">|</span>
-        <a href="policy.html">개인정보 처리방침</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html">이용약관</a>
+                <span class="rk-sep">|</span>
+        <a href="policy.html#privacy">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -894,6 +902,32 @@ async function loadNotices(){
 /* ===== 리워드 (쿠폰 통합) ===== */
 var RW = { items: [], seg: 'todo', total: 0 };
 
+/* ══════════ 상품권 지급 일정 ══════════
+   상품권은 회원마다 따로 보내지 않고 비즈콘으로 정해진 날에 모아서 보낸다.
+   그래서 '언제 주나요?' 문의가 많을 수밖에 없어, 다음 지급일을 미리 알려 준다.
+
+   ⚠ 날짜를 바꿀 때 — 이 목록은 signup.html 과 my.html 두 곳에 같은 내용이 있다.
+      한 곳만 고치면 가입 완료 화면과 마이페이지가 서로 다른 날짜를 말하게 된다.
+   ⚠ 마지막 날짜가 지나면 안내가 저절로 사라진다(틀린 날짜를 보여주지 않으려고).
+      다음 회차 일정이 정해지면 여기에 이어서 적을 것. */
+const PAYOUT_DATES = ['2026-08-21', '2026-09-04', '2026-09-18', '2026-09-30'];
+
+/* 오늘(한국시간) 이후로 가장 가까운 지급일. 다 지났으면 빈 값 */
+function nextPayoutDate(){
+  var today = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  for(var i = 0; i < PAYOUT_DATES.length; i++){
+    if(PAYOUT_DATES[i] >= today) return PAYOUT_DATES[i];
+  }
+  return '';
+}
+/* '8월 21일' 처럼 읽기 좋은 꼴로. 남은 일정이 없으면 빈 값 */
+function nextPayoutText(){
+  var d = nextPayoutDate();
+  if(!d) return '';
+  var p = d.split('-');
+  return Number(p[1]) + '월 ' + Number(p[2]) + '일';
+}
+
 function _rwDate(v){
   var t = String(v||'').replace(/[^0-9]/g,'');
   if(t.length>=8) return t.slice(0,4)+'.'+t.slice(4,6)+'.'+t.slice(6,8);
@@ -963,6 +997,10 @@ function _rwCard(x){
         (isCoupon
           ? '확인이 끝나면 이 화면에서 쿠폰번호를 받으실 수 있어요.'
           : '확인이 끝나면 가입하신 휴대폰 번호로 발송해 드려요.')+
+        /* 상품권은 정해진 날에 모아서 보낸다 — 언제 오는지 미리 알려 준다 */
+        (nextPayoutText()
+          ? ('<br><b style="color:#FF5A00;font-weight:700;">다음 지급 예정일 : ' + nextPayoutText() + '</b>')
+          : '')+
       '</div>';
   }
 
