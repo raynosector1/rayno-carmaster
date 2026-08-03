@@ -338,7 +338,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <select class="filter" id="fltOffice" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">소속 전체</option></select>
           <select class="filter" id="fltRegion" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">지역 전체</option></select>
-          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체</option><option value="일반">일반</option><option value="인증대기">인증대기</option><option value="정지">정지</option><option value="__pending">영업소 승인대기</option><option value="__card_pending">명함 승인대기</option><option value="__card_rejected">명함 거절</option></select>
+          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체 (탈퇴 제외)</option><option value="일반">일반</option><option value="인증대기">인증대기</option><option value="정지">정지</option><option value="__pending">영업소 승인대기</option><option value="__card_pending">명함 승인대기</option><option value="__card_rejected">명함 거절</option><option value="탈퇴">탈퇴</option></select>
           <input type="text" id="mSearch" placeholder="성함, 연락처, 영업소" class="filter" style="flex:1;min-width:200px;font-family:inherit;font-weight:500;">
           <button class="btn btn-primary" id="mSearchBtn" style="padding:10px 22px;font-size:13px;font-weight:800;">검색</button>
         </div>
@@ -1365,7 +1365,11 @@ async function loadDashboard(){
   try{ all = await admRest('carmasters?select=*'); }catch(e){ console.error('carmasters',e); }
   try{ rewards = await admRest('rewards?select=status,item_name,carmasters(name)'); }catch(e){ console.error('rewards',e); }
   all.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
-  var recent = all.slice(0,6).map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(_ts(x)) }; });
+  /* 탈퇴 회원은 이름이 파기되어 '-  ·  -' 로만 보인다. 최근 가입과 총 회원수에서 뺀다.
+     다만 '이번 달 가입'과 가입 추이 그래프는 그대로 둔다 —
+     그건 '이번 달에 몇 명이 가입했나'를 세는 것이라 나중에 탈퇴했더라도 가입은 가입이다. */
+  var alive = all.filter(function(x){ return x.status !== 'withdrawn'; });
+  var recent = alive.slice(0,6).map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(_ts(x)) }; });
   /* 지급 사유는 리워드 종류에서 가져온다.
      예전에는 '가입 축하 웰컴기프트'를 그냥 박아둔 탓에
      프로모션으로 생긴 리워드까지 웰컴기프트로 보였다.
@@ -1377,7 +1381,7 @@ async function loadDashboard(){
                    : x.type==='milestone' ? '시공 실적 달성'
                    : (x.reason || (x.type==='promotion' ? '프로모션 달성' : '관리자 수동 지급')) };
   });
-  return { recent:recent, pending:pending, all:all, rewards:rewards };
+  return { recent:recent, pending:pending, all:all, alive:alive, rewards:rewards };
 }
 function setTxt(id,v){ var e=$(id); if(e)e.textContent=v; }
 var _DONE_ST=['sent','done','completed','paid','approved','issued'], _AUTO_ST=['auto','calculating','산정중'];
@@ -1526,7 +1530,7 @@ async function renderDashboard(){
   var pend=rw.filter(function(r){ return r.status==='pending'; }).length;
   var done=rw.filter(function(r){ return _DONE_ST.indexOf(r.status)>=0; }).length;
   var auto=rw.filter(function(r){ return _AUTO_ST.indexOf(r.status)>=0; }).length;
-  setTxt('kpiTotal',(d.all||[]).length); setTxt('kpiMonth',monthCount); setTxt('kpiPending',pend); setTxt('dashPendingBadge',pend); var _inst=0; try{ _inst=await admCount('warranty_matches?select=id&link_type=eq.linked&installed_at=gte.'+ym+'-01'); }catch(e){} setTxt('kpiInstall',_inst);
+  setTxt('kpiTotal',(d.alive||d.all||[]).length); setTxt('kpiMonth',monthCount); setTxt('kpiPending',pend); setTxt('dashPendingBadge',pend); var _inst=0; try{ _inst=await admCount('warranty_matches?select=id&link_type=eq.linked&installed_at=gte.'+ym+'-01'); }catch(e){} setTxt('kpiInstall',_inst);
   setTxt('kpiRewardTotal',rw.length); setTxt('kpiRwDone',done); setTxt('kpiRwPending',pend); setTxt('kpiRwAuto',auto);
   fillDonut(done,pend,auto);
   renderSignupChart(d.all||[]);
@@ -1557,6 +1561,10 @@ function filteredMembers(){
   return (S.allMembers||[]).filter(function(m){
     if(fo && m.brand!==fo) return false;
     if(fr && m.region!==fr) return false;
+    /* 탈퇴 회원은 이름·연락처가 즉시 파기되어 목록에 빈 칸으로만 남는다.
+       상태 필터에서 '탈퇴'를 고를 때만 보여준다.
+       (완전 삭제·이력 확인을 하려면 찾아 들어갈 수는 있어야 하므로 아주 없애지는 않는다) */
+    if(m.status === '탈퇴' && fs !== '탈퇴') return false;
     if(fs === '__pending'){ if(!m.pending) return false; }
     else if(fs === '__card_pending'){ if(m.card !== 'pending') return false; }
     else if(fs === '__card_rejected'){ if(m.card !== 'rejected') return false; }
@@ -1594,7 +1602,9 @@ function applyMemberFilters(){
     if($('mCountCard')) $('mCountCard').textContent = cardWait;
   }
   /* 명함 확인 상태를 한눈에. 승인된 회원에게는 아무것도 붙이지 않는다. */
-  var cardBadge=function(c){
+  var cardBadge=function(c, st){
+    /* 탈퇴하면 명함도 파기된다. 심사할 것이 없는데 '명함 대기'로 보이면 안 된다. */
+    if(st === '탈퇴') return '';
     if(c === 'pending')  return ' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="명함 확인을 기다리고 있습니다. 상세에서 승인 또는 거절할 수 있습니다.">명함 대기</span>';
     if(c === 'rejected') return ' <span class="badge b-err" style="font-size:10px;padding:2px 6px;" title="명함이 거절된 회원입니다. 회원이 다시 제출하면 대기로 돌아옵니다.">명함 거절</span>';
     return '';
@@ -1610,7 +1620,7 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       '<span style="color:#8A8A8E;">'+m.join+'</span>'+
-      '<span>'+badge(m.status)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+cardBadge(m.card)+'</span>'+
+      '<span>'+badge(m.status)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+cardBadge(m.card, m.status)+'</span>'+
       '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
@@ -4585,7 +4595,15 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
     if(!email||!pw){ admErr('이메일과 비밀번호를 입력해 주세요.'); return; }
     var btn=$('admLoginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
     var r=await admLogin(email,pw); btn.disabled=false; btn.textContent='로그인';
-    if(r.ok){ admErr(''); hideOv(); initAdmin(); } else { admErr(r.message); }
+    if(r.ok){
+      admErr('');
+      /* 로그인 직후에도 '테스트 도구를 쓸 수 있는지'를 서버에서 받아 온다.
+         이 한 줄이 빠져 있어서, 이 화면에서 방금 로그인한 세션에서는
+         회원 상세의 '계정 완전 삭제' 위험 구역이 보이지 않았다.
+         (새로고침해서 들어오면 아래 verifyAdmin() 을 타므로 보였다) */
+      await verifyAdmin();
+      hideOv(); initAdmin();
+    } else { admErr(r.message); }
   }
   var _lo = $('btnLogout');
   if(_lo) _lo.addEventListener('click', function(){
