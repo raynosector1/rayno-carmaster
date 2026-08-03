@@ -298,51 +298,7 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
 
   function gate(btn,ok){ if(!btn)return; btn.dataset.gate=ok?'1':'0'; btn.style.background=ok?'#111':'#EAEAEC'; btn.style.color=ok?'#fff':'#B4B4B8'; }
 
-  /* ===== step1 ===== */
-  var brand=id('brand');
-  if(brand){ var region=id('region'),office=id('office'),bEtc=id('brandEtc'),oEtc=id('officeEtc'),nm=id('name'),bd=id('birth'),n1=id('next1');
-    loadOffices();
-    function etc(sel,inp){ if(inp)inp.style.display=/기타/.test(sel.value)?'block':'none'; }
-    brand.onchange=function(){ S.brand=brand.value; region.disabled=!brand.value; if(!brand.value){office.disabled=true;} etc(brand,bEtc); g1(); };
-    region.onchange=function(){ S.region=region.value; office.disabled=!region.value; g1(); };
-    office.onchange=function(){ S.office=office.value; etc(office,oEtc); g1(); };
-    [nm,bd,bEtc,oEtc].forEach(function(x){ if(x)x.addEventListener('input',function(){ S.name=nm.value;S.birth=bd.value; g1(); }); });
-    function g1(){ var ok=brand.value&&region.value&&office.value&&nm.value.trim()&&bd.value.trim().length===8&&(!/기타/.test(brand.value)||(bEtc&&bEtc.value.trim()))&&(!/기타/.test(office.value)||(oEtc&&oEtc.value.trim())); gate(n1,!!ok); }
-    g1();
-  }
-  /* ===== step2 ===== */
-  var code=id('code');
-  if(code){ var telco=id('telco'),phone=id('phone'),n2=id('next2'),verified=false;
-    function g2(){ gate(n2, verified && code.value.replace(/\D/g,'').length===6); }
-    var reqBtn=id('reqCode'); if(reqBtn)reqBtn.addEventListener('click',function(){ if(!telco.value||phone.value.replace(/\D/g,'').length<10){T('통신사와 휴대폰번호를 입력해 주세요.');return;} verifyIdentity({telco:telco.value,phone:phone.value}); T('인증번호를 발송했어요.'); });
-    var cfBtn=id('confirmCode'); if(cfBtn)cfBtn.addEventListener('click',function(){ if(code.value.replace(/\D/g,'').length===6){ verified=true; S.telco=telco.value;S.phone=phone.value;S.code=code.value; T('인증되었습니다.'); g2(); } else {T('인증번호 6자리를 입력해 주세요.');} });
-    [telco,phone,code].forEach(function(x){ if(x){x.addEventListener('input',g2);x.addEventListener('change',g2);} });
-    g2();
-  }
-  /* ===== step3 ===== */
-  var next3=id('next3');
-  if(next3){ var lid=id('loginId'),dup=id('dupCheck'),pw=id('password'),pw2=id('password2'),idOk=false;
-    var boxes=[].slice.call(document.querySelectorAll('[data-agree]'));
-    function setBox(b,on){ b.dataset.on=on?'1':'0'; if(on){b.style.background='#111';b.style.border='none';b.textContent='✓';b.style.color='#fff';b.style.display='flex';b.style.alignItems='center';b.style.justifyContent='center';}else{b.style.background='none';b.style.border='2px solid #D6D6DA';b.textContent='';} }
-    var all=boxes.find(b=>b.dataset.agree==='all'), items=boxes.filter(b=>b.dataset.agree!=='all');
-    boxes.forEach(function(b){ setBox(b,false); b.addEventListener('click',function(){
-      if(b===all){ var on=b.dataset.on!=='1'; setBox(all,on); items.forEach(function(x){setBox(x,on);}); }
-      else { setBox(b,b.dataset.on!=='1'); if(all)setBox(all,items.every(function(x){return x.dataset.on==='1';})); }
-      var reqs=items.filter(function(x){return x.dataset.agree==='req';});
-      S.agree.req1=reqs[0]&&reqs[0].dataset.on==='1'; S.agree.req2=reqs[1]&&reqs[1].dataset.on==='1';
-      var opt=items.find(function(x){return x.dataset.agree==='opt';}); S.agree.opt=opt&&opt.dataset.on==='1';
-      g3();
-    }); });
-    if(dup)dup.addEventListener('click',function(){ if(!lid.value.trim()){T('아이디를 입력해 주세요.');return;} checkLoginId(lid.value).then(function(res){ idOk=!!(res&&res.ok); dup.textContent='확인완료';dup.style.background='#111';dup.style.color='#fff';dup.style.border='none'; T('사용 가능한 아이디입니다.'); g3(); }); });
-    if(lid)lid.addEventListener('input',function(){ idOk=false; if(dup){dup.textContent='중복확인';dup.style.background='#fff';dup.style.color='#111';dup.style.border='1.5px solid #111';} g3(); });
-    [pw,pw2].forEach(function(x){ if(x)x.addEventListener('input',g3); });
-    function reqOk(){ var reqs=boxes.filter(function(x){return x.dataset.agree==='req';}); return reqs.length&&reqs.every(function(x){return x.dataset.on==='1';}); }
-    function g3(){ gate(next3, idOk && pw&&pw.value&&pw.value===pw2.value && reqOk()); }
-    next3.addEventListener('click',function(){ if(next3.dataset.gate==='0'){shake(next3);return;} S.loginId=lid.value;S.password=pw.value; submitSignup(S).then(function(){ nav(3,1); }); });
-    g3();
-  }
-  /* ===== done → my ===== */
-  D.querySelectorAll('[data-href]').forEach(function(el){ if(el.id)return; });
+  /* (지운 자리) 가입 1~3단계 — 이 화면에 없는 요소를 다루던 코드였습니다. */
   /* ===== login ===== */
   /* 아이디 저장 — 이 브라우저에만 남고 서버로 가지 않습니다. 비밀번호는 저장하지 않습니다. */
   var SAVED_ID_KEY='cm_saved_id';
@@ -469,9 +425,7 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
     });
   });
 
-  /* ===== my: tab bar + stats ===== */
-  var bar=[].slice.call(D.querySelectorAll('div')).find(function(d){ return d.querySelectorAll('svg').length>=4 && /border-radius:999px/.test(d.getAttribute('style')||'') && /background:#111/.test(d.getAttribute('style')||''); });
-  if(bar){ loadMyStats(); var items=[].slice.call(bar.children),names=['홈','쿠폰','리워드','내 정보']; items.forEach(function(it,i){ it.style.cursor='pointer'; it.addEventListener('click',function(){ items.forEach(function(x,j){ var svg=x.querySelector('svg'); if(j===i){x.style.background='#FF5A00';if(svg)svg.setAttribute('stroke','#fff');}else{x.style.background='none';if(svg)svg.setAttribute('stroke','#8A8A8E');} }); if(i>0)T(names[i]+' · 준비 중인 메뉴입니다'); }); }); }
+  /* (지운 자리) 마이페이지 탭바 — 이 화면에 없는 요소를 다루던 코드였습니다. */
   /* ===== 접근성(a11y) ===== */
   D.querySelectorAll('[data-go],[data-href]').forEach(function(el){ if(el.querySelector('input,select,textarea,button'))return; if(el.tagName!=='BUTTON'&&el.tagName!=='A'){ el.setAttribute('role','button'); if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0'); } if(!el.getAttribute('aria-label')){ var t=(el.textContent||'').trim(); if(t==='‹')el.setAttribute('aria-label','뒤로'); } });
   D.querySelectorAll('[data-eye]').forEach(function(el){ if(!el.getAttribute('aria-label'))el.setAttribute('aria-label','비밀번호 표시/숨김'); });
