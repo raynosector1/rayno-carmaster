@@ -338,13 +338,13 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <select class="filter" id="fltOffice" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">소속 전체</option></select>
           <select class="filter" id="fltRegion" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">지역 전체</option></select>
-          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체</option><option value="일반">일반</option><option value="인증대기">인증대기</option><option value="정지">정지</option><option value="__pending">영업소 승인대기</option></select>
+          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체</option><option value="일반">일반</option><option value="인증대기">인증대기</option><option value="정지">정지</option><option value="__pending">영업소 승인대기</option><option value="__card_pending">명함 승인대기</option><option value="__card_rejected">명함 거절</option></select>
           <input type="text" id="mSearch" placeholder="성함, 연락처, 영업소" class="filter" style="flex:1;min-width:200px;font-family:inherit;font-weight:500;">
           <button class="btn btn-primary" id="mSearchBtn" style="padding:10px 22px;font-size:13px;font-weight:800;">검색</button>
         </div>
 
         <div style="margin-top:18px;font-size:15px;font-weight:800;color:var(--ink);">
-          가입자수 : <span id="mCount">0</span>명
+          가입자수 : <span id="mCount">0</span>명<span id="mCardWrap" class="linklike" style="display:none;margin-left:12px;font-size:13.5px;font-weight:800;color:var(--orange);" title="명함 승인 대기 회원만 보기">명함 승인 대기 <span id="mCountCard">0</span>명 ›</span>
           <span style="font-size:13.5px;font-weight:600;color:var(--muted);margin-left:6px;">(일반: <span id="mCountOk">0</span> / 정지: <span id="mCountOff">0</span>)</span>
         </div>
 
@@ -721,6 +721,42 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     </div>
     <div class="info" style="margin-top:12px;"><span class="i">i</span><span>SMS 수신거부가 설정된 경우 문자(SMS)가 발송되지 않습니다.</span></div>
 
+    <div id="dCardBox" style="display:none;margin-top:22px;">
+      <div style="font-size:14px;font-weight:800;color:var(--ink);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        명함 확인 <span id="dCardBadge" class="badge b-warn">승인 대기</span>
+        <span id="dCardMeta" style="font-size:12px;font-weight:600;color:var(--muted);"></span>
+      </div>
+      <div style="margin-top:9px;display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;">
+        <div style="background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:10px;min-height:190px;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+          <img id="dCardImg" alt="제출한 명함 사진" title="누르면 크게 볼 수 있습니다" style="display:none;max-width:100%;max-height:330px;border-radius:8px;cursor:zoom-in;transition:transform .2s;">
+          <div id="dCardMsg" style="font-size:12.5px;color:var(--muted);line-height:1.7;text-align:center;">불러오는 중…</div>
+        </div>
+        <div>
+          <button class="btn btn-line" id="dCardRotate" style="width:100%;padding:9px 0;font-size:12.5px;font-weight:700;">↻ 사진 돌리기</button>
+
+          <div id="dCardActions" style="margin-top:10px;display:flex;gap:8px;">
+            <button class="btn btn-primary" id="dCardApprove" style="flex:1;padding:13px 0;font-size:13.5px;font-weight:800;">승인</button>
+            <button class="btn" id="dCardRejectOpen" style="flex:1;padding:13px 0;font-size:13.5px;font-weight:800;border:1.5px solid var(--err);color:var(--err);">거절</button>
+          </div>
+
+          <div id="dCardReject" style="display:none;margin-top:10px;background:#FFF5F5;border:1px solid #FAD9D9;border-radius:11px;padding:11px 12px;">
+            <div style="font-size:12px;font-weight:800;color:var(--err);">거절 사유를 고르세요</div>
+            <div id="dCardReasons" style="margin-top:8px;display:flex;flex-direction:column;gap:6px;"></div>
+            <input class="finp" id="dCardMemo" placeholder="사유를 직접 입력 (2자 이상)" maxlength="120" style="display:none;margin-top:7px;padding:10px 12px;font-size:12.5px;">
+            <div style="margin-top:9px;display:flex;gap:6px;">
+              <button class="btn btn-line" id="dCardRejCancel" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:700;">취소</button>
+              <button class="btn" id="dCardRejGo" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;border:1.5px solid var(--err);color:var(--err);">거절 확정</button>
+            </div>
+          </div>
+
+          <div id="dCardNote" style="margin-top:10px;font-size:11.5px;color:var(--muted);line-height:1.7;">
+            승인하면 <b style="color:var(--ink);">웰컴기프트가 ‘지급 대기’</b>에 올라갑니다.<br>
+            거절해도 계정은 지워지지 않고, 회원이 명함을 다시 제출할 수 있습니다.
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div style="margin-top:22px;font-size:14px;font-weight:800;color:var(--ink);">활동 정보</div>
     <div style="margin-top:8px;display:flex;gap:10px;">
       <div style="flex:1;background:#F7F7F8;border-radius:12px;padding:14px;"><div style="font-size:12px;color:var(--muted);font-weight:600;">품질보증서 발급 건수</div><div style="font-size:22px;font-weight:800;margin-top:4px;" id="dTotal">—</div></div>
@@ -737,7 +773,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <button class="btn btn-soft" id="dResetPw" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;">비밀번호 초기화</button>
       <button class="btn" id="dSuspend" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
     </div>
-    <div id="dOutHint" style="display:none;margin-top:10px;padding:13px 15px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;font-size:12.5px;color:var(--muted);line-height:1.7;text-align:center;">탈퇴한 계정입니다. 개인정보는 파기되었으며 복구할 수 없습니다.<br>같은 분이 다시 가입하시면 시공 실적은 이어지고, 웰컴기프트는 다시 지급되지 않습니다.</div>
+    <div id="dOutHint" style="display:none;margin-top:10px;padding:13px 15px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;font-size:12.5px;color:var(--muted);line-height:1.7;text-align:center;">탈퇴한 계정입니다. 개인정보는 파기되었으며 복구할 수 없습니다.<br>같은 분이 다시 가입하셔도 <b>이전 시공 실적은 승계되지 않고 0건부터</b> 시작하며, 웰컴기프트도 다시 지급되지 않습니다.</div>
     <button id="dDelete" style="margin-top:10px;width:100%;padding:11px 0;background:none;border:none;font-size:13px;color:#B0B0B4;text-decoration:underline;cursor:pointer;font-family:inherit;">계정 탈퇴 처리</button>
     <div id="dPurgeZone" style="display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);">
       <div style="font-size:11.5px;color:var(--err);font-weight:700;">테스트 도구 · 위험 구역</div>
@@ -1353,7 +1389,7 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending'), rejoin:!!m.stats_from, rejoinN:Number(m.rejoin_count||0) }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending'), rejoin:!!m.stats_from, rejoinN:Number(m.rejoin_count||0), card:String(m.card_approval||'approved'), cardN:Number(m.card_apply_count||0) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
@@ -1380,7 +1416,15 @@ async function getMember(code){
       pending: (m.office_approval === 'pending'), officeId: m.office_id || null,
       brandRaw: m.brand || '', regionRaw: m.region || '',
       brandEtc: m.brand_etc || '', officeEtc: m.office_etc || '',
-      verified: (m.status==='verified'||m.status==='suspended')
+      verified: (m.status==='verified'||m.status==='suspended'),
+      /* 명함 확인 */
+      cardApproval:   String(m.card_approval || 'approved'),
+      cardAt:         m.card_at || null,
+      cardApprovedAt: m.card_approved_at || null,
+      cardRejectedAt: m.card_rejected_at || null,
+      cardRejectCode: m.card_reject_code || '',
+      cardRejectMemo: m.card_reject_memo || '',
+      cardN:          Number(m.card_apply_count || 0)
     };
   }catch(e){ console.error('getMember',e); return {}; }
 }
@@ -1514,6 +1558,8 @@ function filteredMembers(){
     if(fo && m.brand!==fo) return false;
     if(fr && m.region!==fr) return false;
     if(fs === '__pending'){ if(!m.pending) return false; }
+    else if(fs === '__card_pending'){ if(m.card !== 'pending') return false; }
+    else if(fs === '__card_rejected'){ if(m.card !== 'rejected') return false; }
     else if(fs && m.status!==fs) return false;
     if(from && m.joinRaw && m.joinRaw < from) return false;
     if(to && m.joinRaw && m.joinRaw > to) return false;
@@ -1539,6 +1585,20 @@ function applyMemberFilters(){
   if($('mCountOk')) $('mCountOk').textContent=ok;
   if($('mCountOff')) $('mCountOff').textContent=off;
   if($('mTotal')) $('mTotal').textContent=rows.length;
+  /* 명함 승인 대기 건수는 '지금 걸린 필터'가 아니라 전체를 기준으로 센다.
+     관리자가 다른 조건으로 보고 있어도 처리할 일이 남았다는 것을 알아야 한다. */
+  var cardWait = (S.allMembers||[]).filter(function(m){ return m.card === 'pending' && m.status !== '탈퇴'; }).length;
+  var cw = $('mCardWrap');
+  if(cw){
+    cw.style.display = cardWait > 0 ? 'inline' : 'none';
+    if($('mCountCard')) $('mCountCard').textContent = cardWait;
+  }
+  /* 명함 확인 상태를 한눈에. 승인된 회원에게는 아무것도 붙이지 않는다. */
+  var cardBadge=function(c){
+    if(c === 'pending')  return ' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="명함 확인을 기다리고 있습니다. 상세에서 승인 또는 거절할 수 있습니다.">명함 대기</span>';
+    if(c === 'rejected') return ' <span class="badge b-err" style="font-size:10px;padding:2px 6px;" title="명함이 거절된 회원입니다. 회원이 다시 제출하면 대기로 돌아옵니다.">명함 거절</span>';
+    return '';
+  };
   var badge=function(st){ return st==='일반'?'<span class="badge b-ok">일반</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':st==='탈퇴'?'<span class="badge b-off">탈퇴</span>':'<span class="badge b-off">정지</span>'; };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
     return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">'+
@@ -1550,7 +1610,7 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       '<span style="color:#8A8A8E;">'+m.join+'</span>'+
-      '<span>'+badge(m.status)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+'</span>'+
+      '<span>'+badge(m.status)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+cardBadge(m.card)+'</span>'+
       '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
@@ -1567,6 +1627,10 @@ function applyMemberFilters(){
 }
 ['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', function(){ S.mPage=1; applyMemberFilters(); }); });
 if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
+if($('mCardWrap')) $('mCardWrap').addEventListener('click', function(){
+  var fs=$('fltStatus'); if(fs) fs.value='__card_pending';
+  S.mPage=1; applyMemberFilters();
+});
 if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
 if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
 $('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,m.join,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); admAudit('members', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
@@ -1729,7 +1793,163 @@ $('apSave').addEventListener('click', async function(){
   apValidate();
 });
 
+/* ══════════ 명함 확인 ══════════
+   회원이 낸 명함을 눈으로 보고 승인하거나 거절한다.
+
+   사진은 웹에서 바로 열리지 않는 잠긴 폴더에 있어 주소만으로는 볼 수 없다.
+   반드시 관리자 창구를 거쳐야 하고, 열어 볼 때마다 감사 로그에 남는다.
+   그래서 <img src="..."> 로 바로 걸지 않고, 출입증을 붙여 받아온 뒤 화면에 붙인다. */
+const CARD_REASONS = [
+  ['blur',        '사진이 흐려 내용을 확인하기 어려움'],
+  ['noinfo',      '성명 또는 연락처가 보이지 않음'],
+  ['mismatch',    '가입 정보와 명함 내용이 다름'],
+  ['unqualified', '카마스터 자격을 확인할 수 없음'],
+  ['etc',         '기타 (직접 입력)']
+];
+
+function _cardClearImg(){
+  var im = $('dCardImg');
+  if(im){ im.style.display='none'; im.style.transform='rotate(0deg)'; im.removeAttribute('src'); }
+  if(S.dCardUrl){ try{ URL.revokeObjectURL(S.dCardUrl); }catch(e){} S.dCardUrl = null; }
+  S.dCardRot = 0;
+}
+
+async function loadCardImage(code){
+  var msg = $('dCardMsg'), im = $('dCardImg');
+  if(msg){ msg.style.display='block'; msg.textContent='불러오는 중…'; }
+  var r;
+  try{
+    r = await fetch(API + '/v1/admin/members/card?code=' + encodeURIComponent(code),
+                    { headers: { 'Authorization': 'Bearer ' + admToken() } });
+  }catch(e){
+    if(msg) msg.textContent = '서버 연결에 실패했습니다.';
+    return;
+  }
+  var ct = String(r.headers.get('content-type') || '');
+  if(!r.ok || ct.indexOf('image/') !== 0){
+    var j = null; try{ j = await r.json(); }catch(e){}
+    if(msg) msg.textContent = (j && j.message) || '명함을 불러오지 못했습니다.';
+    return;
+  }
+  var blob = await r.blob();
+  S.dCardUrl = URL.createObjectURL(blob);
+  if(im){ im.src = S.dCardUrl; im.style.display='block'; }
+  if(msg) msg.style.display='none';
+}
+
+function fillCardBox(m){
+  var box=$('dCardBox');
+  if(!box) return;
+  _cardClearImg();
+  var rej=$('dCardReject'); if(rej) rej.style.display='none';
+  var res=$('dCardMemo'); if(res){ res.value=''; res.style.display='none'; }
+  S.dCardReason = '';
+
+  var out = (m.status === '탈퇴') || !!m.withdrawnAt;
+  /* 탈퇴하면 명함도 파기되므로 보여 줄 것이 없다 */
+  if(out){ box.style.display='none'; return; }
+
+  var st = String(m.cardApproval || 'approved');
+  box.style.display = 'block';
+
+  var bd=$('dCardBadge'), meta=$('dCardMeta'), acts=$('dCardActions'), note=$('dCardNote');
+  if(bd){
+    bd.textContent = st==='approved' ? '승인 완료' : (st==='rejected' ? '거절' : '승인 대기');
+    bd.className   = 'badge ' + (st==='approved' ? 'b-ok' : (st==='rejected' ? 'b-err' : 'b-warn'));
+  }
+  if(meta){
+    var bits = [];
+    if(m.cardAt) bits.push('제출 ' + _dtm(m.cardAt));
+    if(m.cardN > 1) bits.push(m.cardN + '번째 제출');
+    if(st==='approved' && m.cardApprovedAt) bits.push('승인 ' + _dtm(m.cardApprovedAt));
+    if(st==='rejected'){
+      if(m.cardRejectedAt) bits.push('거절 ' + _dtm(m.cardRejectedAt));
+      var rtxt = _cardReasonText(m.cardRejectCode, m.cardRejectMemo);
+      if(rtxt) bits.push('사유: ' + rtxt);
+    }
+    meta.textContent = bits.join(' · ');
+  }
+  /* 이미 승인한 건은 다시 누를 일이 없다. 사진은 CS 응대를 위해 계속 볼 수 있게 둔다. */
+  if(acts) acts.style.display = (st === 'approved') ? 'none' : 'flex';
+  if(note) note.style.display = (st === 'approved') ? 'none' : 'block';
+
+  loadCardImage(m.code);
+}
+
+function _cardReasonText(code, memo){
+  var c = String(code||''), mm = String(memo||'').trim();
+  if(c === 'etc') return mm;
+  for(var i=0;i<CARD_REASONS.length;i++) if(CARD_REASONS[i][0] === c) return CARD_REASONS[i][1];
+  return mm;
+}
+
+/* 사진 돌리기 — 화면에서만 돌린다. 저장된 파일은 그대로다. */
+if($('dCardRotate')) $('dCardRotate').addEventListener('click', function(){
+  var im=$('dCardImg'); if(!im || im.style.display==='none') return;
+  S.dCardRot = ((S.dCardRot || 0) + 90) % 360;
+  im.style.transform = 'rotate(' + S.dCardRot + 'deg)';
+});
+if($('dCardImg')) $('dCardImg').addEventListener('click', function(){
+  if(S.dCardUrl) window.open(S.dCardUrl, '_blank', 'noopener');
+});
+
+/* 승인 */
+if($('dCardApprove')) $('dCardApprove').addEventListener('click', async function(){
+  var code = S.dCardMemberCode || S.dMemberCode;
+  if(!code) return;
+  if(!confirm(code + ' 회원의 명함을 승인하시겠습니까?\n\n승인하면 웰컴기프트가 지급 대기 목록에 올라갑니다.')) return;
+  var b=this; b.disabled=true; var old=b.textContent; b.textContent='처리 중…';
+  var r = await admFn('card-approve', { code: code });
+  b.disabled=false; b.textContent=old;
+  if(!r || !r.ok){ toast((r && r.message) || '승인에 실패했습니다.'); return; }
+  toast(r.message || '승인했습니다.');
+  await openMember(code);
+  renderMembers();
+});
+
+/* 거절 — 사유를 고르게 한다 */
+if($('dCardRejectOpen')) $('dCardRejectOpen').addEventListener('click', function(){
+  var wrap=$('dCardReasons'); if(!wrap) return;
+  S.dCardReason = '';
+  wrap.innerHTML = CARD_REASONS.map(function(x){
+    return '<button type="button" class="btn btn-line cardRs" data-rs="'+x[0]+'" '
+         + 'style="width:100%;padding:9px 10px;font-size:12.5px;font-weight:700;text-align:left;">'+esc(x[1])+'</button>';
+  }).join('');
+  wrap.querySelectorAll('.cardRs').forEach(function(el){
+    el.addEventListener('click', function(){
+      S.dCardReason = el.dataset.rs;
+      wrap.querySelectorAll('.cardRs').forEach(function(x){
+        var on = (x.dataset.rs === S.dCardReason);
+        x.className = 'btn cardRs ' + (on ? 'btn-primary' : 'btn-line');
+      });
+      var mo=$('dCardMemo');
+      if(mo){ mo.style.display = (S.dCardReason === 'etc') ? 'block' : 'none'; if(S.dCardReason==='etc') mo.focus(); }
+    });
+  });
+  var mo=$('dCardMemo'); if(mo){ mo.value=''; mo.style.display='none'; }
+  $('dCardReject').style.display='block';
+});
+if($('dCardRejCancel')) $('dCardRejCancel').addEventListener('click', function(){
+  $('dCardReject').style.display='none'; S.dCardReason='';
+});
+if($('dCardRejGo')) $('dCardRejGo').addEventListener('click', async function(){
+  var code = S.dCardMemberCode || S.dMemberCode;
+  if(!code) return;
+  if(!S.dCardReason){ toast('거절 사유를 골라 주세요.'); return; }
+  var memo = ((($('dCardMemo')||{}).value)||'').trim();
+  if(S.dCardReason === 'etc' && memo.length < 2){ toast('기타 사유를 2자 이상 입력해 주세요.'); return; }
+  if(!confirm(code + ' 회원의 명함을 거절하시겠습니까?\n\n계정은 지워지지 않으며, 회원이 명함을 다시 제출할 수 있습니다.')) return;
+  var b=this; b.disabled=true; var old=b.textContent; b.textContent='처리 중…';
+  var r = await admFn('card-reject', { code: code, reject_code: S.dCardReason, reject_memo: memo });
+  b.disabled=false; b.textContent=old;
+  if(!r || !r.ok){ toast((r && r.message) || '거절에 실패했습니다.'); return; }
+  toast(r.message || '거절 처리했습니다.');
+  await openMember(code);
+  renderMembers();
+});
+
 async function openMember(code){
+  S.dCardMemberCode = code;
   S.dMemberCode = code;
   applyPurgeZone();
   const m = await getMember(code);
@@ -1750,6 +1970,7 @@ async function openMember(code){
   $('dAgreePrivacy').innerHTML = m.agreePrivacy ? yes : no;
   $('dAgreeMkt').innerHTML = m.agreeMkt ? '<span style="color:var(--ok);font-weight:700;">동의</span>' : '<span style="color:var(--muted);">미동의</span>';
   fillStateBox(m);
+  fillCardBox(m);
   $('dTotal').textContent = (m.total ?? 0)+'건';
   $('dLastWr').textContent = m.lastWr || '-';
   $('dReward').textContent = (m.reward ?? 0)+'건';
@@ -1785,7 +2006,11 @@ async function openMember(code){
     if(r && r.phone) $('dPhone').textContent = _full(r.phone);
   }).catch(function(){ $('dLastLogin').textContent='-'; });
 }
-function closeDrawer(){ $('overlay').classList.remove('on'); $('drawer').classList.remove('on'); }
+function closeDrawer(){
+  $('overlay').classList.remove('on'); $('drawer').classList.remove('on');
+  /* 받아 둔 사진을 브라우저 메모리에서 놓아 준다(안 하면 열 때마다 쌓인다) */
+  try{ _cardClearImg(); }catch(e){}
+}
 $('drawerClose').addEventListener('click', closeDrawer);
 $('overlay').addEventListener('click', closeDrawer);
 async function admFn(action, payload){
@@ -1793,7 +2018,8 @@ async function admFn(action, payload){
   var map = { 'set-status':'set-status', 'reset-password':'reset-password',
               'set-sms-optout':'set-sms-optout', 'member-extra':'member-extra',
               'delete-member':'delete',
-              'purge-member':'purge' };
+              'purge-member':'purge',
+              'card-approve':'card-approve', 'card-reject':'card-reject' };
   var op = map[action];
   if(!op) return { ok:false, message:'알 수 없는 요청입니다.' };
   try{ return await admApi('/v1/admin/members', { method:'POST', body: Object.assign({ op:op }, p) }); }
@@ -1937,7 +2163,7 @@ $('dPurge').addEventListener('click', async ()=>{
 $('dDelete').addEventListener('click', async ()=>{
   var code = S.dMemberCode, name = $('dName').textContent || '회원';
   if(!code) return;
-  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n· 이름·연락처 등 개인정보가 즉시 파기됩니다\n· 되돌릴 수 없습니다\n· 쿠폰과 미지급 리워드가 소멸됩니다\n· 쓰던 아이디는 즉시 다시 쓸 수 있게 됩니다\n\n같은 분이 다시 가입하시면 시공 실적은 이어지고,\n웰컴기프트는 다시 지급되지 않습니다.\n\n계속하시겠습니까?')) return;
+  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n· 이름·연락처 등 개인정보가 즉시 파기됩니다\n· 되돌릴 수 없습니다\n· 쿠폰과 미지급 리워드가 소멸됩니다\n· 쓰던 아이디는 즉시 다시 쓸 수 있게 됩니다\n· 제출한 명함 사진도 함께 파기됩니다\n\n같은 분이 다시 가입하셔도 이전 시공 실적은 승계되지 않고\n0건부터 새로 시작하며, 웰컴기프트도 다시 지급되지 않습니다.\n\n계속하시겠습니까?')) return;
   var btn=$('dDelete'); btn.disabled=true; btn.textContent='처리 중...';
   var res = await deleteMember(code);
   btn.disabled=false; btn.textContent='계정 탈퇴 처리';
