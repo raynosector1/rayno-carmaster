@@ -160,6 +160,159 @@ input::placeholder{color:#B4B4B8;}
 .pmv-soon .m{margin-top:5px;font-size:12.5px;color:#A0A0A6;line-height:1.6;}
 .pmv-soon .n{position:absolute;top:14px;right:16px;font-size:11px;font-weight:800;color:#B4B4BA;background:#F0F0F2;border-radius:99px;padding:4px 9px;}
 
+/* ═══════════════════════════════════════════════════════
+   화면 정비 — 2026-08-03
+   여기 있는 규칙은 화면 전체에 한꺼번에 걸린다.
+   낱개 요소에 style="" 을 더 붙이지 말고 되도록 여기서 손볼 것.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── 여백 눈금 ──
+   지금까지 22px·24px·20px·18px 이 뒤섞여 있었다.
+   앞으로는 이 눈금 안에서만 고른다. */
+:root{
+  --sp1:6px; --sp2:10px; --sp3:14px; --sp4:18px; --sp5:22px; --sp6:28px;
+  --r-sm:9px; --r-md:12px; --r-lg:16px;
+  --shadow-1:0 1px 2px rgba(17,17,17,.05);
+  --shadow-2:0 6px 20px rgba(17,17,17,.08);
+}
+
+/* 아주 넓은 화면에서 표가 끝없이 늘어나면 눈이 줄을 놓친다 */
+.view-wrap{max-width:1680px;width:100%;margin:0 auto;}
+.view.active{gap:var(--sp4);}
+
+/* ── 카드 ──
+   흰 배경 위 흰 카드라 경계가 없었다. 아주 옅은 선과 그림자를 준다. */
+.card{border:1px solid var(--line);box-shadow:var(--shadow-1);}
+.kpi{border:1px solid var(--line);box-shadow:var(--shadow-1);transition:border-color .15s,box-shadow .15s;}
+.kpi.warn{border:1px solid #FFCDB6;box-shadow:0 1px 2px rgba(255,90,0,.08);}
+.section-h{letter-spacing:-.35px;line-height:1.4;}
+
+/* ── 표 · 오와열 ──
+   grid 칸은 안쪽 내용이 길면 칸 폭을 밀어낸다(min-width 기본값이 auto라서).
+   그래서 머리글과 본문 줄이 어긋나 보였다. min-width:0 이 그것을 막는다. */
+.tr{column-gap:14px;}
+.tr > *{min-width:0;}
+.td > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.td{transition:background .12s;}
+.td:hover{background:#FAFAFB;}
+.th{letter-spacing:0;}
+.table{border:1px solid var(--line);box-shadow:var(--shadow-1);}
+/* 숫자는 자릿수가 흔들리지 않게 */
+.td,.th,.kpi .v,.num{font-variant-numeric:tabular-nums;font-feature-settings:'tnum';}
+
+/* ── 배지 ──
+   글자 옆에 놓일 때 밑줄이 어긋나 있었다. */
+.badge{display:inline-flex;align-items:center;justify-content:center;
+       line-height:1.45;vertical-align:middle;white-space:nowrap;}
+
+/* ── 버튼 ── */
+.btn{transition:filter .13s,background .13s,border-color .13s,opacity .13s;
+     display:inline-flex;align-items:center;justify-content:center;gap:6px;
+     line-height:1.2;white-space:nowrap;}
+.btn:hover{filter:brightness(.96);}
+.btn:active{filter:brightness(.92);transform:translateY(.5px);}
+.btn-soft:hover{border-color:#D6D6DA;background:#FAFAFB;}
+.btn-line:hover{background:#FAFAFB;}
+
+/* 키보드로 옮겨 다닐 때 어디에 있는지 보이게 */
+.btn:focus-visible,.finp:focus-visible,.filter:focus-visible,
+.nav-item:focus-visible,.linklike:focus-visible,.pg .p:focus-visible,
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--orange);outline-offset:2px;border-radius:8px;
+}
+.linklike{border-radius:6px;}
+.linklike:hover{text-decoration:underline;}
+
+/* ── 입력칸 ── */
+.finp{transition:border-color .13s,box-shadow .13s;}
+.finp:focus{box-shadow:0 0 0 3px rgba(17,17,17,.06);}
+.filter{transition:border-color .13s;}
+.filter:hover{border-color:#D6D6DA;}
+select.filter,select.finp{cursor:pointer;}
+
+/* ── 사이드바 ── */
+.nav-item{transition:background .13s,color .13s;}
+
+/* ── 서랍 ── */
+.drawer{box-shadow:0 24px 70px rgba(0,0,0,.24);}
+.drawer .db{scrollbar-gutter:stable;}
+.flabel{letter-spacing:0;}
+
+/* ── 스크롤 막대 ── */
+*::-webkit-scrollbar{width:11px;height:11px;}
+*::-webkit-scrollbar-thumb{background:#D8D8DC;border-radius:99px;border:3px solid transparent;background-clip:content-box;}
+*::-webkit-scrollbar-thumb:hover{background:#BFBFC5;background-clip:content-box;}
+*::-webkit-scrollbar-track{background:transparent;}
+
+/* ── 대시보드 ── */
+.kpi .d{min-height:17px;}
+.dash-todo{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;}
+.dash-t{display:flex;align-items:center;gap:12px;padding:15px 17px;border-radius:var(--r-md);
+        border:1px solid var(--line);background:#fff;cursor:pointer;transition:border-color .13s,box-shadow .13s;}
+.dash-t:hover{border-color:#C8C8CE;box-shadow:var(--shadow-1);}
+.dash-t .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+            font-size:15px;font-weight:800;flex-shrink:0;}
+.dash-t .tx{min-width:0;}
+.dash-t .tt{font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap;}
+.dash-t .nn{margin-top:2px;font-size:21px;font-weight:800;letter-spacing:-.6px;}
+.dash-t .go{margin-left:auto;color:#C4C4C8;font-size:16px;flex-shrink:0;}
+.dash-empty{padding:22px 0;text-align:center;font-size:13px;color:var(--muted);font-weight:600;}
+/* 목록 한 줄 */
+.dash-row{display:flex;align-items:center;justify-content:space-between;gap:12px;
+          padding:12px 0;border-bottom:1px solid #F4F4F5;}
+.dash-row:last-child{border-bottom:none;}
+.dash-row .l{min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.dash-row .nm{font-size:14px;font-weight:700;}
+.dash-row .sub{font-size:12px;color:var(--muted);}
+.dash-row .r{font-size:12px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+
+/* ═══ 문자 발송 화면 ═══
+   왼쪽에 '무엇을 정하는 칸인지', 오른쪽에 '고르는 자리'를 두는 구조.
+   칸이 많은 화면은 이렇게 줄을 세워야 눈이 헤매지 않는다. */
+#sdDrawer{width:960px;}
+@media (max-width:1000px){ #sdDrawer{width:94vw;} }
+.sdrow{display:grid;grid-template-columns:136px 1fr;gap:20px;align-items:start;
+       padding:18px 0;border-bottom:1px solid #F2F2F4;}
+.sdrow:first-of-type{padding-top:4px;}
+.sdrow:last-of-type{border-bottom:none;}
+.sdrow-l{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:800;
+         color:var(--ink);padding-top:9px;}
+.sdrow-l .ic{width:26px;height:26px;border-radius:8px;background:#F2F2F4;color:#6A6A70;
+             display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.sdrow-r{min-width:0;}
+.sdhint{margin-top:7px;font-size:11.5px;color:var(--muted);line-height:1.65;}
+
+/* 두 칸 — 왼쪽 고르기 / 오른쪽 휴대폰 */
+.sdsplit{display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start;}
+@media (max-width:1000px){ .sdsplit{grid-template-columns:1fr;} }
+
+/* 휴대폰 모양 미리보기 — 실제로 받는 화면과 비슷하게 보여 준다 */
+.sdphone{border:1.5px solid var(--line);border-radius:22px;padding:14px 13px 12px;background:#fff;}
+.sdphone .hd{display:flex;align-items:center;justify-content:center;gap:6px;
+             font-size:12.5px;font-weight:800;color:#6A6A70;padding-bottom:11px;
+             border-bottom:1px solid #F2F2F4;}
+.sdphone .scr{background:#F4F5F7;border-radius:14px;padding:13px 12px;margin-top:12px;min-height:210px;
+              display:flex;flex-direction:column;}
+.sdphone .sub{font-size:11.5px;font-weight:800;color:#6A6A70;margin-bottom:7px;}
+.sdphone .bub{background:#D9EAF8;border-radius:13px;padding:12px 13px;font-size:13px;line-height:1.75;
+              white-space:pre-wrap;word-break:break-word;color:var(--ink);}
+.sdphone .bub.empty{background:transparent;color:#A6A6AC;font-weight:600;text-align:center;padding:34px 6px;}
+.sdphone .byte{margin-top:auto;padding-top:10px;text-align:right;font-size:11.5px;font-weight:800;color:#8A8A90;}
+.sdphone .note{margin-top:9px;font-size:11px;color:var(--muted);line-height:1.55;}
+
+/* 광고 표기 점검 */
+.sdchk{display:flex;align-items:center;gap:7px;font-size:12.5px;line-height:1.6;color:var(--muted);}
+.sdchk .mk{width:16px;height:16px;border-radius:50%;background:#E4E4E7;color:#fff;flex-shrink:0;
+           display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.sdchk.on{color:var(--ok);font-weight:700;}
+.sdchk.on .mk{background:var(--ok);}
+
+/* 맨 아래 발송 막대 */
+.sdfoot{margin-top:22px;padding-top:18px;border-top:1.5px solid var(--line);text-align:center;}
+.sdfoot .sum{font-size:14px;font-weight:800;color:var(--ink);}
+.sdfoot .sum b{color:var(--orange);}
+.sdfoot .btns{margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+
 html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤바를 밝게 그린다 */
 
 .overlay{position:fixed;inset:0;background:rgba(17,17,17,.45);z-index:40;display:none;}
@@ -186,12 +339,6 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
 .pk{font-size:11.5px;color:var(--muted);font-weight:600;}
 .pv{font-size:14.5px;font-weight:700;margin-top:3px;}
-.switch{position:relative;width:44px;height:26px;flex-shrink:0;cursor:pointer;display:inline-block;}
-.switch input{display:none;}
-.switch .tk{position:absolute;inset:0;background:#D6D6DA;border-radius:999px;transition:.2s;}
-.switch .tk:before{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
-.switch input:checked + .tk{background:var(--orange);}
-.switch input:checked + .tk:before{transform:translateX(18px);}
 .promo-ico{width:46px;height:46px;border-radius:13px;background:rgba(255,90,0,.1);color:var(--orange);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .seg-ctl{display:flex;gap:8px;}
 .seg-ctl .sg{flex:1;text-align:center;padding:11px 0;border-radius:10px;font-size:13.5px;font-weight:700;background:#fff;border:1.5px solid var(--line);color:var(--muted);cursor:pointer;}
@@ -289,17 +436,26 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <!-- ===== 대시보드 ===== -->
       <section class="view active" id="view-dashboard">
         <div class="kpis">
-          <div class="kpi"><div class="l">총 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div><div class="d up">—</div></div>
-          <div class="kpi"><div class="l">이번 달 신규 가입</div><div class="v"><span id="kpiMonth">0</span><span> 명</span></div><div class="d up">—</div></div>
-          <div class="kpi warn"><div class="l">지급 전 리워드</div><div class="v" style="color:var(--orange);"><span id="kpiPending">0</span><span style="color:#C89A82;"> 건</span></div><div class="d hot">—</div></div>
-          <div class="kpi"><div class="l">이번 달 시공</div><div class="v"><span id="kpiInstall">0</span><span> 건</span></div><div class="d flat">—</div></div>
+          <div class="kpi"><div class="l">총 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div><div class="d flat" id="kpiTotalSub">—</div></div>
+          <div class="kpi"><div class="l">이번 달 신규 가입</div><div class="v"><span id="kpiMonth">0</span><span> 명</span></div><div class="d flat" id="kpiMonthSub">—</div></div>
+          <div class="kpi warn"><div class="l">지급 전 리워드</div><div class="v" style="color:var(--orange);"><span id="kpiPending">0</span><span style="color:#C89A82;"> 건</span></div><div class="d hot" id="kpiPendingSub">—</div></div>
+          <div class="kpi"><div class="l">이번 달 시공</div><div class="v"><span id="kpiInstall">0</span><span> 건</span></div><div class="d flat" id="kpiInstallSub">—</div></div>
         </div>
-        <div style="display:flex;gap:20px;">
-          <div class="card" style="padding:22px 24px;flex:1.7;">
+        <!-- 오늘 처리할 일 — 있을 때만 보인다 -->
+        <div class="card" id="dashTodoCard" style="display:none;padding:var(--sp5) 24px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:var(--sp3);">
+            <div class="section-h">오늘 처리할 일</div>
+            <span style="font-size:12px;color:var(--muted);font-weight:600;">눌러서 바로 이동</span>
+          </div>
+          <div class="dash-todo" id="dashTodo"></div>
+        </div>
+
+        <div style="display:flex;gap:var(--sp4);">
+          <div class="card" style="padding:var(--sp5) 24px;flex:1.7;">
             <div style="display:flex;justify-content:space-between;align-items:center;"><div class="section-h">월별 가입 추이</div><div style="font-size:12px;color:var(--muted);font-weight:600;">최근 8개월</div></div>
             <div class="chart" id="signupChart" style="align-items:center;justify-content:center;color:var(--muted);font-size:13px;font-weight:600;">데이터가 없습니다</div>
           </div>
-          <div class="card" style="padding:22px 24px;flex:1;">
+          <div class="card" style="padding:var(--sp5) 24px;flex:1;">
             <div class="section-h">리워드 지급 현황</div>
             <div style="display:flex;align-items:center;gap:20px;margin-top:22px;">
               <div class="donut" id="rewardDonut"><div class="in"><span id="kpiRewardTotal" style="font-size:20px;font-weight:800;">0</span><span style="font-size:10px;color:var(--muted);font-weight:600;">총 건수</span></div></div>
@@ -311,14 +467,23 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:20px;">
-          <div class="card" style="padding:22px 24px;flex:1.4;">
-            <div class="section-h" style="margin-bottom:16px;">최근 가입 카마스터</div>
+        <div style="display:flex;gap:var(--sp4);">
+          <div class="card" style="padding:var(--sp5) 24px;flex:1.4;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp3);">
+              <div class="section-h">최근 가입 카마스터</div>
+              <span class="linklike" data-goview="members" style="font-size:12.5px;">회원 관리 ›</span>
+            </div>
             <div id="recentList"></div>
           </div>
-          <div class="card" style="padding:22px 24px;flex:1;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><div class="section-h">지급 전 리워드</div><span class="badge b-warn" id="dashPendingBadge">0</span></div>
-            <div id="pendingList" style="display:flex;flex-direction:column;gap:10px;"></div>
+          <div class="card" style="padding:var(--sp5) 24px;flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp3);">
+              <div class="section-h">지급 전 리워드 <span class="badge b-warn" id="dashPendingBadge" style="margin-left:4px;">0</span></div>
+              <span class="linklike" data-goview="promotions" style="font-size:12.5px;">지급 관리 ›</span>
+            </div>
+            <div id="pendingList"></div>
+            <div style="margin-top:var(--sp3);font-size:11.5px;color:var(--muted);line-height:1.6;">
+              지급은 <b style="color:var(--ink);">프로모션·리워드</b> 화면에서 처리합니다. 비즈콘 발송 후 지급 완료로 기록해 주세요.
+            </div>
           </div>
         </div>
       </section>
@@ -351,7 +516,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div id="mTodo" style="margin-top:10px;display:none;gap:8px;flex-wrap:wrap;"></div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">
+          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(150px,1.1fr) 62px;">
             <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
           </div>
           <div id="membersRows"></div>
@@ -1063,78 +1228,130 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
   <div class="dh"><div class="t">문자 발송</div><button class="x" id="sdClose">✕</button></div>
   <div class="db">
 
-    <div id="sdWarn" style="display:none;background:#FFF4E5;border:1px solid var(--orange);border-radius:12px;padding:13px 15px;font-size:12.5px;line-height:1.7;"></div>
+    <div id="sdWarn" style="display:none;background:#FFF4E5;border:1px solid var(--orange);border-radius:12px;padding:13px 15px;font-size:12.5px;line-height:1.7;margin-bottom:6px;"></div>
 
-    <!-- 발송 유형 — 왼쪽이 단건, 오른쪽이 대량 -->
-    <div style="display:flex;gap:8px;">
-      <button type="button" class="btn btn-line sdTab" data-mode="manual" style="flex:1;padding:13px 0;font-size:14px;">단건 발송</button>
-      <button type="button" class="btn btn-line sdTab" data-mode="bulk" style="flex:1;padding:13px 0;font-size:14px;">대량 발송</button>
-    </div>
-    <div id="sdModeNote" style="margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6;"></div>
-
-    <div class="flabel" style="margin-top:16px;">받는 사람</div>
-
-    <div id="sdBulk" style="margin-top:12px;">
-      <div style="background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
-        <div style="font-size:12.5px;color:var(--muted);line-height:1.7;">
-          양식을 내려받아 <b>성함</b>과 <b>연락처</b>를 채운 뒤 그대로 올려 주세요.<br>
-          엑셀에서 저장할 때 <b>CSV UTF-8(쉼표로 분리)</b>을 골라야 이름이 깨지지 않습니다.
+    <!-- 발송 유형 -->
+    <div class="sdrow">
+      <div class="sdrow-l"><span class="ic">1</span>발송 유형</div>
+      <div class="sdrow-r">
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-line sdTab" data-mode="manual" style="flex:1;padding:12px 0;font-size:13.5px;">단건 발송</button>
+          <button type="button" class="btn btn-line sdTab" data-mode="bulk" style="flex:1;padding:12px 0;font-size:13.5px;">대량 발송</button>
         </div>
-        <button class="btn btn-line" id="sdTpl" style="margin-top:11px;width:100%;padding:11px 0;font-size:13px;">양식 내려받기</button>
-        <input type="file" id="sdFile" accept=".csv,text/csv" style="margin-top:9px;width:100%;font-size:12.5px;font-family:inherit;">
+        <div id="sdModeNote" class="sdhint"></div>
       </div>
     </div>
 
-    <div id="sdManual" style="margin-top:12px;display:none;">
-      <div id="sdManualRows"></div>
-      <div style="margin-top:7px;font-size:11.5px;color:var(--muted);">성함은 비워 두어도 됩니다. 비우면 문자의 {이름} 자리에 '고객'이 들어갑니다.</div>
-    </div>
-
-    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-      <span id="sdCount" class="badge b-off">대상 0건</span>
-      <span id="sdCountNote" style="font-size:11.5px;color:var(--muted);"></span>
-    </div>
-    <div id="sdRowsPrev" style="margin-top:8px;"></div>
-
-    <div class="flabel" style="margin-top:20px;">보낼 문자</div>
-    <select class="finp selc" id="sdPick" style="padding:11px 13px;font-size:13px;"><option value="">템플릿을 골라 주세요</option></select>
-    <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.6;">
-      문안은 여기서 고칠 수 없습니다. 내용을 바꾸시려면 <b>문자 템플릿</b>에서 수정하거나 새로 만들어 주세요.
-    </div>
-
-    <!-- 미리보기 — 실제로 나갈 문구. 읽기만 한다 -->
-    <div class="flabel" style="margin-top:18px;">문자 미리보기</div>
-    <div id="sdSubjectRow" style="display:none;margin-bottom:8px;font-size:12.5px;color:var(--muted);">
-      제목 · <b id="sdSubjectText" style="color:var(--ink);"></b>
-    </div>
-    <div id="sdPreview" style="background:#F7F7F8;border:1.5px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13.5px;line-height:1.85;white-space:pre-wrap;color:var(--ink);min-height:80px;">템플릿을 고르면 여기에 보입니다.</div>
-    <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-      <span id="sdKind" class="badge b-off">단문 (SMS)</span>
-      <span id="sdBytes" style="font-size:12px;font-weight:700;color:var(--muted);">0 / 2,000 바이트</span>
-    </div>
-    <div style="margin-top:6px;font-size:11.5px;color:var(--muted);">첫 번째 받는 사람 기준으로 {이름}·{수신거부} 자리를 채워 보여 줍니다.</div>
-
-    <div style="margin-top:14px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
-      <div style="font-size:12.5px;font-weight:800;color:var(--ink);">광고 문자 필수 표기</div>
-      <div style="margin-top:9px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.6;">
-        <div id="sdChk1" style="color:var(--muted);">· 맨 앞에 <b>(광고)</b> 표기</div>
-        <div id="sdChk2" style="color:var(--muted);">· 회사명 또는 서비스명 표기</div>
-        <div id="sdChk3" style="color:var(--muted);">· 하단에 <b>무료수신거부</b> 표기</div>
+    <!-- 받는 사람 -->
+    <div class="sdrow">
+      <div class="sdrow-l"><span class="ic">2</span>받는 사람</div>
+      <div class="sdrow-r">
+        <div id="sdBulk">
+          <div style="background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+            <div style="font-size:12.5px;color:var(--muted);line-height:1.7;">
+              양식을 내려받아 <b>성함</b>과 <b>연락처</b>를 채운 뒤 그대로 올려 주세요.<br>
+              엑셀에서 저장할 때 <b>CSV UTF-8(쉼표로 분리)</b>을 골라야 이름이 깨지지 않습니다.
+            </div>
+            <button class="btn btn-line" id="sdTpl" style="margin-top:11px;width:100%;padding:11px 0;font-size:13px;">양식 내려받기</button>
+            <input type="file" id="sdFile" accept=".csv,text/csv" style="margin-top:9px;width:100%;font-size:12.5px;font-family:inherit;">
+          </div>
+        </div>
+        <div id="sdManual" style="display:none;">
+          <div id="sdManualRows"></div>
+          <div class="sdhint">성함은 비워 두어도 됩니다. 비우면 문자의 {이름} 자리에 '고객'이 들어갑니다.</div>
+        </div>
       </div>
     </div>
 
-    <!-- 발송 대상 점검 — 미리보기 아래 -->
-    <div class="flabel" style="margin-top:20px;">발송 대상 점검</div>
-    <button class="btn btn-line" id="sdCheck" style="width:100%;padding:13px 0;font-size:14px;font-weight:800;">발송 대상 점검하기</button>
-    <div id="sdResult" style="display:none;margin-top:11px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.9;"></div>
-
-    <!-- 최하단 · 오른쪽 -->
-    <div style="margin-top:26px;padding-top:18px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-      <button class="btn btn-soft" id="sdCancel" style="min-width:120px;padding:15px 22px;font-size:15px;">취소</button>
-      <button class="btn btn-primary" id="sdSend" style="min-width:170px;padding:15px 26px;font-size:15px;font-weight:800;opacity:.45;pointer-events:none;">문자 발송</button>
+    <!-- 전송 대상 -->
+    <div class="sdrow">
+      <div class="sdrow-l"><span class="ic">3</span>전송 대상</div>
+      <div class="sdrow-r">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:baseline;gap:7px;">
+            <span id="sdCount" style="font-size:22px;font-weight:800;letter-spacing:-.6px;">0</span>
+            <span style="font-size:13px;color:var(--muted);font-weight:700;">명</span>
+            <span id="sdCountNote" style="margin-left:6px;font-size:11.5px;color:var(--muted);"></span>
+          </div>
+          <button class="btn btn-soft" id="sdReset" style="padding:9px 18px;font-size:12.5px;">초기화</button>
+        </div>
+        <div id="sdRowsPrev" style="margin-top:10px;"></div>
+      </div>
     </div>
-    <div style="margin-top:9px;font-size:11.5px;color:var(--muted);line-height:1.6;text-align:right;">
-      발송 대상 점검을 마쳐야 발송할 수 있습니다. 실제 요금이 발생합니다.
+
+    <!-- 문자 내용 -->
+    <div class="sdrow">
+      <div class="sdrow-l"><span class="ic">4</span>문자 내용</div>
+      <div class="sdrow-r">
+        <div class="sdsplit">
+          <div>
+            <select class="finp selc" id="sdPick" style="padding:12px 13px;font-size:13.5px;"><option value="">템플릿을 골라 주세요</option></select>
+            <div class="sdhint">
+              문안은 여기서 고칠 수 없습니다. 내용을 바꾸시려면 <b>문자 템플릿</b>에서 수정하거나 새로 만들어 주세요.
+            </div>
+            <div id="sdSubjectRow" style="display:none;margin-top:12px;font-size:12.5px;color:var(--muted);">
+              장문 제목 · <b id="sdSubjectText" style="color:var(--ink);"></b>
+            </div>
+
+            <div style="margin-top:14px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+              <div style="font-size:12.5px;font-weight:800;color:var(--ink);">광고 문자 필수 표기</div>
+              <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+                <div id="sdChk1" class="sdchk"><span class="mk">✓</span><span>맨 앞에 <b>(광고)</b> 표기</span></div>
+                <div id="sdChk2" class="sdchk"><span class="mk">✓</span><span>회사명 또는 서비스명 표기</span></div>
+                <div id="sdChk3" class="sdchk"><span class="mk">✓</span><span>하단에 <b>무료수신거부</b> 표기</span></div>
+              </div>
+              <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.6;">
+                광고성 문자는 정보통신망법 제50조에 따라 위 표기가 필요하며,<br>
+                수신동의를 받지 않은 번호에는 보낼 수 없습니다.
+              </div>
+            </div>
+          </div>
+
+          <!-- 받는 분이 보게 될 화면 -->
+          <div class="sdphone">
+            <div class="hd"><span id="sdKind">단문 (SMS)</span></div>
+            <div class="scr">
+              <div id="sdPreview" class="bub empty">템플릿을 고르면<br>여기에 보입니다</div>
+              <div class="byte"><span id="sdBytes">0 / 90 byte</span></div>
+            </div>
+            <div class="note">첫 번째 받는 분 기준으로 {이름}·{수신거부}를 채워 보여 줍니다. 실제 화면은 기기마다 조금 다를 수 있습니다.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 발신번호 -->
+    <div class="sdrow">
+      <div class="sdrow-l"><span class="ic">5</span>발신번호</div>
+      <div class="sdrow-r">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:15px;font-weight:800;">1588-8695</span>
+          <span class="badge b-ok">등록 완료</span>
+        </div>
+        <div class="sdhint">발신번호는 사전 등록된 번호로 고정됩니다. 바꾸시려면 담당자에게 문의해 주세요.</div>
+      </div>
+    </div>
+
+    <!-- 발송 전 점검 -->
+    <div class="sdrow">
+      <div class="sdrow-l"><span class="ic">6</span>발송 전 점검</div>
+      <div class="sdrow-r">
+        <button class="btn btn-line" id="sdCheck" style="width:100%;padding:13px 0;font-size:14px;font-weight:800;">발송 대상 점검하기</button>
+        <div class="sdhint">수신거부한 번호와 잘못된 번호를 걸러냅니다. 점검을 마쳐야 발송할 수 있습니다.</div>
+        <div id="sdResult" style="display:none;margin-top:11px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:12.5px;line-height:1.9;"></div>
+      </div>
+    </div>
+
+    <!-- 맨 아래 -->
+    <div class="sdfoot">
+      <div class="sum">발송 내역 : <span id="sdSum">단문 0건</span></div>
+      <div class="btns">
+        <button class="btn btn-soft" id="sdCancel" style="min-width:130px;padding:15px 24px;font-size:15px;">취소</button>
+        <button class="btn btn-primary" id="sdSend" style="min-width:190px;padding:15px 30px;font-size:15px;font-weight:800;opacity:.45;pointer-events:none;">문자 발송하기</button>
+      </div>
+      <div style="margin-top:11px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+        실제 요금이 발생하며 되돌릴 수 없습니다.
+      </div>
     </div>
   </div>
 </div>
@@ -1382,13 +1599,16 @@ async function loadDashboard(){
      다만 '이번 달 가입'과 가입 추이 그래프는 그대로 둔다 —
      그건 '이번 달에 몇 명이 가입했나'를 세는 것이라 나중에 탈퇴했더라도 가입은 가입이다. */
   var alive = all.filter(function(x){ return x.status !== 'withdrawn'; });
-  var recent = alive.slice(0,6).map(function(x){ return { name:x.name||'-', office:x.office||'-', ago:_ago(_ts(x)) }; });
+  var recent = alive.slice(0,6).map(function(x){
+    return { name:x.name||'-', office:_officeLab(x)||'-', ago:_ago(_ts(x)), state:_memberState(x) };
+  });
   /* 지급 사유는 리워드 종류에서 가져온다.
      예전에는 '가입 축하 웰컴기프트'를 그냥 박아둔 탓에
      프로모션으로 생긴 리워드까지 웰컴기프트로 보였다.
      리워드 관리 화면과 같은 기준을 쓴다. */
-  var pending = rewards.filter(function(r){ return r.status==='pending'; }).slice(0,8).map(function(x){
+  var pending = rewards.filter(function(r){ return r.status==='pending'; }).slice(0,6).map(function(x){
     return { name:(x.carmasters&&x.carmasters.name)||'회원',
+             at:(x.created_at||''),
              reward:x.item_name||'리워드',
              reason: x.type==='welcome'   ? '가입 축하 웰컴기프트'
                    : x.type==='milestone' ? '시공 실적 달성'
@@ -1533,15 +1753,26 @@ $('globalSearch').addEventListener('keydown', async e=>{ if(e.key!=='Enter')retu
 /* ── 대시보드 ── */
 async function renderDashboard(){
   const d = await loadDashboard();
-  $('recentList').innerHTML = !d.recent.length ? EMPTY('최근 가입 내역이 없습니다') : d.recent.map(r=>
-    `<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #F2F2F2;">
-       <div><span style="font-size:14px;font-weight:700;">${esc(r.name)}</span> <span style="font-size:12px;color:var(--muted);">· ${esc(r.office)}</span></div>
-       <span style="font-size:12px;color:var(--muted);">${esc(r.ago)}</span></div>`).join('');
-  $('pendingList').innerHTML = !d.pending.length ? EMPTY('승인 대기 리워드가 없습니다') : d.pending.map(p=>
-    `<div style="display:flex;justify-content:space-between;align-items:center;">
-       <div><div style="font-size:13.5px;font-weight:700;">${esc(p.name)} · ${esc(p.reward)}</div><div style="font-size:11.5px;color:var(--muted);margin-top:1px;">${esc(p.reason)}</div></div>
-       <button class="btn btn-primary" style="padding:7px 14px;font-size:12px;">승인</button></div>`).join('');
-  $('pendingList').querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{ b.textContent='완료'; b.style.background='#E5E5E7'; b.style.color='#B0B0B4'; toast('승인 처리했습니다.'); }));
+  var stBadge=function(st){
+    if(st==='정상')   return '<span class="badge b-ok">정상</span>';
+    if(st==='검토중') return '<span class="badge b-warn">검토중</span>';
+    if(st==='거절')   return '<span class="badge b-err">거절</span>';
+    if(st==='정지')   return '<span class="badge b-off">정지</span>';
+    return '';
+  };
+  $('recentList').innerHTML = !d.recent.length
+    ? '<div class="dash-empty">최근 가입 내역이 없습니다</div>'
+    : d.recent.map(r=>
+    `<div class="dash-row"><div class="l"><span class="nm">${esc(r.name)}</span>${stBadge(r.state)}<span class="sub">${esc(r.office)}</span></div>
+       <span class="r">${esc(r.ago)}</span></div>`).join('');
+
+  /* 지급은 프로모션·리워드 화면에서만 한다.
+     여기 있던 [승인] 단추는 눌러도 아무 데도 보내지 않고 글자만 바뀌는 흉내였다. */
+  $('pendingList').innerHTML = !d.pending.length
+    ? '<div class="dash-empty">지급 전 리워드가 없습니다</div>'
+    : d.pending.map(p=>
+    `<div class="dash-row"><div class="l"><span class="nm">${esc(p.name)}</span><span class="sub">${esc(p.reward)} · ${esc(p.reason)}</span></div>
+       <span class="r">${esc(p.at ? _ago(p.at) : '')}</span></div>`).join('');
   var now=new Date(), ym=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
   var monthCount=(d.all||[]).filter(function(m){ return _ts(m).slice(0,7)===ym; }).length;
   var rw=d.rewards||[];
@@ -1552,11 +1783,53 @@ async function renderDashboard(){
   setTxt('kpiRewardTotal',rw.length); setTxt('kpiRwDone',done); setTxt('kpiRwPending',pend); setTxt('kpiRwAuto',auto);
   fillDonut(done,pend,auto);
   renderSignupChart(d.all||[]);
+
+  /* ── KPI 밑줄 · 오늘 처리할 일 ──
+     숫자만 있으면 '많은 건지 적은 건지' 알 수 없다. 견줄 값을 함께 적는다. */
+  var alive2 = d.alive||[];
+  var cs=function(st){ return alive2.filter(function(m){ return _memberState(m)===st; }).length; };
+  var okN=cs('정상'), waitN=cs('검토중'), rejN=cs('거절'), offN=cs('정지');
+  var offiN=alive2.filter(function(m){ return m.office_approval==='pending'; }).length;
+
+  var prev=new Date(now.getFullYear(), now.getMonth()-1, 1);
+  var pym=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');
+  var prevCount=(d.all||[]).filter(function(m){ return _ts(m).slice(0,7)===pym; }).length;
+  var diff=monthCount-prevCount;
+
+  setTxt('kpiTotalSub', '정상 '+okN+' · 검토중 '+waitN+(offN?(' · 정지 '+offN):''));
+  var ms=$('kpiMonthSub');
+  if(ms){
+    ms.textContent = prevCount ? ('지난달 '+prevCount+'명 · '+(diff>0?('+'+diff):(diff<0?String(diff):'변동 없음'))) : '지난달 없음';
+    ms.className = 'd ' + (diff>0 ? 'up' : (diff<0 ? 'hot' : 'flat'));
+  }
+  /* 가장 오래 기다린 건이 며칠째인지가 '급한 정도'를 말해 준다 */
+  var oldest=rw.filter(function(r){ return r.status==='pending' && r.created_at; })
+               .map(function(r){ return String(r.created_at); }).sort()[0];
+  var waitDay = oldest ? Math.floor((Date.now()-new Date(oldest).getTime())/86400000) : 0;
+  setTxt('kpiPendingSub', pend ? ('가장 오래 기다린 건 '+waitDay+'일째') : '밀린 건 없음');
+  setTxt('kpiInstallSub', '누적 리워드 '+rw.length+'건');
+
+  var todo=[
+    { n:waitN, t:'명함 확인 대기', view:'members', flt:'검토중',   c:'var(--orange)', bg:'rgba(255,90,0,.10)' },
+    { n:rejN,  t:'명함 거절 · 재제출 안 함', view:'members', flt:'거절', c:'var(--err)', bg:'rgba(192,64,58,.09)' },
+    { n:offiN, t:'영업소 확정 필요', view:'members', flt:'__office', c:'#5A5A5E', bg:'#F0F0F2' },
+    { n:pend,  t:'지급 전 리워드', view:'promotions', flt:'', c:'var(--orange)', bg:'rgba(255,90,0,.10)' }
+  ].filter(function(x){ return x.n>0; });
+  var tc=$('dashTodoCard'), tb=$('dashTodo');
+  if(tc && tb){
+    tc.style.display = todo.length ? '' : 'none';
+    tb.innerHTML = todo.map(function(x){
+      return '<div class="dash-t" data-goview="'+x.view+'" data-flt="'+esc(x.flt)+'">'
+           + '<span class="ic" style="background:'+x.bg+';color:'+x.c+';">!</span>'
+           + '<span class="tx"><span class="tt">'+esc(x.t)+'</span><span class="nn" style="display:block;">'+x.n+'건</span></span>'
+           + '<span class="go">›</span></div>';
+    }).join('');
+  }
 }
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px');
+  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(150px,1.1fr) 62px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -1654,7 +1927,7 @@ function applyMemberFilters(){
     return '<span class="badge b-off">정지</span>';
   };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">'+
+    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(150px,1.1fr) 62px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
@@ -4129,13 +4402,16 @@ function sdValidate(){
   var filled=smsFillPreview(body, first0 && first0.name);
   var n=smBytes(filled), isLong=n>SMS_SHORT;
 
-  $('sdBytes').textContent = n.toLocaleString()+' / '+SMS_MAX.toLocaleString()+' 바이트';
-  $('sdBytes').style.color = (n>SMS_MAX) ? 'var(--err)' : 'var(--muted)';
+  /* 남은 자리를 보여 줘야 하므로, 단문일 때는 90 바이트를 기준으로 센다 */
+  var cap = isLong ? SMS_MAX : SMS_SHORT;
+  $('sdBytes').textContent = n.toLocaleString()+' / '+cap.toLocaleString()+' byte';
+  $('sdBytes').style.color = (n>SMS_MAX) ? 'var(--err)' : '#8A8A90';
   $('sdKind').textContent = isLong ? '장문 (LMS)' : '단문 (SMS)';
-  $('sdKind').className = 'badge ' + (isLong ? 'b-warn' : 'b-off');
 
-  $('sdCount').textContent = '대상 '+SD.rows.length.toLocaleString()+'건';
-  $('sdCount').className = 'badge ' + (SD.rows.length ? 'b-ok' : 'b-off');
+  $('sdCount').textContent = SD.rows.length.toLocaleString();
+  $('sdCount').style.color = SD.rows.length ? 'var(--ink)' : '#B4B4B8';
+  var sum=$('sdSum');
+  if(sum) sum.innerHTML = (isLong ? '장문' : '단문') + ' <b>' + SD.rows.length.toLocaleString() + '건</b>';
   sdRenderRows();
 
   var ok1=/^\s*\(광고\)/.test(body);
@@ -4143,11 +4419,12 @@ function sdValidate(){
   var ok3=/무료\s*수신\s*거부|무료수신거부|080|\{수신거부\}/.test(body);
   [['sdChk1',ok1],['sdChk2',ok2],['sdChk3',ok3]].forEach(function(x){
     var el=$(x[0]); if(!el) return;
-    el.style.color = x[1] ? 'var(--ok)' : 'var(--muted)';
-    el.style.fontWeight = x[1] ? '700' : '400';
+    el.className = 'sdchk' + (x[1] ? ' on' : '');
   });
 
-  $('sdPreview').textContent = body.trim() ? filled : '템플릿을 고르면 여기에 보입니다.';
+  var pv=$('sdPreview');
+  if(body.trim()){ pv.className='bub'; pv.textContent=filled; }
+  else { pv.className='bub empty'; pv.innerHTML='템플릿을 고르면<br>여기에 보입니다'; }
   /* 장문일 때만 제목이 실제로 나가므로, 그때만 보여 준다 */
   var sr=$('sdSubjectRow');
   if(sr){
@@ -4434,7 +4711,6 @@ $('sdOverlay').addEventListener('click', closeSendDrawer);
 document.querySelectorAll('.sdTab').forEach(function(b){
   b.addEventListener('click', function(){ sdSetMode(b.dataset.mode); });
 });
-['sdSubject','sdBody'].forEach(function(i){ $(i).addEventListener('input', sdCollect); });
 
 $('sdPick').addEventListener('change', function(){
   /* 문안은 화면에서 고칠 수 없다. 고른 템플릿을 그대로 들고 간다.
@@ -4468,6 +4744,16 @@ $('sdFile').addEventListener('change', async function(){
     sdValidate();
     toast(rows.length ? (rows.length+'건을 읽었습니다.') : '읽을 수 있는 줄이 없습니다.');
   }catch(e){ toast((e && e.message) || '파일을 읽지 못했습니다.'); }
+});
+
+$('sdReset').addEventListener('click', function(){
+  /* 받는 사람만 비운다. 고른 템플릿은 그대로 두는 편이 다시 넣기 편하다. */
+  SD.rows=[]; SD.pre=null;
+  $('sdFile').value='';
+  $('sdResult').style.display='none';
+  $('sdCountNote').textContent='';
+  if(SD.mode==='manual') sdBuildManual();
+  sdValidate();
 });
 
 $('sdCheck').addEventListener('click', async function(){
@@ -4637,6 +4923,19 @@ $('dLogLink').addEventListener('click', function(e){
   closeDrawer();
   $('lgFrom').value=''; $('lgTo').value=''; $('lgAction').value=''; $('lgResult').value='';
   $('lgTarget').value = code;
+  /* 대시보드에서 다른 화면으로 바로 넘어가기 */
+  document.addEventListener('click', function(e){
+    var g = e.target.closest && e.target.closest('[data-goview]');
+    if(!g) return;
+    var v = g.dataset.goview, f = g.dataset.flt || '';
+    var nv = document.querySelector('.nav-item[data-view="'+v+'"]');
+    if(nv) nv.click();
+    if(v==='members' && f){
+      var sel=$('fltStatus'); if(sel) sel.value=f;
+      S.mPage=1; try{ applyMemberFilters(); }catch(err){}
+    }
+  });
+
   var nav = document.querySelector('.nav-item[data-view="logs"]');
   if(nav) nav.click();
   renderLogs(1);
