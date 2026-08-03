@@ -84,6 +84,18 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
       <div id="greetSub" style="margin-top:5px;font-size:13.5px;color:#8A8A8E;font-weight:600;">오늘의 실적을 확인해 보세요</div>
     </div>
 
+    <!-- ===== 명함 확인 상태 (승인된 회원에게는 보이지 않는다) ===== -->
+    <div id="cardBox" style="display:none;margin-top:16px;border:1px solid #FFE0CE;background:#FFF6F1;border-radius:16px;padding:16px 18px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <span id="cardBoxIcon" style="width:22px;height:22px;border-radius:999px;background:#FF5A00;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">!</span>
+        <span id="cardBoxTitle" style="font-size:15.5px;font-weight:800;color:#111;letter-spacing:-0.3px;">명함을 확인하고 있습니다</span>
+      </div>
+      <div id="cardBoxDesc" style="margin-top:9px;font-size:13px;line-height:1.7;color:#6A6A6E;font-weight:500;">—</div>
+      <input id="recardInput" type="file" accept="image/*" style="display:none;">
+      <div id="cardBoxState" style="display:none;margin-top:9px;font-size:12.5px;font-weight:600;color:#8A8A8E;line-height:1.5;"></div>
+      <button id="cardBoxBtn" data-act="recard" style="display:none;width:100%;margin-top:14px;padding:14px 0;border:none;border-radius:12px;background:#111;color:#fff;font-size:14.5px;font-weight:800;font-family:inherit;cursor:pointer;">명함 다시 올리기</button>
+    </div>
+
     <!-- ===== 멤버십 카드 (signature) ===== -->
     <div class="mcard" style="margin-top:16px;">
       <div class="mcard-slash"></div>
@@ -198,6 +210,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
       <div class="link" data-goto="home" style="width:38px;height:38px;border-radius:50%;background:#fff;border:1.5px solid #EDEDEF;display:flex;align-items:center;justify-content:center;color:#111;font-size:19px;">‹</div>
       <span style="font-size:20px;font-weight:800;color:#111;">리워드</span>
     </div>
+    <div data-lock="1" style="display:none;margin-top:20px;border:1px solid #EDEDEF;background:#fff;border-radius:16px;padding:34px 22px;text-align:center;"><div style="width:52px;height:52px;margin:0 auto;border-radius:16px;background:#F5F5F6;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></div><div style="margin-top:14px;font-size:16px;font-weight:800;color:#111;letter-spacing:-0.3px;">명함 확인이 끝나면 이용하실 수 있습니다</div><div style="margin-top:8px;font-size:13px;line-height:1.7;color:#8A8A8E;">제출하신 명함으로 카마스터 자격을 확인하고 있습니다.<br>결과는 카카오톡 또는 문자로 안내드립니다.</div><div class="link" data-goto="home" style="margin-top:18px;display:inline-block;padding:12px 22px;border:1.5px solid #E7E7E9;border-radius:999px;font-size:13.5px;font-weight:700;color:#111;cursor:pointer;">홈으로 돌아가기</div></div>
 
     <!-- 다음 목표 (관리자 프로모션 설정과 연동) -->
     <div id="rwGoalCard" class="rw-goal" style="display:none;">
@@ -252,6 +265,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
   <section class="tab" data-tab="record" style="z-index:15;">
     <div style="padding-top:8px;font-size:24px;font-weight:800;color:#111;letter-spacing:-0.6px;">시공 리포트</div>
     <div style="margin-top:5px;font-size:13px;color:#8A8A8E;line-height:1.6;">내가 소개한 시공이 어떻게 집계되고 있는지 보여드립니다.</div>
+    <div data-lock="1" style="display:none;margin-top:18px;border:1px solid #EDEDEF;background:#fff;border-radius:16px;padding:34px 22px;text-align:center;"><div style="width:52px;height:52px;margin:0 auto;border-radius:16px;background:#F5F5F6;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg></div><div style="margin-top:14px;font-size:16px;font-weight:800;color:#111;letter-spacing:-0.3px;">명함 확인이 끝나면 이용하실 수 있습니다</div><div style="margin-top:8px;font-size:13px;line-height:1.7;color:#8A8A8E;">제출하신 명함으로 카마스터 자격을 확인하고 있습니다.<br>결과는 카카오톡 또는 문자로 안내드립니다.</div><div class="link" data-goto="home" style="margin-top:18px;display:inline-block;padding:12px 22px;border:1.5px solid #E7E7E9;border-radius:999px;font-size:13.5px;font-weight:700;color:#111;cursor:pointer;">홈으로 돌아가기</div></div>
     <div id="recordSummary" style="display:none;"></div>
 
     <div id="recordEmpty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 20px;"><div style="width:64px;height:64px;border-radius:16px;border:2px dashed #D0D0D4;display:flex;align-items:center;justify-content:center;margin-bottom:22px;"><div style="width:26px;height:26px;border-radius:7px;background:#E4E4E7;"></div></div><div style="font-size:17px;font-weight:800;color:#111;">아직 시공 내역이 없어요</div><div style="margin-top:8px;font-size:13.5px;color:#8A8A8E;line-height:1.6;">시공점에서 레이노 필름 시공 후<br>보증서가 연계되면 여기에 표시됩니다.</div></div>
@@ -391,6 +405,168 @@ async function api(path, opt){
     throw new Error('session expired');
   }
   return d || { ok:false, message:'응답을 읽지 못했습니다.' };
+}
+
+/* ══════════ 명함 확인 상태 ══════════
+   승인 전에는 리워드·시공 리포트를 이용할 수 없다. 서버가 이미 막고 있으므로
+   화면은 '왜 안 되는지'를 알려 주는 역할만 한다.
+
+   ⚠ 이 파일의 규칙 두 가지 (예전에 어겨서 세 번 무반응이 났다)
+     · T() 토스트는 안쪽 스코프에 있어 여기서 못 부른다 → _recToast() 를 쓴다
+     · 클릭을 직접 붙이지 않는다 → 이미 도는 data-act 위임에 연결한다 */
+var CARD_OK = true;      /* 명함 확인이 끝난 회원인가 */
+
+/* 사진을 줄이는 방식은 가입 화면(signup.html)과 같다.
+   ⚠ 사진이 눕는 문제: 사진을 줄이면 파일에 숨어 있던 '회전 정보'가 함께 사라져
+   아이폰 세로 촬영 사진이 옆으로 누운 채 저장된다.
+   imageOrientation:'from-image' 가 그 회전을 미리 적용해 준다. */
+const CARD_TARGET_BYTES = 1.2 * 1024 * 1024;
+const CARD_MAX_BYTES    = 3 * 1024 * 1024;
+
+function _cardBytes(u){ var i=String(u||'').indexOf(','); return i<0 ? 0 : Math.floor((u.length-i-1)*3/4); }
+
+async function _cardBitmap(file){
+  if(window.createImageBitmap){
+    try{ return await createImageBitmap(file, { imageOrientation:'from-image' }); }
+    catch(e){ /* 아래 방식으로 다시 시도한다 */ }
+  }
+  return await new Promise(function(res, rej){
+    var u = URL.createObjectURL(file);
+    var im = new Image();
+    im.onload = function(){ URL.revokeObjectURL(u); res(im); };
+    im.onerror = function(){ URL.revokeObjectURL(u); rej(new Error('read')); };
+    im.src = u;
+  });
+}
+
+function _cardDraw(bmp, maxSide, quality){
+  var w=bmp.width, h=bmp.height;
+  var scale = Math.min(1, maxSide / Math.max(w, h));
+  var cw = Math.max(1, Math.round(w*scale)), ch = Math.max(1, Math.round(h*scale));
+  var cv = document.createElement('canvas'); cv.width=cw; cv.height=ch;
+  var cx = cv.getContext('2d');
+  cx.fillStyle='#fff'; cx.fillRect(0,0,cw,ch);   /* 투명 PNG 가 검게 나오는 것 방지 */
+  cx.drawImage(bmp, 0, 0, cw, ch);
+  return cv.toDataURL('image/jpeg', quality);
+}
+
+async function shrinkCard(file){
+  if(!file) throw new Error('명함 사진을 선택해 주세요.');
+  var bmp;
+  try{ bmp = await _cardBitmap(file); }
+  catch(e){ throw new Error('사진을 읽지 못했습니다. 다른 사진으로 시도하시거나, 아이폰이라면 [설정 > 카메라 > 포맷]을 \u2018높은 호환성\u2019으로 바꾼 뒤 다시 촬영해 주세요.'); }
+  if(!bmp || !bmp.width || !bmp.height) throw new Error('사진을 읽지 못했습니다. 다른 사진으로 시도해 주세요.');
+  var plans = [[1600,0.82],[1600,0.70],[1400,0.65],[1200,0.60],[1000,0.55]];
+  var out = '';
+  for(var i=0;i<plans.length;i++){
+    out = _cardDraw(bmp, plans[i][0], plans[i][1]);
+    if(_cardBytes(out) <= CARD_TARGET_BYTES) break;
+  }
+  try{ if(bmp.close) bmp.close(); }catch(e){}
+  if(_cardBytes(out) > CARD_MAX_BYTES) throw new Error('사진 용량이 너무 큽니다. 다른 사진으로 시도해 주세요.');
+  if(_cardBytes(out) < 512) throw new Error('사진을 읽지 못했습니다. 다른 사진으로 시도해 주세요.');
+  return out;
+}
+
+/* 관리자가 고른 거절 사유 → 회원이 읽을 문장 (서버의 CARD_REJECT_REASON 과 같은 내용) */
+const CARD_REJECT_TEXT = {
+  blur:        '명함 사진이 흐려 내용을 확인하기 어렵습니다.',
+  noinfo:      '명함에서 성명 또는 연락처를 확인할 수 없습니다.',
+  mismatch:    '가입 시 입력하신 정보와 명함 내용이 일치하지 않습니다.',
+  unqualified: '자동차 영업사원(카마스터) 자격을 확인할 수 없습니다.'
+};
+function cardRejectText(code, memo){
+  var c = String(code||''), m = String(memo||'').trim();
+  var out = (c === 'etc') ? m : (CARD_REJECT_TEXT[c] || m);
+  /* 어떤 경우에도 빈 문장을 내보내지 않는다.
+     '기타'인데 내용이 비어 있으면 회원 화면에 사유 칸이 텅 빈 채로 보인다. */
+  return out || '명함 확인이 완료되지 않았습니다.';
+}
+
+/* 한 탭을 통째로 잠근다.
+   머리글(첫 번째 요소)과 잠금 안내만 남기고 나머지를 감춘다.
+   원래 감춰져 있던 요소를 나중에 잘못 드러내지 않도록 원래 값을 기억해 둔다. */
+function lockTab(name){
+  var sec = document.querySelector('.tab[data-tab="' + name + '"]');
+  if(!sec) return;
+  var kids = [].slice.call(sec.children);
+  kids.forEach(function(ch, i){
+    if(ch.getAttribute('data-lock') !== null){ ch.style.display = 'block'; return; }
+    if(i === 0) return;                       /* 머리글은 그대로 둔다 */
+    if(ch._odisp === undefined) ch._odisp = ch.style.display;
+    ch.style.display = 'none';
+  });
+}
+
+/* 홈 상단 안내 카드를 채우고, 승인 전이면 두 탭을 잠근다 */
+function applyCardState(card){
+  card = card || {};
+  var st = String(card.approval || 'approved');
+  CARD_OK = (st === 'approved');
+
+  var box=_gid('cardBox'), ic=_gid('cardBoxIcon'), ti=_gid('cardBoxTitle'),
+      de=_gid('cardBoxDesc'), bt=_gid('cardBoxBtn');
+  if(box){
+    if(CARD_OK){
+      box.style.display = 'none';
+    } else if(st === 'rejected'){
+      box.style.display   = 'block';
+      box.style.background = '#FFF4F4';
+      box.style.borderColor = '#F3CFCF';
+      if(ic){ ic.textContent = '!'; ic.style.background = '#D64545'; }
+      if(ti){ ti.textContent = '명함 확인이 완료되지 않았습니다'; }
+      if(de){
+        de.innerHTML = '<b style="color:#D64545;font-weight:700;">'
+          + _esch(cardRejectText(card.reject_code, card.reject_memo)) + '</b><br>'
+          + '명함을 다시 올려 주시면 확인 후 안내드리겠습니다.'
+          + '<br><span style="color:#9A9AA0;">소속·영업소가 잘못되었다면 [내 정보 &gt; 회원정보 수정]에서 먼저 고쳐 주세요.</span>';
+      }
+      if(bt) bt.style.display = 'block';
+    } else {
+      box.style.display   = 'block';
+      box.style.background = '#FFF6F1';
+      box.style.borderColor = '#FFE0CE';
+      if(ic){ ic.textContent = '!'; ic.style.background = '#FF5A00'; }
+      if(ti){ ti.textContent = '명함을 확인하고 있습니다'; }
+      if(de){
+        de.innerHTML = '제출하신 명함으로 카마스터 자격을 확인하고 있습니다.<br>'
+          + '확인은 <b style="color:#111;font-weight:700;">평일에 순서대로</b> 진행되며, '
+          + '결과는 카카오톡 또는 문자로 안내드립니다.'
+          + '<br><span style="color:#9A9AA0;">확인이 끝나면 리워드와 시공 리포트를 이용하실 수 있습니다.</span>';
+      }
+      if(bt) bt.style.display = 'block';
+    }
+  }
+
+  if(!CARD_OK){ lockTab('reward'); lockTab('record'); }
+}
+
+/* 명함 다시 올리기 — 거절된 회원이 다시 심사를 받는 길 */
+function recardPick(){ var i=_gid('recardInput'); if(i) i.click(); }
+
+async function recardSend(file){
+  var msg=_gid('cardBoxState'), btn=_gid('cardBoxBtn');
+  function say(t, type){
+    if(!msg) return;
+    msg.textContent = t || '';
+    msg.style.display = t ? 'block' : 'none';
+    msg.style.color = (type==='err') ? '#D64545' : ((type==='ok') ? '#1F9D55' : '#8A8A8E');
+  }
+  say('사진을 준비하고 있어요...');
+  if(btn){ btn.disabled = true; btn.style.opacity = '.5'; }
+  try{
+    var d = await shrinkCard(file);
+    say('제출하고 있어요...');
+    var r = await api('/v1/me/card', { method:'POST', body:{ card_image: d } });
+    if(!r || !r.ok) throw new Error((r && r.message) || '제출에 실패했습니다.');
+    say('\u2713 명함을 다시 제출했습니다. 확인 후 안내드리겠습니다.', 'ok');
+    _recToast('명함을 다시 제출했습니다.');
+    setTimeout(function(){ location.reload(); }, 1500);
+  }catch(e){
+    say((e && e.message) || '제출에 실패했습니다. 다시 시도해 주세요.', 'err');
+    if(btn){ btn.disabled = false; btn.style.opacity = '1'; }
+    var i=_gid('recardInput'); if(i) i.value='';
+  }
 }
 
 function _maskPhone(p){ p=(p||'').replace(/\D/g,''); if(p.length<7) return p||'—'; return p.slice(0,3)+'-****-'+p.slice(-4); }
@@ -1001,7 +1177,11 @@ async function loadMyStats(){
     /* 관리자가 비밀번호를 초기화한 계정이면 새 비밀번호부터 정하게 한다 */
     if(me.pw_reset_required) setTimeout(showForcePwModal, 300);
     initEdit();
-    loadNotices(); loadRewardList(); loadRecordList();
+    loadNotices();
+    /* 승인 전에는 서버가 이 두 창구를 막는다(403). 부르면 빈 화면만 그려지고
+       실패 안내가 섞여 보이므로 아예 부르지 않는다. */
+    var cardOk = (String(me.card_approval || 'approved') === 'approved');
+    if(cardOk){ loadRewardList(); loadRecordList(); }
     return {
       name: name, code: me.code || '—', org: org,
       month_count: me.month_count||0, total_count: me.total_count||0,
@@ -1021,7 +1201,16 @@ async function loadMyStats(){
       promoProgress: (me.progress && typeof me.progress === 'object') ? me.progress : {},
       profile: { loginId: me.login_id||'—', phone: me.phone_masked||'—' },
       /* 광고 문자 수신 여부. null 이면 확인하지 못한 것 */
-      smsOptout: (me.sms_optout===null || me.sms_optout===undefined) ? null : !!me.sms_optout
+      smsOptout: (me.sms_optout===null || me.sms_optout===undefined) ? null : !!me.sms_optout,
+      /* 명함 확인 상태 — 홈 안내 카드와 탭 잠금이 이 값을 본다 */
+      card: {
+        approval:    me.card_approval || 'approved',
+        at:          me.card_at || null,
+        rejected_at: me.card_rejected_at || null,
+        reject_code: me.card_reject_code || '',
+        reject_memo: me.card_reject_memo || '',
+        apply_count: Number(me.card_apply_count || 0)
+      }
     };
   }catch(e){ return {}; }
 }
@@ -1279,6 +1468,7 @@ const S = { name:'', code:'', org:'' };
     if(a==='faq'){ show('faq'); loadFaq(); }
     else if(a==='pw'){ showPwChangeSheet(); }
     else if(a==='smsopt'){ smsToggle(); }
+    else if(a==='recard'){ recardPick(); }
     else if(a==='logout'){ logout().then(function(){ location.href='login.html'; }); }
     else if(a==='leave'){
       var ov=document.createElement('div'); ov.style.cssText='position:absolute;inset:0;z-index:80;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;';
@@ -1289,7 +1479,8 @@ const S = { name:'', code:'', org:'' };
         '<b style="color:#D64545;">어떠한 사유로도 복구할 수 없습니다.</b><br><br>'+
         '· 보유 중인 <b style="color:#111;">쿠폰</b>과 미지급 <b style="color:#111;">리워드</b>는 즉시 소멸됩니다.<br>'+
         '· 같은 명의로 <b style="color:#111;">바로 다시 가입</b>하실 수 있고, 쓰시던 아이디도 다시 쓸 수 있습니다.<br>'+
-        '· 다시 가입하시면 <b style="color:#111;">누적 시공 실적은 그대로 이어집니다.</b><br>'+
+        '· 다시 가입하시면 <b style="color:#D64545;">누적 시공 실적은 이어지지 않으며, 0건부터 새로 시작</b>합니다.<br>'+
+        '· 제출하신 <b style="color:#111;">명함 사진도 함께 삭제</b>되며, 다시 가입하실 때 새로 제출하셔야 합니다.<br>'+
         '· 다만 <b style="color:#111;">웰컴기프트는 최초 가입 시 1회</b>만 드리므로 다시 지급되지 않습니다.<br>'+
         '· 중복 가입 확인을 위한 기록만 남습니다.'+
         '</div>'+
@@ -1311,7 +1502,7 @@ const S = { name:'', code:'', org:'' };
           }
           ov.remove();
           try{ sessionStorage.removeItem('cm_token'); }catch(err){}
-          alert('탈퇴가 완료되었습니다.\n\n회원 정보는 즉시 삭제되었습니다.\n같은 명의로 다시 가입하시면 시공 실적은 그대로 이어집니다.\n\n문의: 레이노 고객센터 1588-8695');
+          alert('탈퇴가 완료되었습니다.\n\n회원 정보는 즉시 삭제되었습니다.\n같은 명의로 다시 가입하실 수 있으나, 누적 시공 실적은 이어지지 않고 0건부터 새로 시작합니다.\n\n문의: 레이노 고객센터 1588-8695');
           location.href='index.html';
         });
       });
@@ -1463,13 +1654,25 @@ const S = { name:'', code:'', org:'' };
   setGreeting('');
 
   /* load stats */
+  /* 명함 사진을 고르면 바로 줄여서 보낸다.
+     click 은 data-act 위임이 맡고, change 는 위임할 방법이 없어 여기서 한 번만 건다. */
+  var recardInp = id('recardInput');
+  if(recardInp) recardInp.addEventListener('change', function(){
+    var f = recardInp.files && recardInp.files[0];
+    if(f) recardSend(f);
+  });
+
   loadMyStats().then(function(res){ res=res||{};
+    /* 다른 것보다 먼저 — 승인 전이면 여기서 두 탭이 잠긴다 */
+    applyCardState(res.card);
     if(res.name){ id('homeName').textContent=res.name; setGreeting(res.name); }
     if(res.code){ id('cmCode').textContent=res.code; }
     if(res.org){ id('cardOrg').textContent=res.org; }
     if(res.month_count!=null){ countUp(id('monthCount'), res.month_count); }
     if(res.total_count!=null){ countUp(id('totalCount'), res.total_count); }
-    fillRewardGoal(res.total_count || 0, res.promoProgress || {});
+    /* 승인 전에는 목표 카드를 그리지 않는다.
+       이 함수는 나중에 응답이 와서 카드를 다시 드러내므로, 잠근 뒤에 부르면 잠금이 풀린다. */
+    if(CARD_OK) fillRewardGoal(res.total_count || 0, res.promoProgress || {});
     smsInit(res.smsOptout === undefined ? null : res.smsOptout);
     /* 리워드 뱃지는 loadRewardList()가 '받을 수 있는 개수'로 채운다 */
     fillMonthCard(res.monthly, res.prev_month_count);
