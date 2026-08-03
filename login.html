@@ -116,7 +116,8 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
   <div style="display:flex;align-items:center;gap:12px;"><div style="width:38px;height:38px;border-radius:50%;background:#F2F2F4;display:flex;align-items:center;justify-content:center;color:#111;font-size:19px;cursor:pointer;" data-go="0">‹</div><span style="font-size:20px;font-weight:800;color:#111;">비밀번호 찾기</span></div>
   <h2 style="margin-top:22px;font-size:22px;font-weight:800;color:#111;line-height:1.35;letter-spacing:-0.6px;">아이디 확인 후<br>본인인증해 주세요</h2>
   <p style="margin-top:10px;font-size:14px;color:#8A8A8E;line-height:1.55;">본인인증이 완료되면 비밀번호를 재설정할 수 있어요.</p>
-  <div style="margin:18px 0 10px;font-size:14px;font-weight:800;color:#111;">아이디</div><input id="fpwId" type="text" placeholder="아이디를 입력해 주세요" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;">
+  <div style="margin:18px 0 10px;font-size:14px;font-weight:800;color:#111;">아이디</div><input id="fpwId" type="text" placeholder="아이디를 입력해 주세요" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;">
+  <div id="fpwIdHint" style="display:none;margin-top:8px;font-size:13px;font-weight:600;color:#FF3B30;line-height:1.5;"></div>
   <div style="margin-top:22px;display:flex;flex-direction:column;gap:12px;">
     <div id="fpwDone" style="display:none;width:100%;align-items:center;gap:12px;background:#F3FBF7;border:1.5px solid #22B07D;border-radius:14px;padding:16px;">
       <span style="width:28px;height:28px;border-radius:50%;background:#22B07D;color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">&#10003;</span>
@@ -403,11 +404,46 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
     var fpwNext = null;
     [].slice.call(D.querySelectorAll('[data-go="3"]')).forEach(function(b){ if(b.tagName==='BUTTON') fpwNext = b; });
     gate(fpwNext, false);
-    fpwNice.addEventListener('click', function(){
+    /* 아이디 입력칸 아래 빨간 안내 */
+    function fpwIdMsg(msg){
+      var e = id('fpwIdHint'), inp = id('fpwId');
+      if(e){ e.textContent = msg || ''; e.style.display = msg ? 'block' : 'none'; }
+      if(inp) inp.style.borderColor = msg ? '#FF3B30' : '#E7E7E9';
+    }
+    var fi = id('fpwId');
+    if(fi) fi.addEventListener('input', function(){ fpwIdMsg(''); });
+
+    fpwNice.addEventListener('click', async function(){
       var lid = id('fpwId');
-      if(!lid || !lid.value.trim()){ T('아이디를 먼저 입력해 주세요.'); return; }
+      if(!lid || !lid.value.trim()){ fpwIdMsg('아이디를 입력해 주세요.'); if(lid) lid.focus(); return; }
       if(NT_FPW) return;
-      fpwNice.disabled = true; fpwNice.style.opacity = '0.5'; fpwNice.textContent = '인증 진행 중...';
+      fpwIdMsg('');
+
+      /* 등록된 아이디인지 먼저 확인한다.
+         이 확인이 없으면 아무 글자나 넣어도 본인인증 창이 열리고,
+         인증까지 다 마친 뒤에야 '아이디가 일치하지 않습니다'를 보게 된다.
+         check-id 는 가입 화면의 중복확인과 같은 창구다 —
+         '사용 가능'(ok:true)은 곧 '가입되지 않은 아이디'라는 뜻이다. */
+      fpwNice.disabled = true; fpwNice.style.opacity = '0.5'; fpwNice.textContent = '아이디 확인 중...';
+      var chk = null;
+      try { chk = await checkLoginId(lid.value.trim().toLowerCase()); } catch(e){}
+      if(chk && chk.ok === true){
+        fpwNice.disabled = false; fpwNice.style.opacity = '1'; fpwNice.textContent = '휴대폰 본인인증 하기';
+        fpwIdMsg('등록된 아이디가 아닙니다. 다시 확인해 주세요.');
+        lid.focus();
+        return;
+      }
+      if(chk && chk.ok === false && !/이미 사용 중/.test(chk.message || '')){
+        /* 형식이 맞지 않는 경우 — 서버가 알려준 이유를 그대로 보여준다 */
+        fpwNice.disabled = false; fpwNice.style.opacity = '1'; fpwNice.textContent = '휴대폰 본인인증 하기';
+        fpwIdMsg(chk.message || '아이디를 다시 확인해 주세요.');
+        lid.focus();
+        return;
+      }
+      /* 서버에 못 물어본 경우(통신 실패)에는 막지 않는다.
+         마지막에 서버가 아이디를 다시 검사하므로 잘못된 채로 끝나지는 않는다. */
+
+      fpwNice.textContent = '인증 진행 중...';
       niceVerify(function(m){ setState('fpwState', m, /완료되지|만료|차단|못했/.test(m||'')); }, 'reset_password').then(function(tok){
         if(!tok){ fpwNice.disabled=false; fpwNice.style.opacity='1'; fpwNice.textContent='휴대폰 본인인증 하기'; return; }
         NT_FPW = tok;
