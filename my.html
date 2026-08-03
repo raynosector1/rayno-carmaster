@@ -119,12 +119,9 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
           </div>
         </div>
 
-        <div style="margin-top:22px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;">
-          <div style="min-width:0;">
-            <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;color:#7C818B;">MEMBER No.</div>
-            <div id="cmCode" style="margin-top:5px;font-size:23px;font-weight:800;color:#fff;letter-spacing:2.5px;font-variant-numeric:tabular-nums;">—</div>
-          </div>
-          <button id="copyCode" style="flex-shrink:0;padding:9px 16px;border:1px solid rgba(255,255,255,.22);border-radius:11px;background:rgba(255,255,255,.06);color:#fff;font-size:12.5px;font-weight:700;font-family:inherit;cursor:pointer;">복사</button>
+        <div style="margin-top:22px;">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.4px;color:#7C818B;">MEMBER No.</div>
+          <div id="cmCode" style="margin-top:5px;font-size:23px;font-weight:800;color:#fff;letter-spacing:2.5px;font-variant-numeric:tabular-nums;">—</div>
         </div>
 
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.10);display:flex;align-items:center;">
@@ -1622,8 +1619,6 @@ const S = { name:'', code:'', org:'' };
     });
   }
 
-  /* copy code */
-  var copyBtn=id('copyCode'); if(copyBtn)copyBtn.addEventListener('click',function(){ var code=id('cmCode').textContent.trim(); function done(){ T('코드가 복사되었습니다.'); } if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(code).then(done,done); } else { var ta=document.createElement('textarea'); ta.value=code; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} ta.remove(); done(); } });
 
   /* 쿠폰 빈 화면을 관리자 프로모션 설정에 맞춰 채운다.
      - 아직 못 받은 프로모션 중 가장 가까운 것을 목표로 보여준다
