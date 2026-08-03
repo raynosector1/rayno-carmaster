@@ -4979,19 +4979,6 @@ $('dLogLink').addEventListener('click', function(e){
   closeDrawer();
   $('lgFrom').value=''; $('lgTo').value=''; $('lgAction').value=''; $('lgResult').value='';
   $('lgTarget').value = code;
-  /* 대시보드에서 다른 화면으로 바로 넘어가기 */
-  document.addEventListener('click', function(e){
-    var g = e.target.closest && e.target.closest('[data-goview]');
-    if(!g) return;
-    var v = g.dataset.goview, f = g.dataset.flt || '';
-    var nv = document.querySelector('.nav-item[data-view="'+v+'"]');
-    if(nv) nv.click();
-    if(v==='members' && f){
-      var sel=$('fltStatus'); if(sel) sel.value=f;
-      S.mPage=1; try{ applyMemberFilters(); }catch(err){}
-    }
-  });
-
   var nav = document.querySelector('.nav-item[data-view="logs"]');
   if(nav) nav.click();
   renderLogs(1);
@@ -5004,6 +4991,23 @@ function admAudit(what, n){
     if(pr && pr.catch) pr.catch(function(){});
   }catch(e){}
 }
+
+/* ══════════ 대시보드에서 다른 화면으로 바로 넘어가기 ══════════
+   [data-goview] 가 붙은 것을 누르면 그 화면으로 옮기고, 필요하면 필터까지 걸어 준다.
+   ⚠ 이 등록은 반드시 최상위에 있어야 한다. 예전에 '변경 기록 보기' 처리 함수 안에
+      잘못 들어가 있어서, 그 링크를 누르기 전에는 대시보드 단추가 먹지 않았다. */
+document.addEventListener('click', function(e){
+  var g = e.target && e.target.closest ? e.target.closest('[data-goview]') : null;
+  if(!g) return;
+  var v = g.dataset.goview || '', f = g.dataset.flt || '';
+  var nv = document.querySelector('.nav-item[data-view="' + v + '"]');
+  if(!nv) return;
+  nv.click();
+  if(v === 'members' && f){
+    var sel = $('fltStatus');
+    if(sel){ sel.value = f; S.mPage = 1; try{ applyMemberFilters(); }catch(err){} }
+  }
+});
 
 function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembers(); renderRewards(); renderPromos(); renderServices(); renderOffices(1); renderNotices(); renderFaq(); renderAdmins(); renderLogs(1); renderSms(); renderSmsStatus(); ooLoad(); slLoad(); }catch(e){ console.error(e); } }
 (function(){
