@@ -338,15 +338,17 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <select class="filter" id="fltOffice" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">소속 전체</option></select>
           <select class="filter" id="fltRegion" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">지역 전체</option></select>
-          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체 (탈퇴 제외)</option><option value="일반">일반</option><option value="인증대기">인증대기</option><option value="정지">정지</option><option value="__pending">영업소 승인대기</option><option value="__card_pending">명함 승인대기</option><option value="__card_rejected">명함 거절</option><option value="탈퇴">탈퇴</option></select>
+          <select class="filter" id="fltStatus" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23B0B0B4%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;"><option value="">상태 전체 (탈퇴 제외)</option><optgroup label="계정 상태"><option value="검토중">검토중</option><option value="거절">거절</option><option value="정상">정상</option><option value="정지">정지</option></optgroup><optgroup label="따로 챙길 것"><option value="__rejoin">재가입</option><option value="__office">영업소 확정 필요</option></optgroup><optgroup label="관리용"><option value="탈퇴">탈퇴</option></optgroup></select>
           <input type="text" id="mSearch" placeholder="성함, 연락처, 영업소" class="filter" style="flex:1;min-width:200px;font-family:inherit;font-weight:500;">
           <button class="btn btn-primary" id="mSearchBtn" style="padding:10px 22px;font-size:13px;font-weight:800;">검색</button>
         </div>
 
-        <div style="margin-top:18px;font-size:15px;font-weight:800;color:var(--ink);">
-          가입자수 : <span id="mCount">0</span>명<span id="mCardWrap" class="linklike" style="display:none;margin-left:12px;font-size:13.5px;font-weight:800;color:var(--orange);" title="명함 승인 대기 회원만 보기">명함 승인 대기 <span id="mCountCard">0</span>명 ›</span>
-          <span style="font-size:13.5px;font-weight:600;color:var(--muted);margin-left:6px;">(일반: <span id="mCountOk">0</span> / 정지: <span id="mCountOff">0</span>)</span>
+        <div style="margin-top:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:15px;font-weight:800;color:var(--ink);">가입자수 <span id="mCount">0</span>명</span>
+          <span style="font-size:13.5px;font-weight:600;color:var(--muted);" id="mBreak">—</span>
         </div>
+        <!-- 처리할 일 — 남아 있을 때만 보이고, 누르면 그 사람들만 걸러진다 -->
+        <div id="mTodo" style="margin-top:10px;display:none;gap:8px;flex-wrap:wrap;"></div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
           <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">
@@ -1319,6 +1321,28 @@ function _lab(v, etc){
 }
 function _brandLab(m){ return _lab(m.brand, m.brand_etc); }
 function _officeLab(m){ return _lab(m.office, m.office_etc); }
+/* ── 회원에게 보이는 '계정 상태' 하나로 합치기 ──
+   그동안은 계정 상태(일반·정지)와 명함 심사(대기·거절)가 따로 표시돼
+   '일반 + 명함 대기' 처럼 배지가 두 개 붙고, 회원이 지금 서비스를 쓸 수 있는지
+   한눈에 알기 어려웠다. 실제로 회원이 겪는 상태는 하나뿐이므로 하나로 합친다.
+
+     탈퇴  — 개인정보가 파기된 계정
+     정지  — 퇴사·부정 발급 등으로 이용을 막은 회원 (해제 가능)
+     거절  — 명함 확인이 안 되어 다시 제출해야 하는 회원
+     검토중 — 명함 확인을 기다리는 중 (가입 직후 기본값)
+     정상  — 명함 확인이 끝나 서비스를 쓸 수 있는 회원
+
+   순서가 곧 우선순위다. 정지된 회원이 명함 대기여도 '정지'가 앞선다. */
+function _memberState(m){
+  var st = String(m.status || '');
+  if (st === 'withdrawn') return '탈퇴';
+  if (st === 'suspended' || st === 'banned') return '정지';
+  var card = String(m.card_approval || 'approved');
+  if (card === 'rejected') return '거절';
+  if (card === 'pending')  return '검토중';
+  return '정상';
+}
+
 function _stat(s){ return s==='verified'?'일반':(s==='withdrawn'?'탈퇴':((s==='suspended'||s==='banned')?'정지':'인증대기')); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
@@ -1376,7 +1400,12 @@ async function loadMembers(filters){
     rows.sort(function(a,b){ return _ts(b).localeCompare(_ts(a)); });
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
-    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending'), rejoin:!!m.stats_from, rejoinN:Number(m.rejoin_count||0), card:String(m.card_approval||'approved'), cardN:Number(m.card_apply_count||0) }; });
+    return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending'), rejoin:!!m.stats_from, rejoinN:Number(m.rejoin_count||0), card:String(m.card_approval||'approved'), cardN:Number(m.card_apply_count||0),
+      /* 소속을 직접 입력한 회원은 값이 제각각이라 드롭박스가 지저분해진다.
+         목록 칸에는 적어 낸 값을 그대로 보여 주되, 걸러낼 때는 '기타' 하나로 묶는다. */
+      brandKey:(m.brand==='기타' ? '기타' : (_brandLab(m)||'')),
+      /* 계정 상태와 명함 심사를 하나로 합친 값 — 목록 배지와 필터가 이것만 본다 */
+      state:_memberState(m) }; });
   }catch(e){ console.error('members',e); return []; }
 }
 async function getMember(code){
@@ -1533,7 +1562,7 @@ async function renderMembers(){
 }
 function populateMemberFilters(rows){
   var fo=$('fltOffice'), fr=$('fltRegion');
-  if(fo && fo.dataset.filled!=='1'){ var bs=Array.from(new Set(rows.map(function(m){return m.brand;}).filter(Boolean))).sort(); fo.innerHTML='<option value="">소속 전체</option>'+bs.map(function(b){return '<option value="'+esc(b)+'">'+esc(b)+'</option>';}).join(''); fo.dataset.filled='1'; }
+  if(fo && fo.dataset.filled!=='1'){ var bs=Array.from(new Set(rows.map(function(m){return m.brandKey;}).filter(Boolean))).sort(function(a,b){ return a==='기타' ? 1 : (b==='기타' ? -1 : a.localeCompare(b,'ko')); }); fo.innerHTML='<option value="">소속 전체</option>'+bs.map(function(b){return '<option value="'+esc(b)+'">'+esc(b)+'</option>';}).join(''); fo.dataset.filled='1'; }
   if(fr && fr.dataset.filled!=='1'){ var rs=Array.from(new Set(rows.map(function(m){return m.region;}).filter(Boolean))).sort(); fr.innerHTML='<option value="">지역 전체</option>'+rs.map(function(r){return '<option value="'+esc(r)+'">'+esc(r)+'</option>';}).join(''); fr.dataset.filled='1'; }
 }
 function filteredMembers(){
@@ -1542,16 +1571,15 @@ function filteredMembers(){
   var q=(($('mSearch')||{}).value||'').trim().toLowerCase();
   var qd=q.replace(/\D/g,'');
   return (S.allMembers||[]).filter(function(m){
-    if(fo && m.brand!==fo) return false;
+    if(fo && m.brandKey!==fo) return false;
     if(fr && m.region!==fr) return false;
     /* 탈퇴 회원은 이름·연락처가 즉시 파기되어 목록에 빈 칸으로만 남는다.
-       상태 필터에서 '탈퇴'를 고를 때만 보여준다.
-       (완전 삭제·이력 확인을 하려면 찾아 들어갈 수는 있어야 하므로 아주 없애지는 않는다) */
-    if(m.status === '탈퇴' && fs !== '탈퇴') return false;
-    if(fs === '__pending'){ if(!m.pending) return false; }
-    else if(fs === '__card_pending'){ if(m.card !== 'pending') return false; }
-    else if(fs === '__card_rejected'){ if(m.card !== 'rejected') return false; }
-    else if(fs && m.status!==fs) return false;
+       '탈퇴'를 고를 때만 보여준다. 8월 11일 테스트 데이터 정리 때
+       찾아 들어가 완전 삭제해야 하므로 아주 없애지는 않는다. */
+    if(m.state === '탈퇴' && fs !== '탈퇴') return false;
+    if(fs === '__rejoin'){ if(!m.rejoin) return false; }
+    else if(fs === '__office'){ if(!m.pending) return false; }
+    else if(fs && m.state!==fs) return false;
     if(from && m.joinRaw && m.joinRaw < from) return false;
     if(to && m.joinRaw && m.joinRaw > to) return false;
     if(q){
@@ -1570,29 +1598,55 @@ function applyMemberFilters(){
   var pages=Math.max(1, Math.ceil(rows.length/PER));
   if(!S.mPage || S.mPage>pages) S.mPage=1;
   var page=rows.slice((S.mPage-1)*PER, S.mPage*PER);
-  var ok=rows.filter(function(m){return m.status==='일반';}).length;
-  var off=rows.filter(function(m){return m.status==='정지';}).length;
   if($('mCount')) $('mCount').textContent=rows.length;
-  if($('mCountOk')) $('mCountOk').textContent=ok;
-  if($('mCountOff')) $('mCountOff').textContent=off;
   if($('mTotal')) $('mTotal').textContent=rows.length;
-  /* 명함 승인 대기 건수는 '지금 걸린 필터'가 아니라 전체를 기준으로 센다.
-     관리자가 다른 조건으로 보고 있어도 처리할 일이 남았다는 것을 알아야 한다. */
-  var cardWait = (S.allMembers||[]).filter(function(m){ return m.card === 'pending' && m.status !== '탈퇴'; }).length;
-  var cw = $('mCardWrap');
-  if(cw){
-    cw.style.display = cardWait > 0 ? 'inline' : 'none';
-    if($('mCountCard')) $('mCountCard').textContent = cardWait;
+
+  /* 지금 보고 있는 목록의 상태별 숫자 */
+  var cnt=function(st){ return rows.filter(function(m){ return m.state===st; }).length; };
+  var br=$('mBreak');
+  if(br){
+    var parts=['정상','검토중','거절','정지','탈퇴'].map(function(st){
+      var n=cnt(st); return n ? (st+' '+n) : '';
+    }).filter(Boolean);
+    br.textContent = parts.length ? ('· ' + parts.join(' · ')) : '';
   }
-  /* 명함 확인 상태를 한눈에. 승인된 회원에게는 아무것도 붙이지 않는다. */
-  var cardBadge=function(c, st){
-    /* 탈퇴하면 명함도 파기된다. 심사할 것이 없는데 '명함 대기'로 보이면 안 된다. */
-    if(st === '탈퇴') return '';
-    if(c === 'pending')  return ' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="명함 확인을 기다리고 있습니다. 상세에서 승인 또는 거절할 수 있습니다.">명함 대기</span>';
-    if(c === 'rejected') return ' <span class="badge b-err" style="font-size:10px;padding:2px 6px;" title="명함이 거절된 회원입니다. 회원이 다시 제출하면 대기로 돌아옵니다.">명함 거절</span>';
-    return '';
+
+  /* ── 처리할 일 ──
+     '지금 걸린 필터'가 아니라 전체를 기준으로 센다.
+     다른 조건으로 보고 있어도 남은 일감을 놓치면 안 되기 때문이다. */
+  var all=(S.allMembers||[]).filter(function(m){ return m.state!=='탈퇴'; });
+  var todo=[
+    { v:'검토중',   n:all.filter(function(m){return m.state==='검토중';}).length,
+      t:'명함 확인 대기', c:'var(--orange)', bg:'#FFF6F0', bd:'#FFE0CC' },
+    { v:'거절',     n:all.filter(function(m){return m.state==='거절';}).length,
+      t:'명함 거절 · 재제출 안 함', c:'var(--err)', bg:'#FFF5F5', bd:'#FAD9D9' },
+    { v:'__office', n:all.filter(function(m){return m.pending;}).length,
+      t:'영업소 확정 필요', c:'#5A5A5E', bg:'#F5F5F6', bd:'#E7E7E9' }
+  ].filter(function(x){ return x.n>0; });
+  var td=$('mTodo');
+  if(td){
+    td.style.display = todo.length ? 'flex' : 'none';
+    td.innerHTML = todo.map(function(x){
+      return '<span class="mTodoChip" data-v="'+esc(x.v)+'" style="cursor:pointer;padding:7px 13px;border-radius:999px;'
+           + 'background:'+x.bg+';border:1px solid '+x.bd+';color:'+x.c+';font-size:13px;font-weight:800;">'
+           + esc(x.t)+' '+x.n+'명 ›</span>';
+    }).join('');
+    td.querySelectorAll('.mTodoChip').forEach(function(el){
+      el.addEventListener('click', function(){
+        var f=$('fltStatus'); if(f) f.value=el.dataset.v;
+        S.mPage=1; applyMemberFilters();
+      });
+    });
+  }
+
+  /* 상태 배지 — 회원이 겪는 상태 하나만 보여 준다 */
+  var badge=function(st){
+    if(st==='정상')   return '<span class="badge b-ok">정상</span>';
+    if(st==='검토중') return '<span class="badge b-warn" title="명함 확인을 기다리는 중입니다. 상세에서 승인 또는 거절할 수 있습니다.">검토중</span>';
+    if(st==='거절')   return '<span class="badge b-err" title="명함이 거절된 회원입니다. 다시 제출하면 검토중으로 돌아옵니다.">거절</span>';
+    if(st==='탈퇴')   return '<span class="badge b-off">탈퇴</span>';
+    return '<span class="badge b-off">정지</span>';
   };
-  var badge=function(st){ return st==='일반'?'<span class="badge b-ok">일반</span>':st==='인증대기'?'<span class="badge b-warn">인증대기</span>':st==='탈퇴'?'<span class="badge b-off">탈퇴</span>':'<span class="badge b-off">정지</span>'; };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
     return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(124px,1fr) 58px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
@@ -1603,7 +1657,7 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       '<span style="color:#8A8A8E;">'+m.join+'</span>'+
-      '<span>'+badge(m.status)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+cardBadge(m.card, m.status)+'</span>'+
+      '<span>'+badge(m.state)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+'</span>'+
       '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
@@ -1620,13 +1674,10 @@ function applyMemberFilters(){
 }
 ['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', function(){ S.mPage=1; applyMemberFilters(); }); });
 if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
-if($('mCardWrap')) $('mCardWrap').addEventListener('click', function(){
-  var fs=$('fltStatus'); if(fs) fs.value='__card_pending';
-  S.mPage=1; applyMemberFilters();
-});
+
 if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
 if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
-$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,m.join,m.status];}))); _download('카마스터_회원_'+_today()+'.csv', csv); admAudit('members', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
+$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,m.join,m.state];}))); _download('카마스터_회원_'+_today()+'.csv', csv); admAudit('members', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 const RAYNO_ADMIN_URL = 'https://raynofilm.co.kr/include/app/8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918/index.php';
 /* ── 계정 상태 접기/폼기 ── */
 function _dtm(iso){
