@@ -1736,9 +1736,22 @@ document.querySelectorAll('.apTab').forEach(function(t){
 ['apNewBrand','apNewName'].forEach(function(i){ $(i).addEventListener('input', apValidate); });
 $('apNewRegion').addEventListener('change', apValidate);
 $('apBrand').addEventListener('change', function(){
+  /* 서버가 주는 값은 지역 이름이 아니라 { region, count } 꾸러미다.
+     여기서 region 을 꺼내지 않고 그대로 화면에 쓰는 바람에
+     지역 목록이 [object Object] 로 나왔다. (영업소 관리 화면의 ofFillRegions 는
+     처음부터 x.region 을 꺼내 쓰고 있었다 — 두 곳이 달랐던 것)
+     고르기 쉽도록 그 지역에 등록된 영업소 수도 함께 보여준다. */
   var rs = (OF.filters && OF.filters[this.value]) || [];
+  var list = rs.map(function(x){
+    return (x && typeof x === 'object') ? { region: x.region, count: Number(x.count || 0) }
+                                        : { region: String(x), count: 0 };
+  }).filter(function(x){ return x.region; });
+  list.sort(function(a, b){ return a.region.localeCompare(b.region, 'ko'); });
   $('apRegion').innerHTML = '<option value="">지역 선택</option>'
-    + rs.slice().sort().map(function(r){ return '<option value="'+esc(r)+'">'+esc(r)+'</option>'; }).join('');
+    + list.map(function(x){
+        var label = x.count > 0 ? (x.region + ' (' + x.count + '곳)') : x.region;
+        return '<option value="'+esc(x.region)+'">'+esc(label)+'</option>';
+      }).join('');
   $('apOffice').innerHTML = '<option value="">영업소 선택</option>';
   apValidate();
 });
