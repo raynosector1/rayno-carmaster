@@ -336,6 +336,50 @@ function fillRegions(brand){ var el=id('region'); if(!el)return; var h='<option 
 /* 등록된 영업소가 몇 곳인지 돌려준다. 0곳이면 부르는 쪽에서 직접입력으로 넘긴다. */
 function fillOffices(brand, region){ var el=id('office'); if(!el)return 0; var h='<option value="" disabled selected>영업소 선택</option>'; var n=0; if(brand!==ETC){ var x=TREE.find(function(t){return t.name===brand;}); if(x){ var r=x.regions.find(function(rr){return rr.name===region;}); if(r)r.offices.forEach(function(o){ h+=_opt(o); n++; }); } } h+=_opt(ETC); el.innerHTML=h; return n; }
 
+/* ══════════ 직접 입력한 이름을 목록과 견주기 ══════════
+   '기아'가 목록에 있는데도 [기타]를 골라 '기 아' 나 '기아기아' 로 적으면
+   같은 회사가 목록에 두 번 생겨 영업소별·소속별 통계가 갈라진다.
+   한번 갈라지면 되돌리기 어렵기 때문에 입력 단계에서 막는다. */
+
+/* 견주기 전에 띄어쓰기와 기호를 걷어낸다 ('기 아' → '기아') */
+function normName(v){
+  return String(v == null ? '' : v).toLowerCase().replace(/[\s()\-·.,&/]/g, '');
+}
+
+/* 같은 말을 두 번 이상 되풀이한 것인가 ('기아기아', '테스트테스트') */
+function isRepeatWord(v){
+  var t = normName(v);
+  return t.length >= 4 && /^(.{2,12}?)\1+$/.test(t);
+}
+
+/* 소속(브랜드) — 목록에 있는 이름과 같거나, 그 이름을 품고 있으면 그 항목을 돌려준다.
+   품는 것까지 보는 이유: '기아기아'·'기아자동차' 도 결국 기아다. */
+function brandLike(v){
+  var t = normName(v);
+  if (!t) return '';
+  for (var i = 0; i < TREE.length; i++){
+    var b = normName(TREE[i].name);
+    if (b.length >= 2 && (t === b || t.indexOf(b) >= 0)) return TREE[i].name;
+  }
+  return '';
+}
+
+/* 영업소 — 여기서는 '품는 것'까지 막으면 안 된다.
+   '기아 궁내동지점'처럼 브랜드명이 들어가는 게 정상이기 때문이다.
+   그래서 목록에 똑같은 이름이 있을 때만 막는다. */
+function officeSame(v, brand, region){
+  var t = normName(v);
+  if (!t || !brand || brand === ETC) return '';
+  var x = TREE.find(function(b){ return b.name === brand; });
+  if (!x) return '';
+  var r = x.regions.find(function(rr){ return rr.name === region; });
+  if (!r) return '';
+  for (var i = 0; i < r.offices.length; i++){
+    if (normName(r.offices[i]) === t) return r.offices[i];
+  }
+  return '';
+}
+
 async function loadOffices(){
   try{
     var r = await api('/v1/offices', { auth:false });
@@ -519,7 +563,24 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
       g1();
     };
     office.onchange=function(){ S.office=office.value; etc(office,oEtc); g1(); };
-    [bEtc,oEtc].forEach(function(x){ if(x)x.addEventListener('input',function(){ etcMsg(x, freeTextError(x.value)); g1(); }); });
+    /* 직접 입력값 검사 — 기본 규칙에 소속·영업소별 규칙을 더한다 */
+    function etcError(inp){
+      var v = inp ? inp.value : '';
+      var base = freeTextError(v);
+      if(base) return base;
+      var t = String(v||'').trim();
+      if(!t) return '';
+      if(isRepeatWord(t)) return '같은 말이 되풀이되었습니다. 정확한 이름을 입력해 주세요.';
+      if(inp === bEtc){
+        var hit = brandLike(t);
+        if(hit) return '\u2018' + hit + '\u2019 은(는) 위 목록에 있습니다. 목록에서 골라 주세요.';
+      } else {
+        var oh = officeSame(t, S.brand, S.region);
+        if(oh) return '\u2018' + oh + '\u2019 은(는) 위 목록에 있습니다. 목록에서 골라 주세요.';
+      }
+      return '';
+    }
+    [bEtc,oEtc].forEach(function(x){ if(x)x.addEventListener('input',function(){ etcMsg(x, etcError(x)); g1(); }); });
 
     /* ── 명함 사진 ── */
     var cardInput=id('cardInput'), cardPick=id('cardPick'), cardWrap=id('cardWrap'),
@@ -563,8 +624,8 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
       var bNeed = /기타/.test(brand.value), oNeed = /기타/.test(office.value);
       if(!bNeed) etcMsg(bEtc,''); if(!oNeed) etcMsg(oEtc,'');
       var ok = brand.value && region.value && office.value
-            && (!bNeed || (bEtc && freeTextOk(bEtc.value)))
-            && (!oNeed || (oEtc && freeTextOk(oEtc.value)))
+            && (!bNeed || (bEtc && bEtc.value.trim() && !etcError(bEtc)))
+            && (!oNeed || (oEtc && oEtc.value.trim() && !etcError(oEtc)))
             && !!S.card;                       /* 명함 사진은 필수다 */
       gate(n1,!!ok);
     }
