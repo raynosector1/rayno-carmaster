@@ -709,8 +709,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
           <div class="table" style="margin-top:16px;border:1px solid var(--line);">
             <div class="tr th" style="grid-template-columns:40px 48px 220px 1fr 116px;">
-              <span><input type="checkbox" id="smsAll" style="cursor:pointer;"></span>
-              <span>No</span><span>템플릿명</span><span>템플릿 내용</span><span>등록일시</span>
+              <span style="text-align:center;"><input type="checkbox" id="smsAll" style="cursor:pointer;"></span>
+              <span style="text-align:center;">No</span><span>템플릿명</span><span>템플릿 내용</span><span style="text-align:right;">등록일시</span>
             </div>
             <div id="smsRows"></div>
           </div>
@@ -4099,12 +4099,16 @@ async function renderSms(){
     : SMS_T.map(function(t, i){
         var no = SMS_T.length - i;          /* 최신이 위, 번호는 큰 수부터 */
         var preview = String(t.body||'').replace(/\s+/g, ' ').slice(0, 200);
-        return '<div class="tr" data-id="'+esc(t.id)+'" style="grid-template-columns:40px 48px 220px 1fr 116px;align-items:flex-start;padding-top:14px;padding-bottom:14px;">'
-          + '<span><input type="checkbox" class="smsChk" style="cursor:pointer;"></span>'
-          + '<span style="color:var(--muted);font-size:13px;">'+no+'</span>'
-          + '<span><button type="button" class="smsOpen" style="border:none;background:none;padding:0;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:underline;cursor:pointer;text-align:left;">'+esc(t.name||'(이름 없음)')+'</button></span>'
-          + '<span style="font-size:12.5px;color:var(--muted);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+esc(preview)+(String(t.body||'').length>200?'…':'')+'</span>'
-          + '<span style="font-size:12.5px;color:var(--muted);">'+esc(t.date||'-')+'</span>'
+        /* 머리글(.th)과 본문(.td)이 같은 class 를 써야 좌우 여백이 같아져 칸이 맞는다.
+           예전에는 본문이 class="tr" 뿐이라 좌우 여백이 없어 머리글보다 22px 왼쪽으로 밀려 있었다. */
+        return '<div class="tr td" data-id="'+esc(t.id)+'" style="grid-template-columns:40px 48px 220px 1fr 116px;align-items:flex-start;">'
+          + '<span style="text-align:center;"><input type="checkbox" class="smsChk" style="cursor:pointer;vertical-align:middle;"></span>'
+          + '<span class="num" style="text-align:center;color:var(--muted);font-size:13px;line-height:1.65;">'+no+'</span>'
+          + '<span><button type="button" class="smsOpen" style="border:none;background:none;padding:0;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:underline;cursor:pointer;text-align:left;line-height:1.65;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.name||'(이름 없음)')+'</button></span>'
+          /* 두 줄까지만 보이게 잘라 줄 높이를 고르게 한다. 여기서는 줄바꿈이 필요하므로
+             표 전체에 걸린 '한 줄 말줄임' 규칙을 white-space:normal 로 되돌린다. */
+          + '<span style="font-size:12.5px;color:var(--muted);line-height:1.65;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">'+esc(preview)+(String(t.body||'').length>200?'…':'')+'</span>'
+          + '<span class="num" style="text-align:right;font-size:12.5px;color:var(--muted);line-height:1.65;">'+esc(t.date||'-')+'</span>'
           + '</div>';
       }).join('');
 
