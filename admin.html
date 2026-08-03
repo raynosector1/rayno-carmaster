@@ -758,7 +758,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <button class="btn btn-soft" id="dResetPw" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;">비밀번호 초기화</button>
       <button class="btn" id="dSuspend" style="flex:1;padding:14px 0;font-size:14px;font-weight:700;border:1.5px solid var(--err);color:var(--err);">계정 정지</button>
     </div>
-    <div id="dOutHint" style="display:none;margin-top:10px;padding:13px 15px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;font-size:12.5px;color:var(--muted);line-height:1.7;text-align:center;">탈퇴한 계정입니다. 개인정보는 파기되었으며 복구할 수 없습니다.<br>같은 분이 다시 가입하셔도 <b>이전 시공 실적은 승계되지 않고 0건부터</b> 시작하며, 웰컴기프트도 다시 지급되지 않습니다.</div>
+    <div id="dOutHint" style="display:none;margin-top:10px;padding:13px 15px;background:#F7F7F8;border:1px solid var(--line);border-radius:12px;font-size:12.5px;color:var(--muted);line-height:1.7;text-align:center;">탈퇴한 계정입니다. 개인정보와 명함 사진은 파기되었으며 복구할 수 없습니다.<br>같은 분이 다시 가입하시면 <b>시공 실적은 초기화되며, 재가입 시점부터 새롭게 누적</b>됩니다. 웰컴기프트는 다시 지급되지 않습니다.</div>
     <button id="dDelete" style="margin-top:10px;width:100%;padding:11px 0;background:none;border:none;font-size:13px;color:#B0B0B4;text-decoration:underline;cursor:pointer;font-family:inherit;">계정 탈퇴 처리</button>
     <div id="dPurgeZone" style="display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);">
       <div style="font-size:11.5px;color:var(--err);font-weight:700;">테스트 도구 · 위험 구역</div>
@@ -1657,7 +1657,7 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       '<span style="color:#8A8A8E;">'+m.join+'</span>'+
-      '<span>'+badge(m.state)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 이전 시공 실적은 승계되지 않습니다.">재가입</span>':'')+'</span>'+
+      '<span>'+badge(m.state)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 시공 실적은 초기화되어, 재가입 시점부터 새롭게 누적됩니다.">재가입</span>':'')+'</span>'+
       '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
@@ -1716,7 +1716,8 @@ function fillStateBox(m){
      실적 기준일이 있다는 것 자체가 재가입했다는 뜻이다. */
   if(m.rejoinAt){
     html += _srow('재가입', esc(_dtm(m.rejoinAt)) + (m.rejoinN>1 ? (' · '+m.rejoinN+'회') : ''), 'var(--warn)')
-          + _srow('이전 실적', '승계 안 됨', 'var(--muted)');
+          + _srow('이전 실적', '초기화됨', 'var(--muted)')
+          + _srow('실적 기준', '재가입 시점부터 새로 누적', 'var(--muted)');
   }
 
   if(html){
@@ -2219,7 +2220,7 @@ $('dPurge').addEventListener('click', async ()=>{
 $('dDelete').addEventListener('click', async ()=>{
   var code = S.dMemberCode, name = $('dName').textContent || '회원';
   if(!code) return;
-  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n· 이름·연락처 등 개인정보가 즉시 파기됩니다\n· 되돌릴 수 없습니다\n· 쿠폰과 미지급 리워드가 소멸됩니다\n· 쓰던 아이디는 즉시 다시 쓸 수 있게 됩니다\n· 제출한 명함 사진도 함께 파기됩니다\n\n같은 분이 다시 가입하셔도 이전 시공 실적은 승계되지 않고\n0건부터 새로 시작하며, 웰컴기프트도 다시 지급되지 않습니다.\n\n계속하시겠습니까?')) return;
+  if(!confirm(name+' 카마스터를 탈퇴 처리하시겠습니까?\n\n[탈퇴 즉시]\n· 이름·연락처 등 개인정보가 파기됩니다\n· 제출한 명함 사진도 함께 파기됩니다\n· 쿠폰과 미지급 리워드가 소멸됩니다\n· 쓰던 아이디는 즉시 다시 쓸 수 있게 됩니다\n· 되돌릴 수 없습니다\n\n[같은 분이 다시 가입하시면]\n· 시공 실적은 초기화되며, 재가입 시점부터 새롭게 누적됩니다\n· 웰컴기프트는 다시 지급되지 않습니다\n\n계속하시겠습니까?')) return;
   var btn=$('dDelete'); btn.disabled=true; btn.textContent='처리 중...';
   var res = await deleteMember(code);
   btn.disabled=false; btn.textContent='계정 탈퇴 처리';
