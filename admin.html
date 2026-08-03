@@ -706,7 +706,6 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           <button class="btn btn-primary" id="apSave" style="margin-top:10px;width:100%;padding:12px 0;font-size:13.5px;font-weight:800;opacity:.45;pointer-events:none;">이 영업소로 확정</button>
         </div>
         <div class="r"><span class="k">휴대전화</span><span class="v" id="dPhone">—</span></div>
-        <div class="r"><span class="k">생년월일</span><span class="v" id="dBirth">—</span></div>
         <div class="r"><span class="k">가입일</span><span class="v" id="dJoin">—</span></div>
         <div class="r"><span class="k">최근 로그인</span><span class="v" id="dLastLogin">—</span></div>
       </div>
@@ -1409,7 +1408,7 @@ async function getMember(code){
     return {
       id:m.id, name:m.name, code:m.code, status:_stat(m.status),
       office:[_brandLab(m), m.region, _officeLab(m)].filter(Boolean).join(' · '),
-      phone:_full(m.phone), phoneFull:m.phone, birth:(m.birth_date||m.birth||'-'),
+      phone:_full(m.phone), phoneFull:m.phone,
       join:_date(_ts(m)), total:total, reward:reward, lastWr:lastWr?_date(lastWr):'-',
       smsOptout: (m.sms_optout === null || m.sms_optout === undefined) ? null : !!m.sms_optout,
       agreePrivacy: (m.agree_privacy!==false), agreeMkt: !!m.agree_marketing,
@@ -1973,7 +1972,6 @@ async function openMember(code){
     + (m.pending ? ' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;">승인대기</span>' : '');
   fillApproval(m);
   $('dPhone').textContent = m.phone || '—';
-  $('dBirth').textContent = m.birth || '—';
   $('dJoin').textContent = m.join || '—';
   $('dLastLogin').textContent = '조회 중…';
   $('dVerify').innerHTML = m.verified ? yes : no;
