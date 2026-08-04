@@ -1787,6 +1787,30 @@ async function approveRewards(ids){
 }
 
 /* ── 내비 전환 ── */
+/* ══════════ 화면을 열 때마다 서버에서 다시 불러오기 ══════════
+   예전에는 처음 한 번만 불러오고 그 뒤로는 화면만 바꿔 보여 줬다.
+   그래서 새 회원이 가입해도 브라우저 새로고침(F5) 전까지 목록에 안 나왔다.
+   ⚠ 한 화면이 실패해도 다른 화면과 화면 전환은 멀쩡해야 하므로
+      각각을 따로 감싼다. (2026-08-03 에 하나가 죽어 전체가 멈춘 일이 있었다) */
+const VIEW_REFRESH = {
+  dashboard : [renderDashboard],
+  members   : [renderMembers],
+  promotions: [renderPromos, renderRewards],
+  services  : [renderServices],
+  offices   : [() => renderOffices(1)],
+  settings  : [renderNotices, renderFaq, renderAdmins],
+  sms       : [renderSms, renderSmsStatus],
+  logs      : [() => renderLogs(1)]
+};
+function refreshView(v){
+  const fns = VIEW_REFRESH[v];
+  if(!fns) return;
+  fns.forEach(function(fn){
+    try{ Promise.resolve(fn()).catch(function(e){ console.error('refresh:'+v, e); }); }
+    catch(e){ console.error('refresh:'+v, e); }
+  });
+}
+
 document.querySelectorAll('.nav-item').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     const v = btn.dataset.view;
@@ -1798,6 +1822,7 @@ document.querySelectorAll('.nav-item').forEach(btn=>{
     S.view = v;
     document.querySelector('.view-wrap').scrollTo(0,0);
     window.scrollTo(0,0);
+    refreshView(v);
   });
 });
 $('globalSearch').addEventListener('keydown', async e=>{ if(e.key!=='Enter')return; var q=(e.target.value||'').trim(); if(!q){ toast('검색어를 입력해 주세요.'); return; } var list=await searchCarmaster(q); if(!list.length){ toast('검색 결과가 없습니다.'); return; } toast(list.length+'명 검색됨'); openMember(list[0].code); });
@@ -2006,7 +2031,7 @@ function applyMemberFilters(){
 ['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', function(){ S.mPage=1; applyMemberFilters(); }); });
 if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
 
-if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
+if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; renderMembers(); });
 if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
 $('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,m.join,m.state];}))); _download('카마스터_회원_'+_today()+'.csv', csv); admAudit('members', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 const RAYNO_ADMIN_URL = 'https://raynofilm.co.kr/include/app/8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918/index.php';
