@@ -54,9 +54,9 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
           <label for="saveId" style="margin-top:14px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;"><input type="checkbox" id="saveId" style="width:18px;height:18px;accent-color:#FF5A00;margin:0;cursor:pointer;"><span style="font-size:14px;color:#5A5A5E;font-weight:600;">아이디 저장</span></label>
           <button style="margin-top:14px;width:100%;padding:19px 0;border:none;border-radius:999px;background:#FF5A00;color:#fff;font-size:17px;font-weight:800;font-family:inherit;" id="loginBtn" data-href="my.html" data-gate="0">로그인</button>
           <div id="loginErr" style="display:none;margin-top:12px;align-items:center;gap:7px;justify-content:center;color:#E23B3B;font-size:13px;font-weight:600;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E23B3B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16.5v.5"></path></svg><span>아이디 또는 비밀번호를 확인해 주세요.</span></div>
-          <div style="margin-top:18px;text-align:center;font-size:13.5px;color:#8A8A8E;font-weight:600;"><span data-go="1" style="cursor:pointer;color:#8A8A8E;font-weight:600;">아이디 찾기</span> &nbsp;&nbsp;<span style="color:#DADADC;">|</span>&nbsp;&nbsp; <span data-go="2" style="cursor:pointer;color:#8A8A8E;font-weight:600;">비밀번호 찾기</span></div>
+          <div style="margin-top:26px;text-align:center;font-size:13.5px;color:#8A8A8E;font-weight:600;line-height:1.9;"><span data-go="1" style="cursor:pointer;color:#8A8A8E;font-weight:600;">아이디 찾기</span> &nbsp;&nbsp;<span style="color:#DADADC;">|</span>&nbsp;&nbsp; <span data-go="2" style="cursor:pointer;color:#8A8A8E;font-weight:600;">비밀번호 찾기</span></div>
           <div style="flex:1;"></div>
-          <div style="margin-bottom:26px;text-align:center;font-size:14px;color:#8A8A8E;font-weight:600;">아직 회원이 아니신가요? <span style="color:#FF5A00;font-weight:800;" data-href="signup.html">가입하기</span></div>
+          <div style="margin:24px 0 30px;text-align:center;font-size:14px;color:#8A8A8E;font-weight:600;line-height:1.9;">아직 회원이 아니신가요? <span style="color:#FF5A00;font-weight:800;" data-href="signup.html">가입하기</span></div>
 
   <div class="rk-footer">
     <div class="rk-links">
@@ -94,7 +94,7 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-eye
   <div id="findid-result" style="display:none;margin-top:20px;background:#F5F5F6;border-radius:16px;padding:20px;text-align:center;"><div style="font-size:13px;font-weight:700;color:#8A8A8E;">가입된 아이디</div><div style="margin-top:8px;font-size:24px;font-weight:800;color:#111;letter-spacing:0.5px;">—</div></div>
   <div style="flex:1;"></div>
   <button data-reveal="#findid-result" style="width:100%;padding:19px 0;border:none;border-radius:999px;background:#111;color:#fff;font-size:17px;font-weight:800;font-family:inherit;cursor:pointer;" id="fidConfirm">아이디 확인하기</button>
-  <div style="margin:14px 0 26px;text-align:center;font-size:14px;color:#8A8A8E;font-weight:600;cursor:pointer;" data-go="0">로그인하러 가기 <span style="color:#111;font-weight:800;text-decoration:underline;">로그인</span></div>
+  <div style="margin:16px 0 28px;text-align:center;font-size:14px;color:#8A8A8E;font-weight:600;line-height:1.9;"><span id="fidToPw" style="cursor:pointer;color:#111;font-weight:800;text-decoration:underline;">비밀번호 찾기</span><span style="color:#DADADC;margin:0 10px;">|</span><span style="cursor:pointer;" data-go="0">로그인하러 가기 <span style="color:#111;font-weight:800;text-decoration:underline;">로그인</span></span></div>
 
   <div class="rk-footer">
     <div class="rk-links">
@@ -365,6 +365,16 @@ const S = { brand:'', region:'', office:'', name:'', birth:'', telco:'', phone:'
   /* ===== reset pw ===== */
   var fpwNice = id('fpwNice');
   if(fpwNice){
+    /* 아이디를 찾은 분이 비밀번호도 모를 수 있다. 찾은 아이디를 채워 넘겨준다. */
+    var fidPw = id('fidToPw');
+    if(fidPw) fidPw.addEventListener('click', function(){
+      var box = id('findid-result');
+      var got = (box && box.children[1]) ? String(box.children[1].textContent || '').trim() : '';
+      var t = id('fpwId');
+      if(t && got && got !== '\u2014') t.value = got;
+      nav(2, 1);
+    });
+
     var fpwNext = null;
     [].slice.call(D.querySelectorAll('[data-go="3"]')).forEach(function(b){ if(b.tagName==='BUTTON') fpwNext = b; });
     gate(fpwNext, false);

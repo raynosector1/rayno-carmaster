@@ -189,8 +189,10 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
           <div class="rk-footer">
             <div class="rk-links">
               <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-              <span class="rk-sep">|</span>
-              <a href="policy.html">개인정보 처리방침</a>
+                            <span class="rk-sep">|</span>
+              <a href="policy.html">이용약관</a>
+                            <span class="rk-sep">|</span>
+              <a href="policy.html#privacy">개인정보 처리방침</a>
             </div>
             <div class="rk-biz">
               주식회사 레이노섹터1<br>
@@ -698,8 +700,7 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
       niceBtn.style.display='none';
       if(nBox) nBox.style.display='none';
       setState('');
-      /* 여기서 멈추는 분에게는 본인인증 안내도 명함 준비 안내도 필요 없다.
-         가입을 이어갈 수 없는데 준비하라고 하면 헷갈리기만 한다. */
+      /* 여기서 멈추는 분에게는 본인인증 안내도 명함 준비 안내도 필요 없다. */
       [].forEach.call(document.querySelectorAll('[data-pre]'), function(el){ el.style.display='none'; });
       var wrap = niceBtn.parentNode;
       if(wrap.querySelector('[data-joined="1"]')) return;
@@ -797,7 +798,23 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
       g3();
     });
     [pw,pw2].forEach(function(x){ if(x)x.addEventListener('input',g3); });
-    if(pw2){ var pw2wrap=pw2.parentElement; pw2.addEventListener('input',function(){ if(pw2.value&&pw.value!==pw2.value){ pw2wrap.style.borderColor='#FF3B30'; showErr(pw2wrap,'pw2','비밀번호가 일치하지 않습니다.'); } else { pw2wrap.style.borderColor='#E7E7E9'; hideErr(pw2wrap,'pw2'); } }); }
+    /* 두 칸이 같은지 다시 따져 표시한다.
+       예전에는 아래 칸을 칠 때만 따져서, 위 칸을 고쳐 같아져도
+       '일치하지 않습니다'가 그대로 남아 아래 칸을 지웠다 다시 써야 했다. */
+    if(pw2){
+      var pw2wrap=pw2.parentElement;
+      var pwMatch=function(){
+        if(pw2.value && pw.value!==pw2.value){
+          pw2wrap.style.borderColor='#FF3B30';
+          showErr(pw2wrap,'pw2','비밀번호가 일치하지 않습니다.');
+        } else {
+          pw2wrap.style.borderColor='#E7E7E9';
+          hideErr(pw2wrap,'pw2');
+        }
+      };
+      pw2.addEventListener('input', pwMatch);
+      if(pw) pw.addEventListener('input', pwMatch);   /* 위 칸을 고쳐도 다시 따진다 */
+    }
     function reqOk(){ var reqs=boxes.filter(function(x){return x.dataset.agree==='req';}); return reqs.length&&reqs.every(function(x){return x.dataset.on==='1';}); }
     function pwChk(v){ v=v||''; var miss=[]; if(!/[A-Za-z]/.test(v))miss.push('영문'); if(!/[0-9]/.test(v))miss.push('숫자'); if(!/[^A-Za-z0-9]/.test(v))miss.push('특수문자'); return { ok: v.length>=6 && miss.length===0, len: v.length>=6, miss: miss }; }
     var pwHint=id('pwHint');
