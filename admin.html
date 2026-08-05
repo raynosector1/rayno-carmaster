@@ -233,7 +233,9 @@ input::placeholder{color:#B4B4B8;}
 }
 
 /* 아주 넓은 화면에서 표가 끝없이 늘어나면 눈이 줄을 놓친다 */
-.view-wrap{max-width:1680px;width:100%;margin:0 auto;}
+/* 넓은 화면에서 표를 끝까지 늘리면 남는 폭이 한 칸에 몰려 들쭉날쭉해 보인다.
+   남는 공간은 좌우 여백으로 돌리고, 표는 읽기 좋은 폭을 지킨다. */
+.view-wrap{max-width:1500px;width:100%;margin:0 auto;}
 .view.active{gap:var(--sp4);}
 
 /* ── 카드 ──
@@ -252,6 +254,9 @@ input::placeholder{color:#B4B4B8;}
 .td{transition:background .12s;}
 .td:hover{background:#FAFAFB;}
 .th{letter-spacing:0;}
+/* 칸 경계가 보이지 않으면 폭이 달라 보일 때 '들쭉날쭉'하게 느껴진다.
+   머리글에만 아주 옅은 선을 두어 어디서 나뉘는지 알려 준다. (본문은 깨끗하게) */
+.th > * + *{box-shadow:inset 1px 0 0 #E9E9EC;padding-left:12px;}
 /* ── 표를 옆으로 밀 수 있게 ──
    화면을 확대했거나 모니터가 좁으면 오른쪽 끝 칸(상세·수정)에 손이 닿지 않았다.
    칸을 줄여 우겨넣는 대신 옆으로 미는 쪽을 택한다. 값이 뭉개지지 않는다.
@@ -594,7 +599,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div id="mTodo" style="margin-top:10px;display:none;gap:8px;flex-wrap:wrap;"></div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:112px minmax(74px,0.7fr) minmax(88px,0.8fr) minmax(150px,1.8fr) minmax(78px,0.8fr) minmax(108px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">
+          <div class="tr th" style="grid-template-columns:112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">
             <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span style="text-align:right;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
           </div>
           <div id="membersRows"></div>
@@ -1982,7 +1987,7 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, '112px minmax(74px,0.7fr) minmax(88px,0.8fr) minmax(150px,1.8fr) minmax(78px,0.8fr) minmax(108px,1fr) 132px 64px 100px 128px 60px');
+  $('membersRows').innerHTML = skelRows(7, '112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -2080,7 +2085,7 @@ function applyMemberFilters(){
     return '<span class="badge b-off">정지</span>';
   };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:112px minmax(74px,0.7fr) minmax(88px,0.8fr) minmax(150px,1.8fr) minmax(78px,0.8fr) minmax(108px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">'+
+    return '<div class="tr td" style="grid-template-columns:112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
