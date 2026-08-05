@@ -134,7 +134,7 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
 
           <div style="margin-top:14px;font-size:14px;font-weight:800;color:#111;margin-bottom:8px;">계정 정보</div>
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;gap:8px;"><input id="loginId" type="text" placeholder="아이디" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="latin" name="cm-login-id" style="flex:1;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:16px;color:#111;outline:none;background:#fff;"><button style="flex-shrink:0;padding:0 18px;border:none;background:#FF5A00;color:#fff;font-size:13.5px;font-weight:800;border-radius:14px;font-family:inherit;" id="dupCheck">중복확인</button></div><div id="idHint" style="font-size:12.5px;font-weight:600;color:#8A8A8E;padding:0 4px;margin-top:-2px;">영문·숫자 조합 4자리 이상</div>
+            <div style="display:flex;gap:8px;"><input id="loginId" type="text" placeholder="아이디" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="latin" name="cm-login-id" style="flex:1;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:16px;color:#111;outline:none;background:#fff;"><button style="flex-shrink:0;padding:0 18px;border:none;background:#FF5A00;color:#fff;font-size:13.5px;font-weight:800;border-radius:14px;font-family:inherit;" id="dupCheck">중복확인</button></div><div id="idHint" style="font-size:12.5px;font-weight:600;color:#8A8A8E;padding:0 4px;margin-top:-2px;">5~20자 · 영문 소문자, 숫자, _ , -</div>
             <div style="position:relative;background:#fff;border:1.5px solid #E7E7E9;border-radius:14px;"><input type="password" placeholder="비밀번호" style="width:100%;border:none;background:none;outline:none;padding:14px 52px 14px 16px;font-size:16px;color:#111;font-family:inherit;" id="password"><button type="button" data-eye="" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:6px;cursor:pointer;line-height:0;"><svg data-off-ic="" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg data-on-ic="" style="display:none" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF5A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3 L21 21"></path></svg></button></div>
             <div id="pwHint" style="font-size:12.5px;font-weight:600;color:#8A8A8E;padding:0 4px;margin-top:-2px;">영문·숫자·특수문자 조합 6자리 이상</div><div style="position:relative;background:#fff;border:1.5px solid #E7E7E9;border-radius:14px;"><input type="password" placeholder="비밀번호 확인" style="width:100%;border:none;background:none;outline:none;padding:14px 52px 14px 16px;font-size:16px;color:#111;font-family:inherit;" id="password2"><button type="button" data-eye="" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;padding:6px;cursor:pointer;line-height:0;"><svg data-off-ic="" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8A8A8E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg data-on-ic="" style="display:none" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF5A00" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle><path d="M3 3 L21 21"></path></svg></button></div>
           </div>
@@ -776,12 +776,17 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
     }); });
     var idHint=id('idHint');
     function setHint(el,msg,type){ if(!el)return; el.textContent=msg; el.style.color = type==='ok' ? '#22B07D' : (type==='err' ? '#FF3B30' : '#8A8A8E'); }
-    function idChk(v){ v=(v||'').trim().toLowerCase(); return { val:v, ok: v.length>=4 && v.length<=20 && /^[a-z0-9]+$/.test(v) && /[a-z]/.test(v) && /[0-9]/.test(v) }; }
+    /* 서버(auth.js)의 규칙과 같아야 한다. 한쪽만 고치면 화면은 통과했는데 서버가 막는다.
+       5~20자 · 영문 소문자, 숫자, 기호(_ -) · 기호만으로는 안 됨 */
+    function idChk(v){
+      v=(v||'').trim().toLowerCase();
+      return { val:v, ok: /^(?=.*[a-z0-9])[a-z0-9_-]{5,20}$/.test(v) };
+    }
     function dupIdle(){ dup.textContent='중복확인'; dup.style.background='#FF5A00'; dup.style.color='#fff'; dup.style.border='none'; }
     if(dup)dup.addEventListener('click',function(){
       var c=idChk(lid.value);
       if(!c.val){ setHint(idHint,'아이디를 입력해 주세요.','err'); lid.style.borderColor='#FF3B30'; return; }
-      if(!c.ok){ setHint(idHint,'영문·숫자 조합 4자리 이상으로 입력해 주세요.','err'); lid.style.borderColor='#FF3B30'; return; }
+      if(!c.ok){ setHint(idHint,'5~20자의 영문 소문자·숫자와 기호(_, -)만 쓸 수 있습니다.','err'); lid.style.borderColor='#FF3B30'; return; }
       lid.value=c.val;
       checkLoginId(c.val).then(function(res){
         if(res&&res.ok){ idOk=true; dup.textContent='확인완료'; dup.style.background='#22B07D'; dup.style.color='#fff'; dup.style.border='none'; lid.style.borderColor='#22B07D'; setHint(idHint,'\u2713 사용 가능한 아이디입니다.','ok'); }
@@ -792,8 +797,8 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
     if(lid)lid.addEventListener('input',function(){
       idOk=false; lid.style.borderColor='#E7E7E9'; if(dup)dupIdle();
       var v=(lid.value||'').trim();
-      if(!v) setHint(idHint,'영문·숫자 조합 4자리 이상','');
-      else if(!idChk(v).ok) setHint(idHint,'영문·숫자 조합 4자리 이상','err');
+      if(!v) setHint(idHint,'5~20자 · 영문 소문자, 숫자, _ , -','');
+      else if(!idChk(v).ok) setHint(idHint,'5~20자 · 영문 소문자, 숫자, _ , -','err');
       else setHint(idHint,'중복확인 버튼을 눌러 주세요.','');
       g3();
     });
