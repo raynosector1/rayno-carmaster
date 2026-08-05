@@ -51,6 +51,7 @@ input::placeholder{color:#B4B4B8;}
   display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;
   transition:background .14s,color .14s;}
 .sbToggle:hover{background:rgba(255,90,0,.20);border-color:rgba(255,90,0,.45);color:#fff;}
+.sidebar.mini .sbToggle{margin:0;width:38px;height:38px;font-size:16px;border-radius:11px;}
 .sidebar .brand{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.07);}
 .sidebar .brand .top{display:flex;align-items:center;gap:10px;}
 .sidebar .brand img{height:19px;width:auto;object-fit:contain;}
@@ -217,6 +218,7 @@ input::placeholder{color:#B4B4B8;}
    지금까지 22px·24px·20px·18px 이 뒤섞여 있었다.
    앞으로는 이 눈금 안에서만 고른다. */
 :root{
+  --ico-out:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>');
   --sp1:6px; --sp2:10px; --sp3:14px; --sp4:18px; --sp5:22px; --sp6:28px;
   --r-sm:9px; --r-md:12px; --r-lg:16px;
   --shadow-1:0 1px 2px rgba(17,17,17,.05);
@@ -237,7 +239,7 @@ input::placeholder{color:#B4B4B8;}
 /* ── 표 · 오와열 ──
    grid 칸은 안쪽 내용이 길면 칸 폭을 밀어낸다(min-width 기본값이 auto라서).
    그래서 머리글과 본문 줄이 어긋나 보였다. min-width:0 이 그것을 막는다. */
-.tr{column-gap:14px;}
+.tr{column-gap:16px;}
 .tr > *{min-width:0;}
 .td > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .td{transition:background .12s;}
@@ -585,7 +587,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div id="mTodo" style="margin-top:10px;display:none;gap:8px;flex-wrap:wrap;"></div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:118px 90px 104px minmax(150px,1fr) 92px 132px 142px 76px 104px 158px 62px;min-width:1330px;">
+          <div class="tr th" style="grid-template-columns:112px minmax(74px,0.7fr) minmax(88px,0.8fr) minmax(150px,1.8fr) minmax(78px,0.8fr) minmax(108px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">
             <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span style="text-align:right;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
           </div>
           <div id="membersRows"></div>
@@ -646,7 +648,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           </div>
 
           <div id="rwWrap" style="display:none;">
-            <div class="tr th" style="grid-template-columns:40px 120px 150px 116px 96px 1fr 150px 100px 140px;min-width:1180px;">
+            <div class="tr th" style="grid-template-columns:40px minmax(90px,0.9fr) 134px 108px 88px minmax(168px,1.7fr) minmax(118px,1.1fr) 96px 128px;min-width:1160px;">
               <span><span id="rwAll" title="이 쪽의 지급 대기 건을 모두 선택합니다" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span></span><span>카마스터</span><span>연락처</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
             </div>
             <div id="rewardsRows"></div>
@@ -673,7 +675,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           <button class="btn btn-line" id="exportServices">↓ 엑셀 다운로드</button>
         </div>
         <div class="table">
-          <div class="tr th" style="grid-template-columns:104px 1.1fr 1.1fr 150px 190px 210px 92px;min-width:1080px;">
+          <div class="tr th" style="grid-template-columns:100px minmax(118px,1.2fr) minmax(118px,1.2fr) minmax(126px,1fr) minmax(156px,1.5fr) 182px 86px;min-width:1060px;">
             <span>시공일</span><span>차량</span><span>시공점</span><span>카마스터</span><span>필름 제품</span><span>보증서번호</span><span>상태</span>
           </div>
           <div id="servicesRows"></div>
@@ -707,7 +709,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         </div>
 
         <div class="table" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:120px 130px 1fr 110px 100px 150px;">
+          <div class="tr th" style="grid-template-columns:minmax(94px,0.8fr) minmax(104px,0.9fr) minmax(160px,1.9fr) 92px 88px 136px;">
             <span>브랜드</span><span>지역</span><span>영업소명</span><span>소속 회원</span><span>상태</span><span>관리</span>
           </div>
           <div id="officesRows"></div>
@@ -777,7 +779,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           </div>
 
           <div class="table" style="margin-top:16px;border:1px solid var(--line);">
-            <div class="tr th" style="grid-template-columns:40px 48px 220px 1fr 116px;">
+            <div class="tr th" style="grid-template-columns:40px 52px minmax(160px,1.1fr) minmax(240px,2.6fr) 108px;">
               <span style="text-align:center;"><input type="checkbox" id="smsAll" style="cursor:pointer;"></span>
               <span style="text-align:center;">No</span><span>템플릿명</span><span>템플릿 내용</span><span style="text-align:right;">등록일시</span>
             </div>
@@ -864,7 +866,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         </div>
 
         <div class="table" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:150px 120px 175px 1fr 125px 70px;">
+          <div class="tr th" style="grid-template-columns:146px minmax(92px,0.85fr) minmax(126px,1.1fr) minmax(200px,2.3fr) 120px 74px;">
             <span>일시</span><span>관리자</span><span>동작</span><span>대상 · 내용</span><span>접속 주소</span><span>결과</span>
           </div>
           <div id="logRows"></div>
@@ -1973,7 +1975,7 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, '118px 90px 104px minmax(150px,1fr) 92px 132px 142px 76px 104px 158px 62px');
+  $('membersRows').innerHTML = skelRows(7, '112px minmax(74px,0.7fr) minmax(88px,0.8fr) minmax(150px,1.8fr) minmax(78px,0.8fr) minmax(108px,1fr) 132px 64px 100px 128px 60px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -2071,7 +2073,7 @@ function applyMemberFilters(){
     return '<span class="badge b-off">정지</span>';
   };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:118px 90px 104px minmax(150px,1fr) 92px 132px 142px 76px 104px 158px 62px;min-width:1330px;">'+
+    return '<div class="tr td" style="grid-template-columns:112px minmax(74px,0.7fr) minmax(88px,0.8fr) minmax(150px,1.8fr) minmax(78px,0.8fr) minmax(108px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
@@ -2677,14 +2679,14 @@ function _rwKind(t){
 
 /* ── 리워드 지급 ── */
 async function renderRewards(){
-  $('rewardsRows').innerHTML = skelRows(5, '40px 120px 150px 116px 96px 1fr 150px 100px 140px');
+  $('rewardsRows').innerHTML = skelRows(5, '40px minmax(90px,0.9fr) 134px 108px 88px minmax(168px,1.7fr) minmax(118px,1.1fr) 96px 128px');
   await sleep(600);
   const base = await loadRewards(S.rewardTab);
   const rows = S.rewardTab==='pending' ? [...S.extraPending, ...base] : base;
   S.rewards = rows;
   const done = S.rewardTab==='done';
   $('rewardsRows').innerHTML = !rows.length ? EMPTY(S.rewardTab==='done'?'지급 완료 내역이 없습니다':'지급 전 리워드가 없습니다') : rows.map(r=>
-    `<div class="tr td" style="grid-template-columns:40px 120px 150px 116px 96px 1fr 150px 100px 140px;min-width:1180px;" data-id="${esc(r.id)}">
+    `<div class="tr td" style="grid-template-columns:40px minmax(90px,0.9fr) 134px 108px 88px minmax(168px,1.7fr) minmax(118px,1.1fr) 96px 128px;min-width:1160px;" data-id="${esc(r.id)}">
        <span>${done?'':'<span class="rchk" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span>'}</span>
        <span style="font-weight:700;">${esc(r.name)}</span><span style="color:#5A5A5E;letter-spacing:.2px;">${esc(_fmtPhone(r.phone))}</span><span style="color:#5A5A5E;">${esc(r.code)}</span>
        <span><span class="badge ${esc(_rwKind(r.type).cls)}">${esc(_rwKind(r.type).label)}</span></span>
@@ -3630,10 +3632,10 @@ async function loadServices(){
   }catch(e){ console.error('loadServices',e); return []; }
 }
 var SV = { rows:[], page:1, size:50 };
-const SV_GRID = '104px 1.1fr 1.1fr 150px 190px 210px 92px';
+const SV_GRID = '100px minmax(118px,1.2fr) minmax(118px,1.2fr) minmax(126px,1fr) minmax(156px,1.5fr) 182px 86px';
 /* 좁은 화면에서 칸이 뭉개지지 않고 옆으로 밀리도록 최소 폭을 정해 둔다.
    SV_GRID 자체에 붙이면 뼈대(skelRows)가 칸 수를 잘못 세므로 따로 둔다. */
-const SV_MINW = 'min-width:1080px;';
+const SV_MINW = 'min-width:1060px;';
 
 /* 한 칸에 두 줄 — 위는 핵심값, 아래는 부가 설명 */
 function svCell(main, sub){
@@ -3784,7 +3786,7 @@ function ofFillRegions(){
 
 async function renderOffices(page){
   OF.page = page || 1;
-  $('officesRows').innerHTML = skelRows(7, '120px 130px 1fr 110px 100px 150px');
+  $('officesRows').innerHTML = skelRows(7, 'minmax(94px,0.8fr) minmax(104px,0.9fr) minmax(160px,1.9fr) 92px 88px 136px');
   await loadOfficeFilters();
   var res;
   try{ res = await admApi(ofQuery(OF.page)); }
@@ -3803,7 +3805,7 @@ async function renderOffices(page){
       ? '<span class="badge b-ok">사용중</span>'
       : '<span class="badge b-off">사용중지</span>';
     var mc = Number(o.member_count||0);
-    return '<div class="tr td" style="grid-template-columns:120px 130px 1fr 110px 100px 150px;" data-id="'+o.id+'">'
+    return '<div class="tr td" style="grid-template-columns:minmax(94px,0.8fr) minmax(104px,0.9fr) minmax(160px,1.9fr) 92px 88px 136px;" data-id="'+o.id+'">'
       + '<span style="font-weight:700;">'+esc(o.brand)+'</span>'
       + '<span style="color:#5A5A5E;">'+esc(o.region)+'</span>'
       + '<span style="font-weight:600;">'+esc(o.name)+'</span>'
@@ -4239,7 +4241,7 @@ async function loadSmsTemplates(){
 }
 
 async function renderSms(){
-  $('smsRows').innerHTML = skelRows(3, '40px 48px 220px 1fr 116px');
+  $('smsRows').innerHTML = skelRows(3, '40px 52px minmax(160px,1.1fr) minmax(240px,2.6fr) 108px');
   SMS_T = await loadSmsTemplates();
   $('smsCount').textContent = SMS_T.length;
   var opts = '<option value="">템플릿에서 불러오기</option>'
@@ -4253,7 +4255,7 @@ async function renderSms(){
         var preview = String(t.body||'').replace(/\s+/g, ' ').slice(0, 200);
         /* 머리글(.th)과 본문(.td)이 같은 class 를 써야 좌우 여백이 같아져 칸이 맞는다.
            예전에는 본문이 class="tr" 뿐이라 좌우 여백이 없어 머리글보다 22px 왼쪽으로 밀려 있었다. */
-        return '<div class="tr td" data-id="'+esc(t.id)+'" style="grid-template-columns:40px 48px 220px 1fr 116px;align-items:flex-start;">'
+        return '<div class="tr td" data-id="'+esc(t.id)+'" style="grid-template-columns:40px 52px minmax(160px,1.1fr) minmax(240px,2.6fr) 108px;align-items:flex-start;">'
           + '<span style="text-align:center;"><input type="checkbox" class="smsChk" style="cursor:pointer;vertical-align:middle;"></span>'
           + '<span class="num" style="text-align:center;color:var(--muted);font-size:13px;line-height:1.65;">'+no+'</span>'
           + '<span><button type="button" class="smsOpen" style="border:none;background:none;padding:0;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink);text-decoration:underline;cursor:pointer;text-align:left;line-height:1.65;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(t.name||'(이름 없음)')+'</button></span>'
@@ -4759,7 +4761,7 @@ async function slLoad(){
         +'font-size:12.5px;color:var(--muted);text-align:center;">아직 발송한 기록이 없습니다.</div>';
       return;
     }
-    var cols='grid-template-columns:150px 70px 1fr 1fr 1fr 80px;';
+    var cols='grid-template-columns:minmax(130px,1.2fr) 66px minmax(110px,1fr) minmax(110px,1fr) minmax(110px,1fr) 76px;';
     box.innerHTML='<div class="table" style="border:1px solid var(--line);">'
       + '<div class="tr th" style="'+cols+'"><span>발송 시각</span><span>유형</span>'
       + '<span style="text-align:right;">전체</span><span style="text-align:right;">접수</span>'
@@ -4794,7 +4796,7 @@ async function slDetailLoad(batch){
     var r=await admApi('/v1/admin/sms/log?batch='+encodeURIComponent(batch));
     if(!r || !r.ok) throw new Error((r && r.message) || '내역을 읽지 못했습니다.');
     var rows=r.items||[];
-    var cols='grid-template-columns:90px 70px 80px 90px 1fr 1fr;';
+    var cols='grid-template-columns:88px 66px 78px 88px minmax(110px,1fr) minmax(110px,1fr);';
     box.innerHTML='<div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:9px;">'
       + '건별 내역 <span style="color:var(--muted);font-weight:600;">('+rows.length.toLocaleString()+'건)</span></div>'
       + '<div class="table" style="border:1px solid var(--line);">'
@@ -5031,7 +5033,7 @@ async function renderLogs(page){
         var bad = (l.result === 'fail');
         var rTxt = st ? '점검' : (bad ? '실패' : '성공');
         var rCls = st ? 'b-off' : (bad ? 'b-err' : 'b-ok');
-        return '<div class="tr td" style="grid-template-columns:150px 120px 175px 1fr 125px 70px;">'
+        return '<div class="tr td" style="grid-template-columns:146px minmax(92px,0.85fr) minmax(126px,1.1fr) minmax(200px,2.3fr) 120px 74px;">'
           + '<span style="font-size:12.5px;color:var(--muted);">'+esc(l.created_kst||'')+'</span>'
           + '<span style="font-size:12.5px;font-weight:700;">'+esc(who)+'</span>'
           + '<span style="font-size:12.5px;font-weight:600;">'+esc(_lgLabel(l.action))+'</span>'
