@@ -610,8 +610,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           </div>
 
           <div id="rwWrap" style="display:none;">
-            <div class="tr th" style="grid-template-columns:40px 1fr 120px 100px 190px 150px 100px 140px;">
-              <span><span id="rwAll" title="이 쪽의 지급 대기 건을 모두 선택합니다" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span></span><span>카마스터</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
+            <div class="tr th" style="grid-template-columns:40px 120px 150px 116px 96px 1fr 150px 100px 140px;">
+              <span><span id="rwAll" title="이 쪽의 지급 대기 건을 모두 선택합니다" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span></span><span>카마스터</span><span>연락처</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
             </div>
             <div id="rewardsRows"></div>
           </div>
@@ -1652,7 +1652,9 @@ async function loadDashboard(){
      그건 '이번 달에 몇 명이 가입했나'를 세는 것이라 나중에 탈퇴했더라도 가입은 가입이다. */
   var alive = all.filter(function(x){ return x.status !== 'withdrawn'; });
   var recent = alive.slice(0,6).map(function(x){
-    return { name:x.name||'-', office:_officeLab(x)||'-', ago:_ago(_ts(x)), state:_memberState(x) };
+    /* 영업소 이름만 있으면 어느 브랜드인지 알 수 없다 (예: '용인지점'). 브랜드를 앞에 붙인다. */
+    var b=_brandLab(x)||'', o=_officeLab(x)||'';
+    return { name:x.name||'-', office:(b&&o)?(b+' ㅣ '+o):(b||o||'-'), ago:_ago(_ts(x)), state:_memberState(x) };
   });
   /* 지급 사유는 리워드 종류에서 가져온다.
      예전에는 '가입 축하 웰컴기프트'를 그냥 박아둔 탓에
@@ -1746,6 +1748,14 @@ async function searchCarmaster(q){
     });
   }catch(e){ console.error('search',e); return []; }
 }
+/* 01012345678 → 010-1234-5678. 비즈콘에 올릴 때 그대로 쓰는 값이라 가리지 않는다. */
+function _fmtPhone(v){
+  var d=String(v||'').replace(/\D/g,'');
+  if(d.length===11) return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  if(d.length===10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+  return d || '-';
+}
+
 async function loadRewards(tab){
   try{
     var rows = await admRest('rewards?select=*,carmasters(code,name,office,phone)');
@@ -2029,7 +2039,9 @@ function applyMemberFilters(){
   }
 }
 ['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', function(){ S.mPage=1; applyMemberFilters(); }); });
-if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; applyMemberFilters(); });
+/* 기간 옆 [조회] — 화면에 남아 있는 목록을 거르는 게 아니라 서버에서 다시 받아온다.
+   (검색창 옆 돋보기 단추와 별개다. 예전에는 이쪽이 다시 불러오지 않았다) */
+if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1; renderMembers(); });
 
 if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; renderMembers(); });
 if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
@@ -2605,16 +2617,16 @@ function _rwKind(t){
 
 /* ── 리워드 지급 ── */
 async function renderRewards(){
-  $('rewardsRows').innerHTML = skelRows(5, '40px 1fr 120px 100px 190px 150px 100px 140px');
+  $('rewardsRows').innerHTML = skelRows(5, '40px 120px 150px 116px 96px 1fr 150px 100px 140px');
   await sleep(600);
   const base = await loadRewards(S.rewardTab);
   const rows = S.rewardTab==='pending' ? [...S.extraPending, ...base] : base;
   S.rewards = rows;
   const done = S.rewardTab==='done';
   $('rewardsRows').innerHTML = !rows.length ? EMPTY(S.rewardTab==='done'?'지급 완료 내역이 없습니다':'지급 전 리워드가 없습니다') : rows.map(r=>
-    `<div class="tr td" style="grid-template-columns:40px 1fr 120px 100px 190px 150px 100px 140px;" data-id="${esc(r.id)}">
+    `<div class="tr td" style="grid-template-columns:40px 120px 150px 116px 96px 1fr 150px 100px 140px;" data-id="${esc(r.id)}">
        <span>${done?'':'<span class="rchk" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span>'}</span>
-       <span style="font-weight:700;">${esc(r.name)}</span><span style="color:#5A5A5E;">${esc(r.code)}</span>
+       <span style="font-weight:700;">${esc(r.name)}</span><span style="color:#5A5A5E;letter-spacing:.2px;">${esc(_fmtPhone(r.phone))}</span><span style="color:#5A5A5E;">${esc(r.code)}</span>
        <span><span class="badge ${esc(_rwKind(r.type).cls)}">${esc(_rwKind(r.type).label)}</span></span>
        <span><div>${esc(r.reward)}</div><div style="font-size:11px;color:${r.delivery==='coupon'?'var(--orange)':'var(--muted)'};margin-top:2px;">${r.delivery==='coupon'?'앱 쿠폰 발급':'비즈콘 발송'}</div></span><span style="color:#8A8A8E;">${esc(r.reason)}</span><span style="color:#8A8A8E;">${esc(r.date)}</span>
        <span>${done

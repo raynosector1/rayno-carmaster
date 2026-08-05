@@ -212,10 +212,8 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html">이용약관</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html#privacy">개인정보 처리방침</a>
+        <span class="rk-sep">|</span>
+        <a href="policy.html">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -278,7 +276,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     </div>
 
     <div style="margin-top:18px;padding:0 4px;font-size:12px;color:#A8A8AC;line-height:1.7;">
-      ※ 주유상품권은 가입 완료 후 자동 지급됩니다.<br>
+      ※ 주유상품권은 명함 확인이 끝난 뒤 정해진 지급일에 발송해 드립니다.<br>
       ※ 쿠폰은 전국 레이노 지정 시공점에서 사용할 수 있습니다.<br>
       ※ 사용 관련 문의는 레이노 고객센터(1588-8695)로 연락 부탁드립니다.
     </div>
@@ -286,10 +284,8 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html">이용약관</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html#privacy">개인정보 처리방침</a>
+        <span class="rk-sep">|</span>
+        <a href="policy.html">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -329,10 +325,8 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html">이용약관</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html#privacy">개인정보 처리방침</a>
+        <span class="rk-sep">|</span>
+        <a href="policy.html">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -375,10 +369,8 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
     <div class="rk-footer">
       <div class="rk-links">
         <a href="https://raynofilm.co.kr/" target="_blank" rel="noopener noreferrer">회사소개</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html">이용약관</a>
-                <span class="rk-sep">|</span>
-        <a href="policy.html#privacy">개인정보 처리방침</a>
+        <span class="rk-sep">|</span>
+        <a href="policy.html">개인정보 처리방침</a>
       </div>
       <div class="rk-biz">
         주식회사 레이노섹터1<br>
@@ -571,6 +563,7 @@ function lockTab(name){
   kids.forEach(function(ch, i){
     if(ch.getAttribute('data-lock') !== null){ ch.style.display = 'block'; return; }
     if(i === 0) return;                       /* 머리글은 그대로 둔다 */
+    if(ch.classList.contains('rk-footer')) return;   /* 푸터(사업자 정보)도 남긴다 */
     if(ch._odisp === undefined) ch._odisp = ch.style.display;
     ch.style.display = 'none';
   });
