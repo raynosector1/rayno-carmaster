@@ -549,8 +549,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div id="mTodo" style="margin-top:10px;display:none;gap:8px;flex-wrap:wrap;"></div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(150px,1.1fr) 62px;">
-            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span>가입일</span><span>상태</span><span>수정</span>
+          <div class="tr th" style="grid-template-columns:118px 90px 104px minmax(150px,1fr) 92px 132px 142px 76px 104px 158px 62px;">
+            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span style="text-align:right;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
           </div>
           <div id="membersRows"></div>
         </div>
@@ -1681,6 +1681,7 @@ async function loadMembers(filters){
     var wmap = {};
     try{ var wm = await admRest('warranty_matches?select=carmaster_id,status,link_type'); wm.forEach(function(w){ if(w.link_type==='linked'||w.status==='valid'){ wmap[w.carmaster_id]=(wmap[w.carmaster_id]||0)+1; } }); }catch(e){}
     return rows.map(function(m){ return { code:m.code||'-', name:m.name||'-', loginId:m.login_id||'-', office:_officeLab(m)||'-', brand:_brandLab(m)||'', region:m.region||'', phone:_full(m.phone), join:_date(_ts(m)), joinRaw:String(_ts(m)).slice(0,10), total:(wmap[m.id]||0), status:_stat(m.status), pending:(m.office_approval==='pending'), rejoin:!!m.stats_from, rejoinN:Number(m.rejoin_count||0), card:String(m.card_approval||'approved'), cardN:Number(m.card_apply_count||0),
+      svc:(m.service_count==null ? null : Number(m.service_count)),
       /* 소속을 직접 입력한 회원은 값이 제각각이라 드롭박스가 지저분해진다.
          목록 칸에는 적어 낸 값을 그대로 보여 주되, 걸러낼 때는 '기타' 하나로 묶는다. */
       brandKey:(m.brand==='기타' ? '기타' : (_brandLab(m)||'')),
@@ -1916,7 +1917,7 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, 'minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(150px,1.1fr) 62px');
+  $('membersRows').innerHTML = skelRows(7, '118px 90px 104px minmax(150px,1fr) 92px 132px 142px 76px 104px 158px 62px');
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -2014,7 +2015,7 @@ function applyMemberFilters(){
     return '<span class="badge b-off">정지</span>';
   };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:minmax(104px,0.9fr) minmax(84px,0.7fr) minmax(104px,0.9fr) minmax(150px,1.5fr) minmax(80px,0.7fr) minmax(100px,0.9fr) minmax(132px,1.1fr) minmax(96px,0.8fr) minmax(150px,1.1fr) 62px;">'+
+    return '<div class="tr td" style="grid-template-columns:118px 90px 104px minmax(150px,1fr) 92px 132px 142px 76px 104px 158px 62px;">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
@@ -2022,9 +2023,12 @@ function applyMemberFilters(){
       '<span>'+esc(m.name)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
-      '<span style="color:#8A8A8E;">'+m.join+'</span>'+
+      /* 시공 건수 — 0 은 흐리게, 셀 수 없었으면 물음표 */
+      '<span class="num" style="text-align:right;font-weight:'+(m.svc>0?'800':'500')+';color:'+(m.svc>0?'var(--ink)':'#B4B4B8')+';">'
+        + (m.svc==null ? '?' : m.svc.toLocaleString()) + '</span>'+
+      '<span class="num" style="text-align:center;color:#8A8A8E;">'+m.join+'</span>'+
       '<span>'+badge(m.state)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 시공 실적은 초기화되어, 재가입 시점부터 새롭게 누적됩니다.">재가입</span>':'')+'</span>'+
-      '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
+      '<span class="linklike" style="text-align:center;" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
   var pg=$('mPager');
@@ -2045,7 +2049,7 @@ if($('fltApply')) $('fltApply').addEventListener('click', function(){ S.mPage=1;
 
 if($('mSearchBtn')) $('mSearchBtn').addEventListener('click', function(){ S.mPage=1; renderMembers(); });
 if($('mSearch')) $('mSearch').addEventListener('keydown', function(e){ if(e.key==='Enter'){ S.mPage=1; applyMemberFilters(); } });
-$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,m.join,m.state];}))); _download('카마스터_회원_'+_today()+'.csv', csv); admAudit('members', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
+$('exportMembers').addEventListener('click', async ()=>{ try{ var rows=(S.allMembers&&S.allMembers.length)?filteredMembers():await loadMembers({}); var csv=_csv([['카마스터코드','소속','지역','영업소','이름','아이디','휴대전화번호','시공','가입일','상태']].concat(rows.map(function(m){return [m.code,m.brand,m.region,m.office,m.name,m.loginId,m.phone,(m.svc==null?'':m.svc),m.join,m.state];}))); _download('카마스터_회원_'+_today()+'.csv', csv); admAudit('members', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 const RAYNO_ADMIN_URL = 'https://raynofilm.co.kr/include/app/8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918/index.php';
 /* ── 계정 상태 접기/폼기 ── */
 function _dtm(iso){
