@@ -96,7 +96,7 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
           <div style="display:flex;flex-direction:column;gap:10px;">
             <select id="brand" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled="" selected="">소속 선택</option></select><input id="brandEtc" maxlength="20" placeholder="소속 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
             <select id="region" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">지역 선택 (시·도)</option></select>
-            <select id="office" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">영업소 선택</option></select><div id="officeHint" style="display:none;margin-top:9px;font-size:13.5px;color:#FF5A00;font-weight:600;line-height:1.5;">이 지역에 등록된 영업소가 없습니다. 영업소명을 직접 입력해 주세요.<br><span style="font-weight:500;color:#8A8A8E;">가입은 바로 완료되며, 입력하신 영업소는 관리자 확인 후 확정됩니다.</span></div><input id="officeEtc" maxlength="20" placeholder="영업소 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
+            <select id="office" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">영업소 선택</option></select><div id="usedCarHint" style="display:none;margin-top:9px;font-size:13.5px;color:#6A6A6E;font-weight:500;line-height:1.5;">중고차는 영업소 대신 <b style="color:#111;">소속 회사명</b>을 적어 주세요.</div><div id="officeHint" style="display:none;margin-top:9px;font-size:13.5px;color:#FF5A00;font-weight:600;line-height:1.5;">이 지역에 등록된 영업소가 없습니다. 영업소명을 직접 입력해 주세요.<br><span style="font-weight:500;color:#8A8A8E;">가입은 바로 완료되며, 입력하신 영업소는 관리자 확인 후 확정됩니다.</span></div><input id="officeEtc" maxlength="20" placeholder="영업소 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
           </div>
           <div style="margin-top:16px;display:flex;align-items:flex-start;gap:10px;background:#F5F5F6;border-radius:14px;padding:14px 16px;"><span style="width:24px;height:24px;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</span><div style="font-size:13.5px;line-height:1.5;color:#6A6A6E;font-weight:500;">소속·영업소가 목록에 없다면 <b style="color:#111;font-weight:700;">기타</b>를 선택해 직접 입력할 수 있어요.</div></div>
           <div style="margin-top:18px;font-size:14px;font-weight:800;color:#111;margin-bottom:8px;"><span id="cardWho">명함 사진</span> <span style="color:#FF5A00;">*</span></div>
@@ -225,6 +225,10 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
 /* ══════════ 백엔드 API (가비아 MySQL) ══════════ */
 const API = 'https://carmaster-auth.raynofilm.co.kr';
 const ETC = '기타 (직접 입력)';
+/* 중고차 카마스터는 브랜드 대리점망에 속하지 않는다.
+   영업소 마스터에 있을 수 없으므로 영업소 선택을 감추고 회사명을 직접 받는다.
+   (보내는 값은 기존 직접입력과 같다: office='기타', office_etc=회사명) */
+const USED_CAR = '중고차';
 const id = function(x){ return document.getElementById(x); };
 function cmToken(){ try{ return sessionStorage.getItem('cm_token')||''; }catch(e){ return ''; } }
 
@@ -356,7 +360,7 @@ function brandRank(n){
 const FULL_REGIONS = ['서울특별시','부산광역시','대구광역시','인천광역시','광주광역시','대전광역시','울산광역시','세종특별자치시','경기도','강원특별자치도','충청북도','충청남도','전북특별자치도','전라남도','경상북도','경상남도','제주특별자치도'];
 function _esch(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function _opt(v){ var e=_esch(v); return '<option value="'+e+'">'+e+'</option>'; }
-function fillBrands(){ var el=id('brand'); if(!el)return; var h='<option value="" disabled selected>소속 선택</option>'; TREE.forEach(function(x){ h+=_opt(x.name); }); h+=_opt(ETC); el.innerHTML=h; }
+function fillBrands(){ var el=id('brand'); if(!el)return; var h='<option value="" disabled selected>소속 선택</option>'; TREE.forEach(function(x){ h+=_opt(x.name); }); h+=_opt(USED_CAR); h+=_opt(ETC); el.innerHTML=h; }
 /* 지역은 브랜드와 상관없이 17개 시·도를 모두 보여준다.
    전시장 마스터에 빠진 곳, 신규 개점, 미등록 매장이 있어서
    마스터에 있는 지역만 보여주면 가입 자체가 막힌다. */
@@ -577,9 +581,37 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
   if(brand){ var region=id('region'),office=id('office'),bEtc=id('brandEtc'),oEtc=id('officeEtc'),n1=id('next1');
     loadOffices();
     function etc(sel,inp){ if(inp)inp.style.display=/기타/.test(sel.value)?'block':'none'; }
-    brand.onchange=function(){ S.brand=brand.value; region.value=''; S.region=''; fillRegions(brand.value); region.disabled=!brand.value; office.innerHTML='<option value=\"\" disabled selected>영업소 선택</option>'; office.value=''; S.office=''; office.disabled=true; etc(brand,bEtc); g1(); };
+
+    /* 중고차를 고르면 영업소 칸을 감추고 회사명을 직접 받는다.
+       고르는 순간 S.office 를 '기타'로 못 박아 두므로,
+       보내는 값과 [다음] 조건은 기존 직접입력과 똑같이 흘러간다. */
+    function usedCarMode(){
+      var on = (brand.value === USED_CAR);
+      office.style.display = on ? 'none' : '';
+      var hint = id('officeHint');
+      if(on){
+        /* 목록에 없는 값은 select 에 넣어지지 않는다.
+           감춰 두더라도 항목을 하나 만들어 둬야 값이 남고 [다음]이 켜진다. */
+        office.innerHTML = _opt(ETC);
+        office.value = ETC; S.office = ETC; office.disabled = false;
+        if(hint) hint.style.display = 'none';
+        if(oEtc){
+          oEtc.style.display = 'block';
+          oEtc.placeholder = '회사명 직접 입력 (예: 케이카 분당점)';
+        }
+      } else if(oEtc){
+        oEtc.placeholder = '영업소 직접 입력 (최대 20자)';
+      }
+      var uh = id('usedCarHint');
+      if(uh) uh.style.display = on ? 'block' : 'none';
+      return on;
+    }
+
+    brand.onchange=function(){ S.brand=brand.value; region.value=''; S.region=''; fillRegions(brand.value); region.disabled=!brand.value; office.innerHTML='<option value=\"\" disabled selected>영업소 선택</option>'; office.value=''; S.office=''; office.disabled=true; etc(brand,bEtc); if(!usedCarMode()) etc(office,oEtc); g1(); };
     region.onchange=function(){
-      S.region=region.value; office.value=''; S.office='';
+      S.region=region.value;
+      if(brand.value === USED_CAR){ usedCarMode(); g1(); return; }   /* 중고차는 영업소 자체가 없다 */
+      office.value=''; S.office='';
       var n = fillOffices(S.brand, region.value);
       office.disabled = !region.value;
       var hint = id('officeHint');

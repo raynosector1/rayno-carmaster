@@ -952,6 +952,29 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:0 36px;">
       <div class="info-list">
         <div class="r"><span class="k">소속/지역/영업소</span><span class="v" id="dOffice">—</span></div>
+        <div id="dOrgBtnWrap" style="display:none;margin-top:6px;text-align:right;">
+          <span class="linklike" id="dOrgBtn" style="font-size:12px;">소속 수정</span>
+        </div>
+        <div id="dOrgEdit" style="display:none;margin-top:10px;background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:13px 14px;">
+          <div style="font-size:12.5px;font-weight:800;color:var(--ink);">소속 수정</div>
+          <div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.6;">
+            가입 화면과 같은 규칙으로 저장됩니다. 목록에 없으면 '기타'를 고르고 직접 적어 주세요.
+          </div>
+          <div style="margin-top:11px;display:flex;flex-direction:column;gap:7px;">
+            <select class="finp selc" id="ogBrand" style="padding:11px 13px;font-size:13px;"><option value="">소속 선택</option></select>
+            <input class="finp" id="ogBrandEtc" maxlength="20" placeholder="소속 직접 입력" style="display:none;padding:11px 13px;font-size:13px;">
+            <select class="finp selc" id="ogRegion" style="padding:11px 13px;font-size:13px;"><option value="">지역 선택 (시·도)</option></select>
+            <select class="finp selc" id="ogOffice" style="padding:11px 13px;font-size:13px;"><option value="">영업소 선택</option></select>
+            <input class="finp" id="ogOfficeEtc" maxlength="20" placeholder="영업소 직접 입력" style="display:none;padding:11px 13px;font-size:13px;">
+            <div id="ogUsedCarHint" style="display:none;font-size:11.5px;color:var(--muted);line-height:1.6;">
+              중고차는 영업소 대신 <b style="color:var(--ink);">소속 회사명</b>을 적어 주세요.
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn btn-soft" id="ogCancel" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;">취소</button>
+            <button class="btn btn-primary" id="ogSave" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;opacity:.45;pointer-events:none;">저장</button>
+          </div>
+        </div>
         <div id="dOfficeApproval" style="display:none;margin-top:10px;background:#FFF6F0;border:1px solid #FFE0CC;border-radius:11px;padding:13px 14px;">
           <div style="font-size:12.5px;font-weight:800;color:var(--orange);">영업소 승인 대기</div>
           <div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.6;">
@@ -1831,7 +1854,7 @@ async function getMember(code){
       withdrawnAt: m.withdrawn_at || null,
       rejoinAt: m.stats_from || null, rejoinN: Number(m.rejoin_count||0),
       pending: (m.office_approval === 'pending'), officeId: m.office_id || null,
-      brandRaw: m.brand || '', regionRaw: m.region || '',
+      brandRaw: m.brand || '', regionRaw: m.region || '', officeRaw: m.office || '',
       brandEtc: m.brand_etc || '', officeEtc: m.office_etc || '',
       verified: (m.status==='verified'||m.status==='suspended'),
       /* 명함 확인 */
@@ -2274,6 +2297,80 @@ async function fillApproval(m){
 
   apSetMode('pick');
 }
+/* ══════════ 소속 수정 (관리자) ══════════
+   가입 화면과 같은 규칙으로 브랜드·지역·영업소를 고쳐 저장한다.
+   서버는 op:'set-org' 하나로 받고, 규칙은 가입과 같은 함수를 쓴다.
+   영업소 승인 대기 중인 회원에게는 이 단추를 보이지 않는다 —
+   그때는 위의 '영업소 승인 대기' 상자가 같은 일을 하기 때문이다. */
+var ORG_ETC = '기타', ORG_USEDCAR = '중고차', ORG_CODE = null;
+
+function ogUsedCar(){
+  var on = ($('ogBrand').value === ORG_USEDCAR);
+  $('ogOffice').style.display = on ? 'none' : '';
+  $('ogUsedCarHint').style.display = on ? 'block' : 'none';
+  if(on){
+    $('ogOffice').innerHTML = '<option value="'+ORG_ETC+'">'+ORG_ETC+'</option>';
+    $('ogOffice').value = ORG_ETC;
+    $('ogOfficeEtc').style.display = 'block';
+    $('ogOfficeEtc').placeholder = '회사명 직접 입력 (예: 케이카 분당점)';
+  } else {
+    $('ogOfficeEtc').placeholder = '영업소 직접 입력';
+  }
+  return on;
+}
+function ogValidate(){
+  var b=$('ogBrand').value, r=$('ogRegion').value, o=$('ogOffice').value;
+  var ok = !!(b && r && o)
+        && (b !== ORG_ETC || !!$('ogBrandEtc').value.trim())
+        && (o !== ORG_ETC || !!$('ogOfficeEtc').value.trim());
+  var btn=$('ogSave');
+  btn.style.opacity = ok ? '1' : '.45';
+  btn.style.pointerEvents = ok ? 'auto' : 'none';
+}
+async function ogFillOffices(){
+  var b=$('ogBrand').value, r=$('ogRegion').value;
+  if(b === ORG_USEDCAR){ ogUsedCar(); ogValidate(); return; }
+  if(!b || !r || b === ORG_ETC){
+    $('ogOffice').innerHTML = '<option value="'+ORG_ETC+'">'+ORG_ETC+' (직접 입력)</option>';
+    $('ogOffice').value = ORG_ETC; $('ogOfficeEtc').style.display='block'; ogValidate(); return;
+  }
+  $('ogOffice').innerHTML = '<option value="">불러오는 중…</option>';
+  try{
+    var res = await admApi('/v1/admin/offices?brand=' + encodeURIComponent(b)
+      + '&region=' + encodeURIComponent(r) + '&active=1&size=500');
+    var rows = (res && res.items) || [];
+    $('ogOffice').innerHTML = '<option value="">영업소 선택</option>'
+      + rows.map(function(o){ return '<option value="'+esc(o.name)+'">'+esc(o.name)+'</option>'; }).join('')
+      + '<option value="'+ORG_ETC+'">'+ORG_ETC+' (직접 입력)</option>';
+  }catch(e){
+    $('ogOffice').innerHTML = '<option value="'+ORG_ETC+'">'+ORG_ETC+' (직접 입력)</option>';
+  }
+  ogValidate();
+}
+async function ogOpen(m){
+  ORG_CODE = m.code;
+  await loadOfficeFilters();
+  var bs = Object.keys(OF.filters || {}).sort();
+  $('ogBrand').innerHTML = '<option value="">소속 선택</option>'
+    + bs.map(function(b){ return '<option value="'+esc(b)+'">'+esc(b)+'</option>'; }).join('')
+    + '<option value="'+ORG_USEDCAR+'">'+ORG_USEDCAR+'</option>'
+    + '<option value="'+ORG_ETC+'">'+ORG_ETC+' (직접 입력)</option>';
+  $('ogRegion').innerHTML = '<option value="">지역 선택 (시·도)</option>'
+    + OF_REGIONS.map(function(r){ return '<option value="'+esc(r)+'">'+esc(r)+'</option>'; }).join('');
+
+  $('ogBrand').value = m.brandRaw || '';
+  $('ogBrandEtc').value = m.brandEtc || '';
+  $('ogBrandEtc').style.display = (m.brandRaw === ORG_ETC) ? 'block' : 'none';
+  $('ogRegion').value = m.regionRaw || '';
+  $('ogOfficeEtc').value = m.officeEtc || '';
+  $('ogOfficeEtc').style.display = (m.officeRaw === ORG_ETC) ? 'block' : 'none';
+  await ogFillOffices();
+  if(m.officeRaw) $('ogOffice').value = m.officeRaw;
+  ogUsedCar();
+  ogValidate();
+  $('dOrgEdit').style.display = 'block';
+}
+
 var apMode = 'pick';
 function apValidate(){
   var ok = (apMode === 'pick')
@@ -2333,6 +2430,41 @@ $('apRegion').addEventListener('change', async function(){
   apValidate();
 });
 $('apOffice').addEventListener('change', apValidate);
+
+/* ── 소속 수정 단추들 ── */
+$('ogBrand').addEventListener('change', async function(){
+  $('ogBrandEtc').style.display = (this.value === ORG_ETC) ? 'block' : 'none';
+  $('ogOfficeEtc').style.display = 'none';
+  await ogFillOffices();
+  ogUsedCar();
+  ogValidate();
+});
+$('ogRegion').addEventListener('change', async function(){ await ogFillOffices(); ogValidate(); });
+$('ogOffice').addEventListener('change', function(){
+  $('ogOfficeEtc').style.display = (this.value === ORG_ETC) ? 'block' : 'none';
+  ogValidate();
+});
+['ogBrandEtc','ogOfficeEtc'].forEach(function(i){ $(i).addEventListener('input', ogValidate); });
+$('ogCancel').addEventListener('click', function(){ $('dOrgEdit').style.display='none'; });
+$('ogSave').addEventListener('click', async function(){
+  if(!ORG_CODE) return;
+  var body = {
+    op:'set-org', code:ORG_CODE,
+    brand:  $('ogBrand').value,
+    region: $('ogRegion').value,
+    office: $('ogOffice').value,
+    brand_etc:  ($('ogBrand').value  === ORG_ETC) ? $('ogBrandEtc').value.trim()  : null,
+    office_etc: ($('ogOffice').value === ORG_ETC) ? $('ogOfficeEtc').value.trim() : null
+  };
+  try{
+    var r = await admApi('/v1/admin/members', { method:'POST', body:body });
+    if(!r || !r.ok) throw new Error((r&&r.message)||'저장에 실패했습니다.');
+    toast('소속을 수정했습니다.');
+    $('dOrgEdit').style.display='none';
+    await openMember(ORG_CODE);
+    renderMembers();
+  }catch(e){ toast(String((e&&e.message)||'저장에 실패했습니다.')); }
+});
 $('apSave').addEventListener('click', async function(){
   var code = S.dMemberCode;
   if(!code) return;
@@ -2532,6 +2664,10 @@ async function openMember(code){
   $('dOffice').innerHTML = esc(m.office || '—')
     + (m.pending ? ' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;">승인대기</span>' : '');
   fillApproval(m);
+  /* 승인 대기 중에는 위의 '영업소 승인 대기' 상자가 같은 일을 하므로 단추를 감춘다 */
+  $('dOrgEdit').style.display = 'none';
+  $('dOrgBtnWrap').style.display = (m.pending || m.status === '탈퇴') ? 'none' : 'block';
+  $('dOrgBtn').onclick = function(){ ogOpen(m); };
   $('dPhone').textContent = m.phone || '—';
   $('dJoin').textContent = m.join || '—';
   $('dLastLogin').textContent = '조회 중…';
