@@ -1229,7 +1229,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
       <div style="margin-top:14px;">
         <div class="flabel">안내 문구</div>
-        <input class="finp" id="pmSubText" placeholder="예: 가입 완료 즉시, 주유 혜택을 100% 선물로 드려요." maxlength="60">
+        <input class="finp" id="pmSubText" placeholder="예: 명함 확인이 끝나면 주유 혜택을 드려요." maxlength="60">
       </div>
 
       <div style="margin-top:14px;">
@@ -3589,7 +3589,9 @@ function pmPreview(){
   var teaser = $('pmTeaser').checked;
 
   $('pvTitle').textContent = signup ? '웰컴 기프트' : name;
-  $('pvSub').textContent = sub || (signup ? '가입 완료 즉시 혜택을 드려요.' : '조건을 채우면 리워드가 지급됩니다.');
+  /* 첫 화면(index.html)이 쓰는 기본 문구와 같아야 미리보기가 실제와 맞는다.
+     웰컴기프트는 명함 확인이 끝난 뒤 정해진 지급일에 나간다. */
+  $('pvSub').textContent = sub || (signup ? '명함 확인이 끝나면 주유 혜택을 드려요.' : '조건을 채우면 리워드가 지급됩니다.');
 
   var wrap = $('pvImgWrap');
   wrap.innerHTML = pmImage
@@ -3605,7 +3607,7 @@ function pmPreview(){
   $('pvName').textContent = name;
   $('pvReward').textContent = (rw || '혜택') + (amt ? (' · ' + amt.toLocaleString('ko-KR') + '원') : '');
   $('pvDesc').textContent = teaser ? '오픈 예정'
-    : signup ? '가입 완료 즉시 100% 지급'
+    : signup ? '명함 확인 후 지급일에 지급'
     : ((pmPeriod==='range' && $('pmStart').value && $('pmEnd').value)
         ? ('기간 내 시공 ' + (+$('pmN').value||0) + '건 달성 시 지급')
         : ('누적 시공 ' + (+$('pmN').value||0) + '건 달성 시 지급'));
