@@ -765,8 +765,12 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           <div style="margin-top:16px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
             <div style="flex:1;min-width:260px;">
               <div class="flabel">받을 번호</div>
-              <input class="finp" id="ntNums" placeholder="01012345678 (쉼표로 여러 명, 5개까지)" style="font-size:14px;">
-              <div id="ntState" style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+              <div style="display:flex;gap:8px;">
+                <input class="finp" id="ntNums" placeholder="01012345678" style="font-size:14px;flex:1;min-width:0;">
+                <button class="btn btn-soft" id="ntAdd" style="flex-shrink:0;padding:11px 18px;">추가</button>
+              </div>
+              <div id="ntList" style="margin-top:10px;"></div>
+              <div id="ntState" style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.6;">
                 비워 두면 알림을 보내지 않습니다.
               </div>
             </div>
@@ -4121,14 +4125,54 @@ function ntFill(){
   f.dataset.filled='1';
 }
 
-/* 저장된 값을 따로 들고 있다가 지금 칸의 값과 견준다.
-   칸에 글자가 있어도 '저장된 것'인지 '방금 친 것'인지 알 수 없다는 지적에서 나온 것.
-   단추를 새로 만들지 않고 안내 한 줄이 상태를 말하게 한다. */
-var NT_SAVED = null;
-function _ntDigits(v){ return String(v||'').split(/[,\s]+/).map(function(x){ return x.replace(/\D/g,''); }).filter(Boolean); }
+/* 받는 사람이 여럿이라 쉼표로 이어 붙이면 읽기도 지우기도 어렵다.
+   그래서 '입력칸 + [추가]' 로 넣고, 넣은 번호는 한 줄씩 목록으로 보여 주고 [삭제] 를 붙인다.
+   목록은 화면에서만 고치고, [저장] 을 눌러야 서버에 반영된다.
+   (추가·삭제가 곧바로 저장되면 [저장] 단추가 무슨 일을 하는지 모호해진다) */
+var NT_SAVED = null;   // 서버에 저장돼 있는 값
+var NT_NUMS  = [];     // 지금 화면에서 고치는 중인 목록
+var NT_MAX   = 5;
+
+function _ntHH(n){ return String(n===24?0:n).padStart(2,'0')+':00'; }
+
+function ntRenderList(){
+  var box=$('ntList'); if(!box) return;
+  if(!NT_NUMS.length){
+    box.innerHTML = '<div style="padding:12px 14px;border:1px dashed var(--line);border-radius:12px;'
+                  + 'font-size:12.5px;color:var(--muted);">받는 사람이 없습니다. 위에 번호를 넣고 [추가] 를 눌러 주세요.</div>';
+    return;
+  }
+  box.innerHTML = '<div style="border:1px solid var(--line);border-radius:12px;overflow:hidden;">'
+    + NT_NUMS.map(function(ph, i){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;'
+             + 'padding:10px 14px;' + (i ? 'border-top:1px solid var(--line);' : '') + '">'
+             + '<span class="num" style="font-size:13.5px;font-weight:700;">' + esc(_fmtPhone(ph)) + '</span>'
+             + '<span class="linklike ntDel" data-i="' + i + '" style="color:var(--err);font-size:12.5px;">삭제</span>'
+             + '</div>';
+      }).join('')
+    + '</div>';
+  box.querySelectorAll('.ntDel').forEach(function(el){
+    el.addEventListener('click', function(){
+      NT_NUMS.splice(Number(el.getAttribute('data-i')), 1);
+      ntRenderList(); ntStatus();
+    });
+  });
+}
+
+function ntAddNumber(){
+  var inp=$('ntNums'); if(!inp) return;
+  var d = String(inp.value||'').replace(/\D/g,'');
+  if(!d){ toast('번호를 넣어 주세요.'); return; }
+  if(d.length < 10 || d.length > 11){ toast('휴대폰 번호를 다시 확인해 주세요.'); return; }
+  if(NT_NUMS.indexOf(d) >= 0){ toast('이미 들어 있는 번호입니다.'); return; }
+  if(NT_NUMS.length >= NT_MAX){ toast('받는 사람은 ' + NT_MAX + '명까지 넣을 수 있습니다.'); return; }
+  NT_NUMS.push(d);
+  inp.value='';
+  ntRenderList(); ntStatus();
+}
+
 function ntStatus(){
   var el=$('ntState'); if(!el) return;
-  var now = _ntDigits($('ntNums') ? $('ntNums').value : '');
   var f = $('ntFrom') ? Number($('ntFrom').value) : null;
   var t = $('ntTo')   ? Number($('ntTo').value)   : null;
   if(!NT_SAVED){
@@ -4136,19 +4180,18 @@ function ntStatus(){
     el.textContent='비워 두면 알림을 보내지 않습니다.';
     return;
   }
-  var same = (now.join(',') === NT_SAVED.numbers.join(','))
+  var same = (NT_NUMS.join(',') === NT_SAVED.numbers.join(','))
           && (f === NT_SAVED.from) && (t === NT_SAVED.to);
   if(!same){
     el.style.color='var(--orange)';
-    el.textContent='저장하지 않은 변경이 있습니다. [저장]을 눌러 주세요.';
+    el.textContent='저장하지 않은 변경이 있습니다. [저장] 을 눌러 주세요.';
   } else if(!NT_SAVED.numbers.length){
     el.style.color='var(--muted)';
     el.textContent='저장된 번호가 없습니다. 이대로 두면 알림을 보내지 않습니다.';
   } else {
-    var hh=function(n){ return String(n===24?0:n).padStart(2,'0')+':00'; };
     el.style.color='var(--ok)';
-    el.textContent='저장됨 · ' + NT_SAVED.numbers.map(_fmtPhone).join(', ')
-                 + ' · ' + hh(NT_SAVED.from) + '~' + hh(NT_SAVED.to) + ' 에 받습니다';
+    el.textContent='저장됨 · ' + NT_SAVED.numbers.length + '명 · '
+                 + _ntHH(NT_SAVED.from) + '~' + _ntHH(NT_SAVED.to) + ' 에 받습니다';
   }
 }
 
@@ -4159,9 +4202,11 @@ async function renderNotify(){
     if(!r || !r.ok) return;
     NT_SAVED = { numbers:(r.numbers||[]).map(function(x){ return String(x).replace(/\D/g,''); }).filter(Boolean),
                  from:Number(r.from), to:Number(r.to) };
-    $('ntNums').value = NT_SAVED.numbers.map(_fmtPhone).join(', ');
+    NT_NUMS = NT_SAVED.numbers.slice();   /* 화면 편집용 사본 (원본을 직접 고치면 견줄 대상이 사라진다) */
+    $('ntNums').value = '';
     $('ntFrom').value = String(r.from);
     $('ntTo').value   = String(r.to);
+    ntRenderList();
     ntStatus();
     var w=$('ntWarn');
     if(w){
@@ -4172,15 +4217,18 @@ async function renderNotify(){
   }catch(e){ console.error('notify', e); }
 }
 
-/* 칸을 고치는 즉시 '저장 안 함'으로 바뀌어야 한다. 저장하고 나갔는지 헷갈리지 않게. */
-if($('ntNums')) $('ntNums').addEventListener('input', ntStatus);
+/* 목록·시간을 고치는 즉시 '저장 안 함'으로 바뀌어야 한다. 저장하고 나갔는지 헷갈리지 않게. */
+if($('ntAdd'))  $('ntAdd').addEventListener('click', ntAddNumber);
+if($('ntNums')) $('ntNums').addEventListener('keydown', function(e){
+  if(e.key === 'Enter'){ e.preventDefault(); ntAddNumber(); }   /* 엔터로도 추가 */
+});
 if($('ntFrom')) $('ntFrom').addEventListener('change', ntStatus);
 if($('ntTo'))   $('ntTo').addEventListener('change', ntStatus);
 
 if($('ntSave')) $('ntSave').addEventListener('click', async function(){
   try{
     var r = await admApi('/v1/admin/notify', { method:'POST', body:{
-      op:'save', numbers:$('ntNums').value, from:Number($('ntFrom').value), to:Number($('ntTo').value) } });
+      op:'save', numbers:NT_NUMS.join(','), from:Number($('ntFrom').value), to:Number($('ntTo').value) } });
     if(!r || !r.ok) throw new Error((r&&r.message)||'저장에 실패했습니다.');
     toast('저장했습니다.');
     renderNotify();
