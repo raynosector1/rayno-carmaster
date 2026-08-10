@@ -766,7 +766,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             <div style="flex:1;min-width:260px;">
               <div class="flabel">받을 번호</div>
               <input class="finp" id="ntNums" placeholder="01012345678 (쉼표로 여러 명, 5개까지)" style="font-size:14px;">
-              <div style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+              <div id="ntState" style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.6;">
                 비워 두면 알림을 보내지 않습니다.
               </div>
             </div>
@@ -4121,14 +4121,48 @@ function ntFill(){
   f.dataset.filled='1';
 }
 
+/* 저장된 값을 따로 들고 있다가 지금 칸의 값과 견준다.
+   칸에 글자가 있어도 '저장된 것'인지 '방금 친 것'인지 알 수 없다는 지적에서 나온 것.
+   단추를 새로 만들지 않고 안내 한 줄이 상태를 말하게 한다. */
+var NT_SAVED = null;
+function _ntDigits(v){ return String(v||'').split(/[,\s]+/).map(function(x){ return x.replace(/\D/g,''); }).filter(Boolean); }
+function ntStatus(){
+  var el=$('ntState'); if(!el) return;
+  var now = _ntDigits($('ntNums') ? $('ntNums').value : '');
+  var f = $('ntFrom') ? Number($('ntFrom').value) : null;
+  var t = $('ntTo')   ? Number($('ntTo').value)   : null;
+  if(!NT_SAVED){
+    el.style.color='var(--muted)';
+    el.textContent='비워 두면 알림을 보내지 않습니다.';
+    return;
+  }
+  var same = (now.join(',') === NT_SAVED.numbers.join(','))
+          && (f === NT_SAVED.from) && (t === NT_SAVED.to);
+  if(!same){
+    el.style.color='var(--orange)';
+    el.textContent='저장하지 않은 변경이 있습니다. [저장]을 눌러 주세요.';
+  } else if(!NT_SAVED.numbers.length){
+    el.style.color='var(--muted)';
+    el.textContent='저장된 번호가 없습니다. 이대로 두면 알림을 보내지 않습니다.';
+  } else {
+    var hh=function(n){ return String(n===24?0:n).padStart(2,'0')+':00'; };
+    el.style.color='var(--ok)';
+    el.textContent='저장됨 · ' + NT_SAVED.numbers.map(_fmtPhone).join(', ')
+                 + ' · ' + hh(NT_SAVED.from) + '~' + hh(NT_SAVED.to) + ' 에 받습니다';
+  }
+}
+
 async function renderNotify(){
   ntFill();
   try{
     var r = await admApi('/v1/admin/notify');
     if(!r || !r.ok) return;
-    $('ntNums').value = (r.numbers||[]).join(', ');
+    NT_SAVED = { numbers:(r.numbers||[]).map(function(x){ return String(x).replace(/\D/g,''); }).filter(Boolean),
+                 from:Number(r.from), to:Number(r.to) };
+    $('ntNums').value = NT_SAVED.numbers.map(_fmtPhone).join(', ');
     $('ntFrom').value = String(r.from);
     $('ntTo').value   = String(r.to);
+    ntStatus();
     var w=$('ntWarn');
     if(w){
       /* 문자 설정이 안 돼 있으면 번호를 넣어 봐야 나가지 않는다 */
@@ -4137,6 +4171,11 @@ async function renderNotify(){
     }
   }catch(e){ console.error('notify', e); }
 }
+
+/* 칸을 고치는 즉시 '저장 안 함'으로 바뀌어야 한다. 저장하고 나갔는지 헷갈리지 않게. */
+if($('ntNums')) $('ntNums').addEventListener('input', ntStatus);
+if($('ntFrom')) $('ntFrom').addEventListener('change', ntStatus);
+if($('ntTo'))   $('ntTo').addEventListener('change', ntStatus);
 
 if($('ntSave')) $('ntSave').addEventListener('click', async function(){
   try{
