@@ -256,7 +256,8 @@ input::placeholder{color:#B4B4B8;}
 .th{letter-spacing:0;}
 /* 칸 경계가 보이지 않으면 폭이 달라 보일 때 '들쭉날쭉'하게 느껴진다.
    머리글에만 아주 옅은 선을 두어 어디서 나뉘는지 알려 준다. (본문은 깨끗하게) */
-.th > * + *{box-shadow:inset 1px 0 0 #E9E9EC;padding-left:12px;}
+.th > * + *{position:relative;}
+.th > * + *::before{content:'';position:absolute;left:-8px;top:0;bottom:0;width:1px;background:#E9E9EC;}
 /* ── 표를 옆으로 밀 수 있게 ──
    화면을 확대했거나 모니터가 좁으면 오른쪽 끝 칸(상세·수정)에 손이 닿지 않았다.
    칸을 줄여 우겨넣는 대신 옆으로 미는 쪽을 택한다. 값이 뭉개지지 않는다.
@@ -604,7 +605,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
         <div class="table" id="membersTable" style="margin-top:10px;">
           <div class="tr th" style="grid-template-columns:112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">
-            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span style="text-align:right;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
+            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span style="text-align:center;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
           </div>
           <div id="membersRows"></div>
         </div>
@@ -2159,7 +2160,7 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
       /* 시공 건수 — 0 은 흐리게, 셀 수 없었으면 물음표 */
-      '<span class="num" style="text-align:right;font-weight:'+(m.svc>0?'800':'500')+';color:'+(m.svc>0?'var(--ink)':'#B4B4B8')+';">'
+      '<span class="num" style="text-align:center;font-weight:'+(m.svc>0?'800':'500')+';color:'+(m.svc>0?'var(--ink)':'#B4B4B8')+';">'
         + (m.svc==null ? '?' : m.svc.toLocaleString()) + '</span>'+
       '<span class="num" style="text-align:center;color:#8A8A8E;">'+m.join+'</span>'+
       '<span>'+badge(m.state)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 시공 실적은 초기화되어, 재가입 시점부터 새롭게 누적됩니다.">재가입</span>':'')+'</span>'+
