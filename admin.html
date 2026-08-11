@@ -1048,6 +1048,25 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             </div>
           </div>
 
+          <div id="dP2Box" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);">
+            <div style="font-size:12px;font-weight:800;color:var(--ink);">보조 연락처</div>
+            <div style="margin-top:4px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+              명함의 번호가 <b style="color:var(--ink);">본인인증 번호</b>와 다르면 여기에 넣어 주세요.<br>
+              대리점이 어느 번호로 조회해도 이 회원 실적으로 잡힙니다.
+            </div>
+            <div style="margin-top:8px;font-size:11.5px;color:var(--muted);">
+              본인인증 번호 <b class="num" id="dP2Main" style="color:var(--ink);">—</b>
+            </div>
+            <div style="margin-top:7px;display:flex;gap:6px;">
+              <input class="finp" id="dP2Input" maxlength="13" placeholder="01012345678"
+                     style="flex:1;min-width:0;padding:10px 12px;font-size:12.5px;">
+              <button class="btn btn-soft" id="dP2Save" style="flex-shrink:0;padding:10px 14px;font-size:12.5px;font-weight:800;">저장</button>
+            </div>
+            <div id="dP2State" style="margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.6;">
+              비워 두고 저장하면 지워집니다.
+            </div>
+          </div>
+
           <div id="dCardNote" style="margin-top:10px;font-size:11.5px;color:var(--muted);line-height:1.7;">
             승인하면 <b style="color:var(--ink);">웰컴기프트가 ‘지급 대기’</b>에 올라갑니다.<br>
             거절해도 계정은 지워지지 않고, 회원이 명함을 다시 제출할 수 있습니다.
@@ -1847,6 +1866,7 @@ async function getMember(code){
       id:m.id, name:m.name, code:m.code, status:_stat(m.status),
       office:[_brandLab(m), m.region, _officeLab(m)].filter(Boolean).join(' · '),
       phone:_full(m.phone), phoneFull:m.phone,
+      phone2Last4:m.phone2_last4 || '',   /* 보조 연락처가 있는지만 목록에 표시 */
       join:_date(_ts(m)), total:total, reward:reward, lastWr:lastWr?_date(lastWr):'-',
       smsOptout: (m.sms_optout === null || m.sms_optout === undefined) ? null : !!m.sms_optout,
       agreePrivacy: (m.agree_privacy!==false), agreeMkt: !!m.agree_marketing,
@@ -2186,7 +2206,10 @@ function applyMemberFilters(){
       '<span style="color:#5A5A5E;">'+esc(m.office)+(m.pending?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;">승인대기</span>':'')+'</span>'+
       '<span>'+esc(m.name)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.loginId||'-')+'</span>'+
-      '<span style="color:#5A5A5E;">'+esc(m.phone)+'</span>'+
+      /* 보조 연락처가 있으면 옆에 표시한다. 대리점이 그 번호로도 조회할 수 있다는 뜻. */
+      '<span style="color:#5A5A5E;">'+esc(m.phone)
+        + (m.phone2Last4 ? ' <span class="badge b-off" style="font-size:10px;padding:1px 5px;" title="보조 연락처 등록됨">+'+esc(m.phone2Last4)+'</span>' : '')
+        + '</span>'+
       /* 시공 건수 — 0 은 흐리게, 셀 수 없었으면 물음표 */
       '<span class="num" style="text-align:center;font-weight:'+(m.svc>0?'800':'500')+';color:'+(m.svc>0?'var(--ink)':'#B4B4B8')+';">'
         + (m.svc==null ? '?' : m.svc.toLocaleString()) + '</span>'+
@@ -2540,6 +2563,40 @@ async function loadCardImage(code){
   if(msg) msg.style.display='none';
 }
 
+/* ══════════ 보조 연락처 ══════════
+   카마스터가 개인 휴대폰(본인인증 번호)과 업무 휴대폰(명함 번호)을 함께 쓰는 경우가 많다.
+   대리점이 명함 번호로 조회하면 미가입자로 나오고 실적이 안 잡힌다.
+   그래서 명함을 확인하는 바로 그 자리에서 함께 넣게 둔다. */
+var P2_MAIN = '', P2_SAVED = '';
+
+function _p2Digits(v){ return String(v||'').replace(/\D/g,''); }
+
+function p2Fill(mainPhone, sub){
+  P2_MAIN  = _p2Digits(mainPhone);
+  P2_SAVED = _p2Digits(sub);
+  var mn=$('dP2Main'); if(mn) mn.textContent = P2_MAIN ? _fmtPhone(P2_MAIN) : '—';
+  var inp=$('dP2Input'); if(inp) inp.value = P2_SAVED ? _fmtPhone(P2_SAVED) : '';
+  p2State();
+}
+
+function p2State(){
+  var el=$('dP2State'); if(!el) return;
+  var now=_p2Digits($('dP2Input') ? $('dP2Input').value : '');
+  if(now === P2_SAVED){
+    if(!P2_SAVED){
+      el.style.color='var(--muted)';
+      el.textContent='명함 번호가 위 번호와 같으면 넣지 않으셔도 됩니다.';
+    } else {
+      el.style.color='var(--ok)';
+      el.textContent='저장됨 · ' + _fmtPhone(P2_SAVED);
+    }
+  } else {
+    el.style.color='var(--orange)';
+    el.textContent = now ? '저장하지 않은 변경이 있습니다. [저장]을 눌러 주세요.'
+                         : '비우고 저장하면 보조 연락처가 지워집니다.';
+  }
+}
+
 function fillCardBox(m){
   var box=$('dCardBox');
   if(!box) return;
@@ -2592,6 +2649,27 @@ if($('dCardRotate')) $('dCardRotate').addEventListener('click', function(){
   S.dCardRot = ((S.dCardRot || 0) + 90) % 360;
   im.style.transform = 'rotate(' + S.dCardRot + 'deg)';
 });
+/* ── 보조 연락처 저장 ── */
+if($('dP2Input')) $('dP2Input').addEventListener('input', p2State);
+if($('dP2Save')) $('dP2Save').addEventListener('click', async function(){
+  var code = S.dCardMemberCode || S.dMemberCode;   /* 승인·거절 단추와 같은 값을 쓴다 */
+  if(!code) return;
+  var v = _p2Digits($('dP2Input').value);
+  if(v && (v.length < 10 || v.length > 11)){ toast('휴대폰 번호를 다시 확인해 주세요.'); return; }
+  var btn=this, pv=btn.textContent;
+  btn.textContent='저장 중…'; btn.style.pointerEvents='none';
+  try{
+    var r = await admFn('set-phone2', { code: code, phone2: v });
+    if(!r || !r.ok) throw new Error((r && r.message) || '저장에 실패했습니다.');
+    P2_SAVED = _p2Digits(r.phone2);
+    $('dP2Input').value = P2_SAVED ? _fmtPhone(P2_SAVED) : '';
+    p2State();
+    toast(P2_SAVED ? '보조 연락처를 저장했습니다.' : '보조 연락처를 지웠습니다.');
+    renderMembers();
+  }catch(e){ toast(String((e && e.message) || '저장에 실패했습니다.')); }
+  btn.textContent=pv; btn.style.pointerEvents='auto';
+});
+
 if($('dCardImg')) $('dCardImg').addEventListener('click', function(){
   if(S.dCardUrl) window.open(S.dCardUrl, '_blank', 'noopener');
 });
@@ -2710,6 +2788,7 @@ async function openMember(code){
     $('dLastLogin').textContent = (r && r.last_login) ? _date(r.last_login)+' '+new Date(r.last_login).toTimeString().slice(0,5) : '-';
     /* 전체 번호는 상세를 열 때 한 건만 받아 온다 */
     if(r && r.phone) $('dPhone').textContent = _full(r.phone);
+    p2Fill(r && r.phone, r && r.phone2);
   }).catch(function(){ $('dLastLogin').textContent='-'; });
 }
 function closeDrawer(){
@@ -2725,7 +2804,8 @@ async function admFn(action, payload){
               'set-sms-optout':'set-sms-optout', 'member-extra':'member-extra',
               'delete-member':'delete',
               'purge-member':'purge',
-              'card-approve':'card-approve', 'card-reject':'card-reject' };
+              'card-approve':'card-approve', 'card-reject':'card-reject',
+              'set-phone2':'set-phone2' };
   var op = map[action];
   if(!op) return { ok:false, message:'알 수 없는 요청입니다.' };
   try{ return await admApi('/v1/admin/members', { method:'POST', body: Object.assign({ op:op }, p) }); }
