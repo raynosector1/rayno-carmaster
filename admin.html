@@ -1023,7 +1023,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
           <button class="btn btn-primary" id="apSave" style="margin-top:10px;width:100%;padding:12px 0;font-size:13.5px;font-weight:800;opacity:.45;pointer-events:none;">이 영업소로 확정</button>
         </div>
-        <div class="r"><span class="k">휴대전화</span><span class="v" id="dPhone">—</span></div>
+        <div class="r"><span class="k">휴대전화 1</span><span class="v" id="dPhone">—</span></div>
+        <div class="r" id="dPhone2Row"><span class="k">휴대전화 2</span><span class="v" id="dPhone2">—</span></div>
         <div class="r"><span class="k">가입일</span><span class="v" id="dJoin">—</span></div>
         <div class="r"><span class="k">최근 로그인</span><span class="v" id="dLastLogin">—</span></div>
       </div>
@@ -2428,8 +2429,7 @@ async function renderReferrers(){
             var d=t.dealers[k];
             return '<div style="padding:11px 16px;'+(i?'border-top:1px solid var(--line);':'border-top:1px solid var(--line);')+'">'
               + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">'
-              +   '<span style="font-size:13px;color:var(--ink);font-weight:600;">'+esc(d.name)
-              +     ' <span class="num" style="color:var(--muted);font-weight:700;font-size:11.5px;">#'+esc(k)+'</span></span>'
+              +   '<span style="font-size:13px;color:var(--ink);font-weight:600;">'+esc(d.name)+'</span>'
               +   '<span style="font-size:12.5px;color:var(--muted);flex-shrink:0;">'+d.members.length+'명</span>'
               + '</div>'
               + '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;">'
@@ -2731,6 +2731,11 @@ function p2Fill(mainPhone, sub){
   P2_SAVED = _p2Digits(sub);
   var mn=$('dP2Main'); if(mn) mn.textContent = P2_MAIN ? _fmtPhone(P2_MAIN) : '—';
   var inp=$('dP2Input'); if(inp) inp.value = P2_SAVED ? _fmtPhone(P2_SAVED) : '';
+  /* 회원 정보 칸에도 함께 보여 준다. 명함 카드까지 내려가지 않아도 보이게. */
+  var v2=$('dPhone2');
+  if(v2) v2.innerHTML = P2_SAVED
+    ? _fmtPhone(P2_SAVED)
+    : '<span style="color:var(--muted);font-weight:600;">—</span>';
   p2State();
 }
 
@@ -2903,7 +2908,7 @@ async function openMember(code){
     $('dReferrer').innerHTML = m.refUnknown
       ? '<span style="color:var(--muted);">모름</span>'
       : (m.refName
-          ? esc(m.refName) + (m.refNo ? ' <span style="color:var(--muted);font-size:11.5px;">#'+esc(m.refNo)+'</span>' : '')
+          ? esc(m.refName)
           : '<span style="color:var(--muted);">—</span>');
   }
   fillApproval(m);
@@ -2912,6 +2917,11 @@ async function openMember(code){
   $('dOrgBtnWrap').style.display = (m.pending || m.status === '탈퇴') ? 'none' : 'block';
   $('dOrgBtn').onclick = function(){ ogOpen(m); };
   $('dPhone').textContent = m.phone || '—';
+  /* 보조 연락처는 상세 조회(member-extra)로 뒤늦게 온다.
+     먼저 비워 두지 않으면 앞서 본 회원의 번호가 잠깐 남는다. */
+  if($('dPhone2')) $('dPhone2').innerHTML = m.phone2Last4
+    ? '<span style="color:var(--muted);font-weight:600;">불러오는 중…</span>'
+    : '<span style="color:var(--muted);font-weight:600;">—</span>';
   $('dJoin').textContent = m.join || '—';
   $('dLastLogin').textContent = '조회 중…';
   $('dVerify').innerHTML = m.verified ? yes : no;
@@ -5314,10 +5324,10 @@ async function ooLoad(){
         +'font-size:12.5px;color:var(--muted);text-align:center;">아직 수신거부한 사람이 없습니다.</div>';
       return;
     }
-    var cols='grid-template-columns:150px 1fr 110px 150px;';
+    var cols='grid-template-columns:150px 1fr 110px 150px 60px;';
     $('ooRows').innerHTML='<div class="table" style="border:1px solid var(--line);">'
       + '<div class="tr th" style="'+cols+'"><span>연락처</span><span>변환값</span><span>경로</span>'
-      + '<span style="text-align:right;">등록일시</span></div>'
+      + '<span style="text-align:right;">등록일시</span><span style="text-align:center;">삭제</span></div>'
       + rows.map(function(x){
           var SRC = { admin:'관리자 등록', link:'링크 클릭', self:'본인 번호 입력', member:'마이페이지' };
           var src = SRC[x.source] || esc(x.source||'-');
@@ -5330,9 +5340,29 @@ async function ooLoad(){
             + '<span class="num" style="font-weight:700;">'+ph+'</span>'
             + '<span style="font-family:monospace;font-size:12px;color:var(--muted);">'+esc(x.code||'')+'</span>'
             + '<span>'+src+'</span>'
-            + '<span style="text-align:right;color:var(--muted);">'+esc(x.at_kst||'-')+'</span></div>';
+            + '<span style="text-align:right;color:var(--muted);">'+esc(x.at_kst||'-')+'</span>'
+            + '<span class="linklike ooDel" data-code="'+esc(x.code||'')+'" data-l4="'+esc(x.phone_last4||'')+'"'
+            + ' style="text-align:center;color:var(--err);font-size:12px;">삭제</span></div>';
         }).join('')
       + '</div>';
+
+    /* ⚠ 지우면 그 번호가 다시 광고 문자 대상이 된다. 확인을 받는다. */
+    $('ooRows').querySelectorAll('.ooDel').forEach(function(el){
+      el.addEventListener('click', async function(){
+        var code=el.getAttribute('data-code'), l4=el.getAttribute('data-l4');
+        var who = l4 ? ('010-****-'+l4) : '번호를 알 수 없는 건';
+        if(!confirm(who+' 의 수신거부를 목록에서 지웁니다.\n\n'
+          + '지우면 이 번호로 광고 문자가 다시 나갑니다.\n'
+          + '본인이 거부를 취소한 경우가 아니라면 그대로 두세요.\n\n계속할까요?')) return;
+        try{
+          var r=await admApi('/v1/admin/sms/optout',{ method:'POST',
+            body:{ op:'remove-by-code', code:code } });
+          if(!r || !r.ok) throw new Error((r&&r.message)||'지우지 못했습니다.');
+          toast('지웠습니다.');
+          ooLoad();
+        }catch(e){ toast(String((e&&e.message)||'지우지 못했습니다.')); }
+      });
+    });
   }catch(e){
     $('ooRows').innerHTML='<div style="font-size:12.5px;color:var(--err);font-weight:700;">'
       + esc((e&&e.message)||'현황을 읽지 못했습니다.')+'</div>';
