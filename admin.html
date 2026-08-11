@@ -2166,7 +2166,7 @@ function filteredMembers(){
 }
 function applyMemberFilters(){
   var rows=filteredMembers();
-  var PER=10;
+  var PER=20;   /* 한 화면에 보이는 회원 수 */
   var pages=Math.max(1, Math.ceil(rows.length/PER));
   if(!S.mPage || S.mPage>pages) S.mPage=1;
   var page=rows.slice((S.mPage-1)*PER, S.mPage*PER);
