@@ -953,6 +953,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:0 36px;">
       <div class="info-list">
         <div class="r"><span class="k">소속/지역/영업소</span><span class="v" id="dOffice">—</span></div>
+        <div class="r"><span class="k">추천 대리점</span><span class="v" id="dReferrer">—</span></div>
         <div id="dOrgBtnWrap" style="display:none;margin-top:6px;text-align:right;">
           <span class="linklike" id="dOrgBtn" style="font-size:12px;">소속 수정</span>
         </div>
@@ -1876,6 +1877,8 @@ async function getMember(code){
       rejoinAt: m.stats_from || null, rejoinN: Number(m.rejoin_count||0),
       pending: (m.office_approval === 'pending'), officeId: m.office_id || null,
       brandRaw: m.brand || '', regionRaw: m.region || '', officeRaw: m.office || '',
+      refName: m.referrer_dealer_name || '', refNo: m.referrer_dealer_no || null,
+      refUnknown: Number(m.referrer_unknown || 0) === 1,
       brandEtc: m.brand_etc || '', officeEtc: m.office_etc || '',
       verified: (m.status==='verified'||m.status==='suspended'),
       /* 명함 확인 */
@@ -2742,6 +2745,15 @@ async function openMember(code){
   cs.className = 'badge ' + (m.status==='정지' ? 'b-off' : 'b-ok');
   $('dOffice').innerHTML = esc(m.office || '—')
     + (m.pending ? ' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;">승인대기</span>' : '');
+  /* 추천 대리점 — 값이 비어 있는 것에는 두 가지 뜻이 섞인다.
+     이 기능 이전에 가입한 회원인지, 물었는데 모른다고 답한 것인지 구분해 보여 준다. */
+  if($('dReferrer')){
+    $('dReferrer').innerHTML = m.refUnknown
+      ? '<span style="color:var(--muted);">모름</span>'
+      : (m.refName
+          ? esc(m.refName) + (m.refNo ? ' <span style="color:var(--muted);font-size:11.5px;">#'+esc(m.refNo)+'</span>' : '')
+          : '<span style="color:var(--muted);">—</span>');
+  }
   fillApproval(m);
   /* 승인 대기 중에는 위의 '영업소 승인 대기' 상자가 같은 일을 하므로 단추를 감춘다 */
   $('dOrgEdit').style.display = 'none';
