@@ -101,14 +101,14 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
           <div style="margin-top:16px;display:flex;align-items:flex-start;gap:10px;background:#F5F5F6;border-radius:14px;padding:14px 16px;"><span style="width:24px;height:24px;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</span><div style="font-size:13.5px;line-height:1.5;color:#6A6A6E;font-weight:500;">소속·영업소가 목록에 없다면 <b style="color:#111;font-weight:700;">기타</b>를 선택해 직접 입력할 수 있어요.</div></div>
           <div style="margin-top:18px;font-size:14px;font-weight:800;color:#111;margin-bottom:8px;">추천 레이노 대리점 <span style="color:#FF5A00;">*</span></div>
           <div id="refPick" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#B0B0B4;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-            <span id="refPickText" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">대리점 찾기</span>
+            <span id="refPickText" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">레이노 대리점 찾기</span>
             <span style="flex-shrink:0;color:#8A8A8E;font-size:15px;">검색 ›</span>
           </div>
           <div id="refUnknownRow" style="margin-top:10px;display:flex;align-items:center;gap:10px;cursor:pointer;">
             <span id="refUnknownBox" style="width:20px;height:20px;border-radius:6px;border:2px solid #D6D6DA;flex-shrink:0;background:none;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;"></span>
             <span style="font-size:15px;color:#5A5A5E;">추천 대리점을 모릅니다</span>
           </div>
-          <div style="margin-top:8px;font-size:13px;color:#B0B0B4;line-height:1.5;">저를 소개해 주신 레이노 대리점을 찾아 주세요.</div>
+          <div style="margin-top:8px;font-size:13px;color:#B0B0B4;line-height:1.5;">카마스터님을 소개해주신 레이노 대리점을 입력해주세요.</div>
 
           <div style="margin-top:18px;font-size:14px;font-weight:800;color:#111;margin-bottom:8px;"><span id="cardWho">명함 사진</span> <span style="color:#FF5A00;">*</span></div>
           <input id="cardInput" type="file" accept="image/*" style="display:none;">
@@ -222,7 +222,7 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
     <div id="refBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.42);opacity:0;transition:opacity .3s ease;"></div>
     <div id="refPanel" style="position:absolute;left:0;right:0;bottom:0;height:84%;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);">
       <div style="flex-shrink:0;padding:18px 22px 14px;border-bottom:1px solid #F2F2F4;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:17px;font-weight:800;color:#111;">추천 대리점 찾기</span>
+        <span style="font-size:17px;font-weight:800;color:#111;">레이노 대리점 찾기</span>
         <button id="refClose" type="button" style="width:32px;height:32px;border-radius:50%;background:#F2F2F4;border:none;font-size:15px;color:#8A8A8E;cursor:pointer;font-family:inherit;">✕</button>
       </div>
       <div style="flex-shrink:0;padding:14px 22px 12px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #F2F2F4;">
@@ -767,7 +767,7 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
       if(t){
         if(S.refUnknown){ t.textContent='모릅니다'; t.parentNode.style.color='#B0B0B4'; }
         else if(S.refName){ t.textContent=S.refName + (S.refArea?(' \u00b7 '+(AREA_NAME[S.refArea]||S.refArea)):''); pick.style.color='#111'; }
-        else { t.textContent='대리점 찾기'; pick.style.color='#B0B0B4'; }
+        else { t.textContent='레이노 대리점 찾기'; pick.style.color='#B0B0B4'; }
       }
       if(pick) pick.style.opacity = S.refUnknown ? '.5' : '1';
       g1();
