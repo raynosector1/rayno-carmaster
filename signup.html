@@ -814,10 +814,13 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
         var items=j.items||[];
         if(!items.length){ refSay('찾는 대리점이 없습니다.<br>이름을 줄여서 다시 찾아보세요.'); refBusy=false; return; }
         refList.innerHTML = items.map(function(x){
+          /* 주소가 있으면 주소를 보여 준다. 지역 이름은 주소 안에 이미 들어 있어 겹친다.
+             주소가 비어 있는 곳만 '경기 · 광주시' 형태로 대신 보여 준다. */
+          var sub = x.addr ? x.addr : refWhere(x.area, x.gu);
           return '<div class="refRow" data-no="'+x.no+'" data-name="'+_esch(x.name)+'" data-area="'+_esch(x.area)+'"'
                + ' style="padding:14px 2px;border-bottom:1px solid #F2F2F4;cursor:pointer;">'
                + '<div style="font-size:15.5px;color:#111;font-weight:600;">'+_esch(x.name)+'</div>'
-               + '<div style="margin-top:3px;font-size:13px;color:#8A8A8E;">'+_esch(refWhere(x.area,x.gu))+'</div></div>';
+               + '<div style="margin-top:3px;font-size:13px;color:#8A8A8E;line-height:1.5;">'+_esch(sub)+'</div></div>';
         }).join('') + (j.more ? '<div style="padding:16px 0;text-align:center;font-size:13px;color:#B0B0B4;">결과가 많습니다. 이름을 더 넣어 좁혀 주세요.</div>' : '');
         [].slice.call(refList.querySelectorAll('.refRow')).forEach(function(el){
           el.addEventListener('click', function(){
