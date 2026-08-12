@@ -974,6 +974,9 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div id="dOrgBtnWrap" style="display:none;margin-top:6px;text-align:right;">
           <span class="linklike" id="dOrgBtn" style="font-size:12px;">소속 수정</span>
         </div>
+        <div id="dRefBtnWrap" style="display:none;margin-top:6px;text-align:right;">
+          <span class="linklike" id="dRefBtn" style="font-size:12px;">추천 대리점 수정</span>
+        </div>
         <div id="dOrgEdit" style="display:none;margin-top:10px;background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:13px 14px;">
           <div style="font-size:12.5px;font-weight:800;color:var(--ink);">소속 수정</div>
           <div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.6;">
@@ -992,6 +995,25 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           <div style="margin-top:10px;display:flex;gap:6px;">
             <button class="btn btn-soft" id="ogCancel" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;">취소</button>
             <button class="btn btn-primary" id="ogSave" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;opacity:.45;pointer-events:none;">저장</button>
+          </div>
+        </div>
+        <div id="dRefEdit" style="display:none;margin-top:10px;background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:13px 14px;">
+          <div style="font-size:12.5px;font-weight:800;color:var(--ink);">추천 대리점 수정</div>
+          <div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.6;">
+            대리점 이름의 일부로 찾아 고르세요. 회원이 모른다고 답한 상태로 되돌리려면 [모릅니다]를 누르세요.
+          </div>
+          <div style="margin-top:11px;display:flex;gap:6px;">
+            <input class="finp" id="rfQ" maxlength="30" placeholder="대리점 이름 검색 (예: 의왕)" style="flex:1;padding:11px 13px;font-size:13px;">
+            <button class="btn btn-line" id="rfSearch" style="padding:10px 16px;font-size:12.5px;font-weight:800;">검색</button>
+          </div>
+          <div id="rfList" style="margin-top:9px;max-height:200px;overflow-y:auto;"></div>
+          <div id="rfPicked" style="display:none;margin-top:9px;font-size:12.5px;color:var(--ink);">
+            고른 대리점 : <b id="rfPickedName"></b>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn btn-line" id="rfUnknown" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;">모릅니다</button>
+            <button class="btn btn-soft" id="rfCancel" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;">취소</button>
+            <button class="btn btn-primary" id="rfSave" style="flex:1;padding:10px 0;font-size:12.5px;font-weight:800;opacity:.45;pointer-events:none;">저장</button>
           </div>
         </div>
         <div id="dOfficeApproval" style="display:none;margin-top:10px;background:#FFF6F0;border:1px solid #FFE0CC;border-radius:11px;padding:13px 14px;">
@@ -2610,6 +2632,87 @@ document.querySelectorAll('.mtab').forEach(function(btn){
 });
 if($('refReload')) $('refReload').addEventListener('click', renderReferrers);
 
+/* ══════════ 추천 대리점 수정 (관리자) ══════════
+   가입 화면에서 회원이 고른 값을 관리자가 고칠 수 있게 한다.
+   서버는 op:'set-referrer' 하나로 받고, 규칙은 가입과 같은 parseReferrer 를 쓴다.
+
+   지역·시군구 선택은 넣지 않았다. 이름 검색만으로 충분하고,
+   선택 장치가 늘수록 잘못 고를 여지도 늘기 때문이다.
+   ('의왕' 두 글자면 목록이 한두 개로 줄어든다) */
+var REF_CODE = null, REF_PICK = null;
+
+function rfValidate(){
+  var ok = !!REF_PICK;
+  var b = $('rfSave');
+  b.style.opacity = ok ? '1' : '.45';
+  b.style.pointerEvents = ok ? 'auto' : 'none';
+}
+function rfOpen(m){
+  REF_CODE = m.code; REF_PICK = null;
+  $('rfQ').value = '';
+  $('rfList').innerHTML = '';
+  $('rfPicked').style.display = 'none';
+  $('dRefEdit').style.display = 'block';
+  rfValidate();
+  $('rfQ').focus();
+}
+async function rfSearch(){
+  var q = $('rfQ').value.trim();
+  if(q.length < 2){ $('rfList').innerHTML = '<div style="padding:10px 2px;font-size:12px;color:var(--muted);">두 글자 이상 입력해 주세요.</div>'; return; }
+  $('rfList').innerHTML = '<div style="padding:10px 2px;font-size:12px;color:var(--muted);">찾는 중…</div>';
+  try{
+    var res = await admApi('/v1/dealers?q=' + encodeURIComponent(q));
+    var rows = (res && res.items) || [];
+    if(!rows.length){
+      $('rfList').innerHTML = '<div style="padding:10px 2px;font-size:12px;color:var(--muted);">찾는 대리점이 없습니다.</div>';
+      return;
+    }
+    $('rfList').innerHTML = rows.map(function(d){
+      var where = [d.area, d.gu].filter(Boolean).join(' ');
+      return '<div class="rfItem" data-no="'+d.no+'" data-name="'+esc(d.name)+'"'
+        + ' style="padding:9px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;cursor:pointer;background:#fff;">'
+        + '<div style="font-size:12.5px;font-weight:800;color:var(--ink);">'+esc(d.name)+'</div>'
+        + '<div style="margin-top:2px;font-size:11.5px;color:var(--muted);">'+esc(d.addr || where || '')+'</div>'
+        + '</div>';
+    }).join('') + (res.more ? '<div style="padding:6px 2px;font-size:11.5px;color:var(--muted);">더 있습니다. 검색어를 좁혀 주세요.</div>' : '');
+  }catch(e){
+    $('rfList').innerHTML = '<div style="padding:10px 2px;font-size:12px;color:var(--muted);">불러오지 못했습니다.</div>';
+  }
+}
+async function rfSubmit(body, msg){
+  try{
+    var r = await admApi('/v1/admin/members', { method:'POST', body:body });
+    if(!r || !r.ok) throw new Error((r&&r.message)||'저장에 실패했습니다.');
+    toast(msg);
+    $('dRefEdit').style.display = 'none';
+    await openMember(REF_CODE);
+  }catch(e){ toast(String((e&&e.message)||'저장에 실패했습니다.')); }
+}
+
+$('rfSearch').addEventListener('click', rfSearch);
+$('rfQ').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); rfSearch(); } });
+$('rfList').addEventListener('click', function(e){
+  var el = e.target.closest ? e.target.closest('.rfItem') : null;
+  if(!el) return;
+  REF_PICK = { no: Number(el.getAttribute('data-no')), name: el.getAttribute('data-name') };
+  $('rfPickedName').textContent = REF_PICK.name;
+  $('rfPicked').style.display = 'block';
+  rfValidate();
+});
+$('rfCancel').addEventListener('click', function(){ $('dRefEdit').style.display = 'none'; });
+$('rfSave').addEventListener('click', function(){
+  if(!REF_CODE || !REF_PICK) return;
+  rfSubmit({ op:'set-referrer', code:REF_CODE,
+             referrer_dealer_no: REF_PICK.no, referrer_dealer_name: REF_PICK.name },
+           '추천 대리점을 수정했습니다.');
+});
+$('rfUnknown').addEventListener('click', function(){
+  if(!REF_CODE) return;
+  if(!confirm("추천 대리점을 '모름'으로 되돌립니다. 계속할까요?")) return;
+  rfSubmit({ op:'set-referrer', code:REF_CODE, referrer_unknown: 1 },
+           "추천 대리점을 '모름'으로 바꿨습니다.");
+});
+
 /* ── 소속 수정 단추들 ── */
 $('ogBrand').addEventListener('change', async function(){
   $('ogBrandEtc').style.display = (this.value === ORG_ETC) ? 'block' : 'none';
@@ -2916,6 +3019,12 @@ async function openMember(code){
   $('dOrgEdit').style.display = 'none';
   $('dOrgBtnWrap').style.display = (m.pending || m.status === '탈퇴') ? 'none' : 'block';
   $('dOrgBtn').onclick = function(){ ogOpen(m); };
+  /* 추천 대리점 수정은 영업소 승인 대기와 무관하므로 탈퇴 회원에게만 감춘다 */
+  if($('dRefEdit')) $('dRefEdit').style.display = 'none';
+  if($('dRefBtnWrap')){
+    $('dRefBtnWrap').style.display = (m.status === '탈퇴') ? 'none' : 'block';
+    $('dRefBtn').onclick = function(){ rfOpen(m); };
+  }
   $('dPhone').textContent = m.phone || '—';
   /* 보조 연락처는 상세 조회(member-extra)로 뒤늦게 온다.
      먼저 비워 두지 않으면 앞서 본 회원의 번호가 잠깐 남는다. */
