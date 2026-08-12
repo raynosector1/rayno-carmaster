@@ -404,6 +404,7 @@ button:focus-visible,.link:focus-visible,.nav-i:focus-visible,[data-goto]:focus-
       <select id="eBrand" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled>소속 선택</option></select>
       <input id="eBrandEtc" maxlength="20" placeholder="소속 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;">
       <select id="eRegion" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled>지역 선택 (시·도)</option></select>
+      <input id="eOfficeQ" maxlength="20" placeholder="영업소 이름으로 찾기 (예: 분당)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:15px 16px;font-size:15px;color:#111;outline:none;background:#fff;display:none;">
       <select id="eOffice" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled>영업소 선택</option></select>
       <div id="eUsedCarHint" style="display:none;margin-top:9px;font-size:13.5px;color:#6A6A6E;font-weight:500;line-height:1.5;">중고차는 영업소 대신 <b style="color:#111;">소속 회사명</b>을 적어 주세요.</div><div id="eOfficeHint" style="display:none;margin-top:9px;font-size:13.5px;color:#FF5A00;font-weight:600;line-height:1.5;">이 지역에 등록된 영업소가 없습니다. 영업소명을 직접 입력해 주세요.</div><input id="eOfficeEtc" maxlength="20" placeholder="영업소 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:17px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;">
     </div>
@@ -700,7 +701,42 @@ function _o(v){ var e=_esch(v); return '<option value="'+e+'">'+e+'</option>'; }
 function fillEBrands(){ var el=_gid('eBrand'); if(!el)return; var h='<option value="" disabled>소속 선택</option>'; TREE.forEach(function(x){ h+=_o(x.name); }); h+=_o(USED_CAR); h+=_o(ETC); el.innerHTML=h; }
 /* 가입 화면과 동일: 지역은 브랜드와 상관없이 17개 시·도를 모두 보여준다 */
 function fillERegions(brand){ var el=_gid('eRegion'); if(!el)return; var h='<option value="" disabled>지역 선택 (시·도)</option>'; FULL_REGIONS.forEach(function(r){ h+=_o(r); }); el.innerHTML=h; }
-function fillEOffices(brand, region){ var el=_gid('eOffice'); if(!el)return 0; var h='<option value="" disabled>영업소 선택</option>'; var n=0; if(brand!==ETC){ var x=TREE.find(function(t){return t.name===brand;}); if(x){ var r=x.regions.find(function(rr){return rr.name===region;}); if(r)r.offices.forEach(function(o){ h+=_o(o); n++; }); } } h+=_o(ETC); el.innerHTML=h; return n; }
+/* 경기도만 135곳이라 목록에서 눈으로 찾기가 어렵다.
+   시·군·구 칸이 마스터에 없으므로, 이름 일부로 걸러내는 방식을 쓴다.
+   가입 화면(signup.html)과 같은 방식이다. */
+var EOF_LIST = [];
+var EOF_SHOW_Q = 15;
+
+function eofNorm(v){ return String(v==null?'':v).toLowerCase().replace(/\s/g,''); }
+
+function eofRender(){
+  var el=_gid('eOffice'); if(!el) return 0;
+  var q=eofNorm(_gid('eOfficeQ') ? _gid('eOfficeQ').value : '');
+  var list = q ? EOF_LIST.filter(function(o){ return eofNorm(o).indexOf(q)>=0; }) : EOF_LIST;
+  var h='<option value="" disabled>'
+      + (q && !list.length ? '찾는 영업소가 없습니다' : '영업소 선택')
+      + '</option>';
+  list.forEach(function(o){ h+=_o(o); });
+  h+=_o(ETC);
+  var keep = el.value;
+  el.innerHTML=h;
+  if(keep && (list.indexOf(keep)>=0 || keep===ETC)) el.value=keep;
+  else if(keep) el.value='';
+  return list.length;
+}
+
+function fillEOffices(brand, region){
+  var el=_gid('eOffice'); if(!el)return 0;
+  EOF_LIST=[];
+  if(brand!==ETC){
+    var x=TREE.find(function(t){return t.name===brand;});
+    if(x){ var r=x.regions.find(function(rr){return rr.name===region;}); if(r) EOF_LIST=r.offices.slice(); }
+  }
+  var q=_gid('eOfficeQ');
+  if(q){ q.value=''; q.style.display = (EOF_LIST.length > EOF_SHOW_Q) ? 'block' : 'none'; }
+  eofRender();
+  return EOF_LIST.length;
+}
 /* 중고차를 고르면 영업소 칸을 감추고 회사명 입력칸만 남긴다.
    보내는 값은 기존 직접입력과 같다(office='기타', office_etc=회사명). */
 function eUsedCarMode(){
@@ -708,6 +744,9 @@ function eUsedCarMode(){
   if(!eB || !eO) return false;
   var on = (eB.value === USED_CAR);
   eO.style.display = on ? 'none' : '';
+  /* 중고차는 영업소 자체가 없으므로 검색칸도 함께 감춘다 */
+  var eq = _gid('eOfficeQ');
+  if(eq && on){ eq.value=''; eq.style.display='none'; }
   if(on){
     /* 목록에 없는 값은 select 에 담기지 않는다. 감춰 두더라도 항목을 만들어 둔다. */
     eO.innerHTML = _o(ETC); eO.value = ETC;
@@ -735,6 +774,10 @@ async function initEdit(){
   fillEBrands();
   var eR=_gid('eRegion'), eO=_gid('eOffice'), eBE=_gid('eBrandEtc'), eOE=_gid('eOfficeEtc');
   eB.onchange=function(){ var known=TREE.some(function(t){return t.name===eB.value;})||eB.value===ETC; fillERegions(eB.value); if(eR){eR.value='';} if(eO){eO.innerHTML='<option value="" disabled>영업소 선택</option>'+_o(ETC);eO.value='';}  eUsedCarMode();};
+  /* 영업소 이름으로 걸러내기 */
+  var eOQ=_gid('eOfficeQ');
+  if(eOQ) eOQ.addEventListener('input', eofRender);
+
   if(eR) eR.onchange=function(){
     if(eB.value === USED_CAR){ eUsedCarMode(); return; }   /* 중고차는 영업소 자체가 없다 */
     var n = fillEOffices(eB.value, eR.value);
