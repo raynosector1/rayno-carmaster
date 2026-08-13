@@ -589,8 +589,23 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             <div style="font-size:15px;font-weight:800;color:var(--ink);">지부별 추천 현황</div>
             <button class="btn btn-line" id="refReload" style="padding:9px 16px;font-size:12.5px;font-weight:700;">새로고침</button>
           </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+                      background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:11px 13px;">
+            <span style="font-size:12.5px;font-weight:800;color:var(--ink);">기간</span>
+            <input type="date" class="finp" id="refFrom" style="padding:8px 10px;font-size:12.5px;width:150px;">
+            <span style="color:var(--muted);font-size:12.5px;">~</span>
+            <input type="date" class="finp" id="refTo" style="padding:8px 10px;font-size:12.5px;width:150px;">
+            <button class="btn btn-primary" id="refApply" style="padding:8px 15px;font-size:12.5px;font-weight:800;">적용</button>
+            <button class="btn btn-soft" id="refAll" style="padding:8px 15px;font-size:12.5px;font-weight:800;">전체</button>
+            <span style="font-size:11.5px;color:var(--muted);">회원 가입일 기준</span>
+          </div>
           <div id="refSummary" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7;"></div>
           <div id="refTree" style="margin-top:12px;"></div>
+          <div id="refTopWrap" style="display:none;margin-top:22px;">
+            <div style="font-size:14px;font-weight:800;color:var(--ink);">대리점 순위</div>
+            <div style="margin-top:4px;font-size:12px;color:var(--muted);">선택한 기간에 카마스터를 많이 가입시킨 대리점 상위 5곳</div>
+            <div id="refTop" style="margin-top:10px;"></div>
+          </div>
         </div>
 
         <div id="mPaneList">
@@ -2381,104 +2396,192 @@ function refBranchName(b){
   return BRANCH_NAME[b] || b;
 }
 
+var REF_DATA = null;        /* 한 번 받아 두고 기간만 화면에서 거른다 */
+
+/* 기간 칸의 값을 읽는다. 비어 있으면 제한 없음. */
+function refPeriod(){
+  var f = ($('refFrom') && $('refFrom').value) || '';
+  var t = ($('refTo')   && $('refTo').value)   || '';
+  return { from:f, to:t };
+}
+function refInPeriod(joined, p){
+  if(!p.from && !p.to) return true;
+  if(!joined) return false;              /* 가입일을 모르면 기간을 건 순간 제외된다 */
+  if(p.from && joined < p.from) return false;
+  if(p.to   && joined > p.to)   return false;
+  return true;
+}
+function refPeriodLabel(p){
+  if(!p.from && !p.to) return '전체 기간';
+  if(p.from && p.to)   return p.from + ' ~ ' + p.to;
+  if(p.from)           return p.from + ' 이후';
+  return p.to + ' 이전';
+}
+function refPct(n, d){
+  if(!d) return null;
+  return Math.round((n / d) * 1000) / 10;   /* 소수 첫째 자리 */
+}
+
 async function renderReferrers(){
-  var box=$('refTree'), sum=$('refSummary');
+  var box = $('refTree');
   if(!box) return;
-  box.innerHTML='<div style="padding:26px 0;text-align:center;color:var(--muted);font-size:13px;">불러오는 중…</div>';
+  box.innerHTML = '<div style="padding:26px 0;text-align:center;color:var(--muted);font-size:13px;">불러오는 중…</div>';
   try{
     var r = await admApi('/v1/admin/referrers');
     if(!r || !r.ok) throw new Error('');
-    var items = r.items || [];
-
-    /* 셋으로 가른다: 대리점을 고른 사람 / '모릅니다' / 아직 안 물어본 사람 */
-    var picked=[], unknown=0, blank=0;
-    items.forEach(function(x){
-      if(x.dealer_no && x.dealer) picked.push(x);
-      else if(x.unknown) unknown++;
-      else blank++;
-    });
-
-    if(sum){
-      sum.innerHTML = '회원 <b style="color:var(--ink);">'+items.length+'</b>명 중 '
-        + '추천 대리점 <b style="color:var(--ink);">'+picked.length+'</b>명'
-        + ' · 모름 '+unknown+'명'
-        + ' · 미입력 '+blank+'명'
-        + (blank ? ' <span style="color:var(--muted);font-size:12px;">(기능 적용 전 가입)</span>' : '');
-    }
-
-    if(!picked.length){
-      box.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.7;">'
-        + '아직 추천 대리점을 고른 회원이 없습니다.<br>'
-        + '<span style="font-size:12.5px;">가입이 쌓이면 지부별로 나뉘어 보입니다.</span></div>';
-      return;
-    }
-
-    /* 지부 → 대리점 → 회원 */
-    var tree={};
-    picked.forEach(function(x){
-      var b=x.branch||'none';
-      if(!tree[b]) tree[b]={ n:0, dealers:{} };
-      tree[b].n++;
-      var key=String(x.dealer_no);
-      if(!tree[b].dealers[key]) tree[b].dealers[key]={ name:x.dealer, area:x.area, members:[] };
-      tree[b].dealers[key].members.push(x);
-    });
-
-    /* 사람이 많은 지부부터. '미지정'은 늘 맨 뒤로 */
-    var keys=Object.keys(tree).sort(function(a,b){
-      if(a==='none') return 1;
-      if(b==='none') return -1;
-      return tree[b].n - tree[a].n;
-    });
-
-    box.innerHTML = keys.map(function(b){
-      var t=tree[b];
-      var dk=Object.keys(t.dealers).sort(function(x,y){
-        return t.dealers[y].members.length - t.dealers[x].members.length;
-      });
-      var open = !!REF_OPEN[b];
-      return '<div style="border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden;">'
-        + '<div class="refBr" data-b="'+esc(b)+'" style="display:flex;align-items:center;justify-content:space-between;gap:12px;'
-        + 'padding:13px 16px;cursor:pointer;background:#FAFAFB;">'
-        +   '<span style="font-size:13.5px;font-weight:800;color:var(--ink);">'
-        +     esc(refBranchName(b))
-        +     ' <span style="color:var(--muted);font-weight:700;font-size:12px;">대리점 '+dk.length+'곳</span></span>'
-        +   '<span style="font-size:13px;font-weight:800;color:var(--orange);flex-shrink:0;">'+t.n+'명 '
-        +     '<span style="color:var(--muted);font-weight:700;">'+(open?'▴':'▾')+'</span></span>'
-        + '</div>'
-        + '<div style="display:'+(open?'block':'none')+';">'
-        + dk.map(function(k,i){
-            var d=t.dealers[k];
-            return '<div style="padding:11px 16px;'+(i?'border-top:1px solid var(--line);':'border-top:1px solid var(--line);')+'">'
-              + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">'
-              +   '<span style="font-size:13px;color:var(--ink);font-weight:600;">'+esc(d.name)+'</span>'
-              +   '<span style="font-size:12.5px;color:var(--muted);flex-shrink:0;">'+d.members.length+'명</span>'
-              + '</div>'
-              + '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;">'
-              + d.members.map(function(m){
-                  return '<span class="linklike refMem" data-code="'+esc(m.code)+'" style="font-size:12.5px;">'
-                       + esc(m.name||'-')+' <span style="color:var(--muted);">'+esc(m.code)+'</span></span>';
-                }).join('')
-              + '</div></div>';
-          }).join('')
-        + '</div></div>';
-    }).join('');
-
-    /* 지부 줄을 누르면 접었다 폈다 */
-    box.querySelectorAll('.refBr').forEach(function(el){
-      el.addEventListener('click', function(){
-        var b=el.getAttribute('data-b');
-        REF_OPEN[b] = !REF_OPEN[b];
-        renderReferrers();
-      });
-    });
-    /* 이름을 누르면 그 회원 상세로 */
-    box.querySelectorAll('.refMem').forEach(function(el){
-      el.addEventListener('click', function(){ openMember(el.getAttribute('data-code')); });
-    });
+    REF_DATA = { items: r.items || [], branches: r.branches || {} };
+    refDraw();
   }catch(e){
-    box.innerHTML='<div style="padding:26px 0;text-align:center;color:var(--muted);font-size:13px;">불러오지 못했습니다.</div>';
+    REF_DATA = null;
+    box.innerHTML = '<div style="padding:26px 0;text-align:center;color:var(--muted);font-size:13px;">불러오지 못했습니다.</div>';
   }
+}
+
+/* 받아 둔 자료를 기간에 맞춰 다시 그린다. 서버에 다시 묻지 않는다. */
+function refDraw(){
+  var box = $('refTree'), sum = $('refSummary');
+  if(!box || !REF_DATA) return;
+  var p = refPeriod();
+  var held = REF_DATA.branches || {};
+  var items = REF_DATA.items.filter(function(x){ return refInPeriod(x.joined, p); });
+
+  /* 셋으로 가른다: 대리점을 고른 사람 / '모릅니다' / 아직 안 물어본 사람 */
+  var picked=[], unknown=0, blank=0;
+  items.forEach(function(x){
+    if(x.dealer_no && x.dealer) picked.push(x);
+    else if(x.unknown) unknown++;
+    else blank++;
+  });
+
+  if(sum){
+    sum.innerHTML = '<b style="color:var(--ink);">'+esc(refPeriodLabel(p))+'</b> 가입 '
+      + '<b style="color:var(--ink);">'+items.length+'</b>명 중 '
+      + '추천 대리점 <b style="color:var(--ink);">'+picked.length+'</b>명'
+      + ' · 모름 '+unknown+'명'
+      + ' · 미입력 '+blank+'명'
+      + (blank ? ' <span style="color:var(--muted);font-size:12px;">(기능 적용 전 가입)</span>' : '');
+  }
+
+  var topWrap = $('refTopWrap');
+  if(!picked.length){
+    box.innerHTML = '<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.7;">'
+      + '이 기간에 추천 대리점을 고른 회원이 없습니다.<br>'
+      + '<span style="font-size:12.5px;">기간을 넓히거나 [전체]를 눌러 보세요.</span></div>';
+    if(topWrap) topWrap.style.display = 'none';
+    return;
+  }
+
+  /* 지부 → 대리점 → 회원 */
+  var tree = {};
+  picked.forEach(function(x){
+    var b = x.branch || 'none';
+    if(!tree[b]) tree[b] = { n:0, dealers:{} };
+    tree[b].n++;
+    var key = String(x.dealer_no);
+    if(!tree[b].dealers[key]) tree[b].dealers[key] = { name:x.dealer, area:x.area, members:[] };
+    tree[b].dealers[key].members.push(x);
+  });
+
+  /* 사람이 많은 지부부터. '미지정'은 늘 맨 뒤로 */
+  var keys = Object.keys(tree).sort(function(a,b){
+    if(a === 'none') return 1;
+    if(b === 'none') return -1;
+    return tree[b].n - tree[a].n;
+  });
+
+  /* 참여율 막대는 지부끼리 견주려는 것이므로 가장 높은 값을 기준으로 늘린다.
+     100% 기준으로 그리면 전부 1~3% 라 막대가 보이지 않는다. */
+  var maxPct = 0;
+  keys.forEach(function(b){
+    if(b === 'none') return;
+    var d = held[b] || 0, np = refPct(Object.keys(tree[b].dealers).length, d);
+    if(np != null && np > maxPct) maxPct = np;
+  });
+
+  var GRID = 'display:grid;grid-template-columns:1fr 92px 92px 118px 84px;gap:10px;align-items:center;';
+
+  box.innerHTML =
+      '<div style="'+GRID+'padding:10px 16px;font-size:11.5px;font-weight:800;color:var(--muted);">'
+    +   '<span>지부</span><span style="text-align:right;">보유 대리점</span>'
+    +   '<span style="text-align:right;">참여 대리점</span><span style="text-align:right;">참여율</span>'
+    +   '<span style="text-align:right;">가입 회원</span>'
+    + '</div>'
+    + keys.map(function(b){
+        var t = tree[b];
+        var dCount = Object.keys(t.dealers).length;
+        var hold = held[b];
+        var pct = (b === 'none') ? null : refPct(dCount, hold || 0);
+        var bar = (pct == null || !maxPct) ? ''
+          : '<div style="margin-top:5px;height:4px;background:var(--line);border-radius:2px;overflow:hidden;">'
+            + '<div style="width:'+Math.max(4, Math.round(pct / maxPct * 100))+'%;height:100%;background:var(--orange);"></div></div>';
+        var dk = Object.keys(t.dealers).sort(function(x,y){
+          return t.dealers[y].members.length - t.dealers[x].members.length;
+        });
+        var open = !!REF_OPEN[b];
+        return '<div style="border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden;">'
+          + '<div class="refBr" data-b="'+esc(b)+'" style="'+GRID+'padding:13px 16px;cursor:pointer;background:#FAFAFB;">'
+          +   '<span style="font-size:13.5px;font-weight:800;color:var(--ink);">'+esc(refBranchName(b))
+          +     ' <span style="color:var(--muted);font-weight:700;font-size:12px;">'+(open?'▴':'▾')+'</span></span>'
+          +   '<span style="text-align:right;font-size:13px;color:var(--muted);font-weight:700;">'
+          +     (hold == null ? '—' : hold.toLocaleString())+'</span>'
+          +   '<span style="text-align:right;font-size:13px;color:var(--ink);font-weight:700;">'+dCount+'</span>'
+          +   '<span style="text-align:right;font-size:13px;color:var(--ink);font-weight:700;">'
+          +     (pct == null ? '<span style="color:var(--muted);font-weight:600;">—</span>' : pct + '%') + bar + '</span>'
+          +   '<span style="text-align:right;font-size:14px;font-weight:800;color:var(--orange);">'+t.n+'</span>'
+          + '</div>'
+          + '<div style="display:'+(open?'block':'none')+';">'
+          + dk.map(function(k){
+              var d = t.dealers[k];
+              return '<div style="padding:11px 16px;border-top:1px solid var(--line);">'
+                + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">'
+                +   '<span style="font-size:13px;color:var(--ink);font-weight:600;">'+esc(d.name)+'</span>'
+                +   '<span style="font-size:12.5px;color:var(--muted);flex-shrink:0;">'+d.members.length+'명</span>'
+                + '</div>'
+                + '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;">'
+                + d.members.map(function(m){
+                    return '<span class="linklike refMem" data-code="'+esc(m.code)+'" style="font-size:12.5px;">'
+                         + esc(m.name||'-')+' <span style="color:var(--muted);">'+esc(m.code)+'</span></span>';
+                  }).join('')
+                + '</div></div>';
+            }).join('')
+          + '</div></div>';
+      }).join('');
+
+  /* ── 대리점 순위 (상위 5곳) ── */
+  var byDealer = {};
+  picked.forEach(function(x){
+    var k = String(x.dealer_no);
+    if(!byDealer[k]) byDealer[k] = { name:x.dealer, branch:x.branch||'none', n:0 };
+    byDealer[k].n++;
+  });
+  var top = Object.keys(byDealer).map(function(k){ return byDealer[k]; })
+    .sort(function(a,b){ return b.n - a.n || a.name.localeCompare(b.name); })
+    .slice(0, 5);
+  if(topWrap){
+    topWrap.style.display = 'block';
+    $('refTop').innerHTML = top.map(function(d, i){
+      return '<div style="display:grid;grid-template-columns:30px 1fr 150px 64px;gap:10px;align-items:center;'
+        + 'padding:11px 16px;border:1px solid var(--line);border-radius:11px;margin-bottom:6px;">'
+        + '<span style="font-size:13px;font-weight:800;color:var(--muted);">'+(i+1)+'</span>'
+        + '<span style="font-size:13px;font-weight:700;color:var(--ink);">'+esc(d.name)+'</span>'
+        + '<span style="font-size:12.5px;color:var(--muted);">'+esc(refBranchName(d.branch))+'</span>'
+        + '<span style="text-align:right;font-size:13.5px;font-weight:800;color:var(--orange);">'+d.n+'명</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  /* 지부 줄을 누르면 접었다 폈다 */
+  box.querySelectorAll('.refBr').forEach(function(el){
+    el.addEventListener('click', function(){
+      var b = el.getAttribute('data-b');
+      REF_OPEN[b] = !REF_OPEN[b];
+      refDraw();
+    });
+  });
+  /* 이름을 누르면 그 회원 상세로 */
+  box.querySelectorAll('.refMem').forEach(function(el){
+    el.addEventListener('click', function(){ openMember(el.getAttribute('data-code')); });
+  });
 }
 
 /* ══════════ 소속 수정 (관리자) ══════════
@@ -2711,6 +2814,16 @@ $('rfUnknown').addEventListener('click', function(){
   if(!confirm("추천 대리점을 '모름'으로 되돌립니다. 계속할까요?")) return;
   rfSubmit({ op:'set-referrer', code:REF_CODE, referrer_unknown: 1 },
            "추천 대리점을 '모름'으로 바꿨습니다.");
+});
+
+/* ── 추천 대리점 기간 단추 ── */
+$('refApply').addEventListener('click', function(){ refDraw(); });
+$('refAll').addEventListener('click', function(){
+  $('refFrom').value = ''; $('refTo').value = ''; refDraw();
+});
+['refFrom','refTo'].forEach(function(i){
+  $(i).addEventListener('change', refDraw);
+  $(i).addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); refDraw(); } });
 });
 
 /* ── 소속 수정 단추들 ── */
