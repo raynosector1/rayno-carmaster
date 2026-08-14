@@ -18,6 +18,9 @@ a{color:#FF5A00;text-decoration:none}a:hover{color:#E0500A}
 .screen.on{transform:translateX(0);opacity:1;pointer-events:auto}
 .screen>div{width:100%!important;height:100%!important;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
 input,select,button{font-family:inherit;min-width:0}
+.pkNative{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;border:0!important;opacity:0!important;pointer-events:none!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;}
+.pkRow:active{background:#FAFAFA!important;}
+.pkItem:active{background:#FAFAFA!important;}
 input::placeholder{color:#B4B4B8}
 select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23A0A0A4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");background-repeat:no-repeat;background-position:right 16px center}
 select:invalid{color:#B4B4B8}
@@ -94,10 +97,13 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
           </div>
           <div style="margin-top:16px;font-size:14px;font-weight:800;color:#111;margin-bottom:8px;">소속 정보</div>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <select id="brand" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled="" selected="">소속 선택</option></select><input id="brandEtc" maxlength="20" placeholder="소속 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
-            <select id="region" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">지역 선택 (시·도)</option></select>
-            <input id="officeQ" maxlength="20" placeholder="영업소 이름으로 찾기 (예: 분당)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:13px 16px;font-size:15px;color:#111;outline:none;background:#fff;display:none;">
-            <select id="office" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">영업소 선택</option></select><div id="usedCarHint" style="display:none;margin-top:9px;font-size:13.5px;color:#6A6A6E;font-weight:500;line-height:1.5;">중고차는 영업소 대신 <b style="color:#111;">소속 회사명</b>을 적어 주세요.</div><div id="officeHint" style="display:none;margin-top:9px;font-size:13.5px;color:#FF5A00;font-weight:600;line-height:1.5;">이 지역에 등록된 영업소가 없습니다. 영업소명을 직접 입력해 주세요.<br><span style="font-weight:500;color:#8A8A8E;">가입은 바로 완료되며, 입력하신 영업소는 관리자 확인 후 확정됩니다.</span></div><input id="officeEtc" maxlength="20" placeholder="영업소 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
+            <div class="pkRow" id="pkRowBrand" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:11px 16px;background:#fff;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:56px;box-sizing:border-box;"><span style="flex:1;min-width:0;"><span style="display:block;font-size:12px;color:#8A8A8E;font-weight:600;">소속 브랜드</span><span class="pkVal" id="pkValBrand" style="display:block;margin-top:1px;font-size:17px;color:#B0B0B4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">소속 선택</span></span><span class="pkArrow" style="flex-shrink:0;color:#C4C4C8;font-size:19px;line-height:1;">›</span></div>
+            <div class="pkRow" id="pkRowRegion" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:11px 16px;background:#fff;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:56px;box-sizing:border-box;"><span style="flex:1;min-width:0;"><span style="display:block;font-size:12px;color:#8A8A8E;font-weight:600;">지역</span><span class="pkVal" id="pkValRegion" style="display:block;margin-top:1px;font-size:17px;color:#B0B0B4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">지역 선택 (시·도)</span></span><span class="pkArrow" style="flex-shrink:0;color:#C4C4C8;font-size:19px;line-height:1;">›</span></div>
+            <div class="pkRow" id="pkRowOffice" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:11px 16px;background:#fff;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:56px;box-sizing:border-box;"><span style="flex:1;min-width:0;"><span style="display:block;font-size:12px;color:#8A8A8E;font-weight:600;">영업소</span><span class="pkVal" id="pkValOffice" style="display:block;margin-top:1px;font-size:17px;color:#B0B0B4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">영업소 선택</span></span><span class="pkArrow" style="flex-shrink:0;color:#C4C4C8;font-size:19px;line-height:1;">›</span></div>
+            <select id="brand" class="pkNative" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;"><option value="" disabled="" selected="">소속 선택</option></select><input id="brandEtc" maxlength="20" placeholder="소속 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
+            <select id="region" class="pkNative" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">지역 선택 (시·도)</option></select>
+            <input id="officeQ" class="pkNative" maxlength="20" placeholder="영업소 이름으로 찾기 (예: 분당)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:13px 16px;font-size:15px;color:#111;outline:none;background:#fff;display:none;">
+            <select id="office" class="pkNative" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;padding-right:44px;" disabled=""><option value="" disabled="" selected="">영업소 선택</option></select><div id="usedCarHint" style="display:none;margin-top:9px;font-size:13.5px;color:#6A6A6E;font-weight:500;line-height:1.5;">중고차는 영업소 대신 <b style="color:#111;">소속 회사명</b>을 적어 주세요.</div><div id="officeHint" style="display:none;margin-top:9px;font-size:13.5px;color:#FF5A00;font-weight:600;line-height:1.5;">이 지역에 등록된 영업소가 없습니다. 영업소명을 직접 입력해 주세요.<br><span style="font-weight:500;color:#8A8A8E;">가입은 바로 완료되며, 입력하신 영업소는 관리자 확인 후 확정됩니다.</span></div><input id="officeEtc" maxlength="20" placeholder="영업소 직접 입력 (최대 20자)" style="width:100%;border:1.5px solid #E7E7E9;border-radius:14px;padding:14px 16px;font-size:17px;color:#111;outline:none;background:#fff;display:none;margin-top:10px;">
           </div>
           <div style="margin-top:16px;display:flex;align-items:flex-start;gap:10px;background:#F5F5F6;border-radius:14px;padding:14px 16px;"><span style="width:24px;height:24px;border-radius:8px;background:#111;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">i</span><div style="font-size:13.5px;line-height:1.5;color:#6A6A6E;font-weight:500;">소속·영업소가 목록에 없다면 <b style="color:#111;font-weight:700;">기타</b>를 선택해 직접 입력할 수 있어요.</div></div>
           <div style="margin-top:18px;font-size:14px;font-weight:800;color:#111;margin-bottom:8px;">추천 레이노 대리점 <span style="color:#FF5A00;">*</span></div>
@@ -219,6 +225,22 @@ button:focus-visible,[data-go]:focus-visible,[data-href]:focus-visible,[data-ter
         </div>
       </div>
       </div>
+  <div id="pkSheet" style="position:absolute;inset:0;z-index:62;display:none;">
+    <div id="pkBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.42);opacity:0;transition:opacity .3s ease;"></div>
+    <div id="pkPanel" style="position:absolute;left:0;right:0;bottom:0;max-height:80%;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);">
+      <div style="flex-shrink:0;padding:18px 22px 14px;border-bottom:1px solid #F2F2F4;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span style="min-width:0;">
+          <span id="pkTitle" style="display:block;font-size:17px;font-weight:800;color:#111;">선택</span>
+          <span id="pkSub" style="display:block;margin-top:3px;font-size:13px;color:#8A8A8E;font-weight:500;"></span>
+        </span>
+        <button id="pkClose" type="button" style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:#F2F2F4;border:none;font-size:15px;color:#8A8A8E;cursor:pointer;font-family:inherit;">✕</button>
+      </div>
+      <div id="pkSearchWrap" style="flex-shrink:0;padding:12px 22px;border-bottom:1px solid #F2F2F4;display:none;">
+        <input id="pkQ" maxlength="20" placeholder="이름으로 찾기" style="width:100%;border:1.5px solid #E7E7E9;border-radius:12px;padding:12px 14px;font-size:15px;color:#111;outline:none;background:#fff;">
+      </div>
+      <div id="pkList" style="flex:1;overflow-y:auto;padding:6px 0 24px;"></div>
+    </div>
+  </div>
   <div id="refSheet" style="position:absolute;inset:0;z-index:61;display:none;">
     <div id="refBackdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.42);opacity:0;transition:opacity .3s ease;"></div>
     <div id="refPanel" style="position:absolute;left:0;right:0;bottom:0;height:84%;background:#fff;border-radius:22px 22px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);">
@@ -895,6 +917,119 @@ const S = { card:null, brand:'', region:'', office:'', name:'', birth:'', telco:
     /* ── 추천 대리점 단추 연결 ── */
     refFillAreas();
     refShowPick();
+    /* ══════════ 소속 정보 세 줄 + 선택 시트 ══════════
+       원래 <select> 를 지우지 않고 눈에서만 감춘 뒤, 시트에서 고른 값을
+       그 select 에 넣고 change 를 일으킨다. 그래서 기존 판정·초기화·
+       [다음] 조건이 손대지 않은 채 그대로 돈다.
+       (중고차 모드가 office.style.display 를 끄고 켜는 것도 그대로 살아 있다) */
+    var PK = { key:null, items:[], sel:null };
+    var PK_MAP = { Brand:'brand', Region:'region', Office:'office' };
+
+    function pkOptions(sel){
+      var out=[];
+      for(var i=0;i<sel.options.length;i++){
+        var o=sel.options[i];
+        if(o.disabled || o.value==='') continue;
+        out.push(o.value);
+      }
+      return out;
+    }
+    function pkSync(){
+      ['Brand','Region','Office'].forEach(function(k){
+        var sel=id(PK_MAP[k]), row=id('pkRow'+k), val=id('pkVal'+k);
+        if(!sel||!row||!val) return;
+        /* 중고차 모드에서 영업소 칸을 감추면 줄도 함께 감춘다 */
+        row.style.display = (sel.style.display==='none') ? 'none' : 'flex';
+        var v = sel.value;
+        if(v){ val.textContent=v; val.style.color='#111'; }
+        else {
+          var ph = sel.options.length ? sel.options[0].textContent : '';
+          val.textContent = ph; val.style.color='#B0B0B4';
+        }
+        var off = !!sel.disabled;
+        row.style.opacity = off ? '.5' : '1';
+        row.style.cursor  = off ? 'default' : 'pointer';
+        row.style.background = off ? '#FAFAFA' : '#fff';
+      });
+    }
+    function pkDraw(){
+      var q = (id('pkQ').value||'').toLowerCase().replace(/\s/g,'');
+      var list = q ? PK.items.filter(function(v){ return v.toLowerCase().replace(/\s/g,'').indexOf(q)>=0; }) : PK.items;
+      if(!list.length){
+        id('pkList').innerHTML='<div style="padding:26px 22px;text-align:center;font-size:15px;color:#8A8A8E;">찾는 항목이 없습니다.</div>';
+        return;
+      }
+      var cur = PK.sel.value;
+      /* 영업소 이름에 어떤 글자가 들어 있을지 모르므로 문자열을 이어 붙이지 않고
+         textContent 로 넣는다. 따옴표·꺾쇠가 섞여도 화면이 깨지지 않는다. */
+      var box=id('pkList'); box.innerHTML='';
+      list.forEach(function(v){
+        var on=(v===cur);
+        var row=document.createElement('div');
+        row.className='pkItem';
+        row.setAttribute('style','padding:15px 22px;font-size:16.5px;color:'+(on?'#FF5A00':'#111')
+          +';font-weight:'+(on?'800':'500')+';cursor:pointer;border-bottom:1px solid #F6F6F7;'
+          +'display:flex;align-items:center;justify-content:space-between;gap:10px;');
+        var t=document.createElement('span');
+        t.setAttribute('style','min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;');
+        t.textContent=v;
+        row.appendChild(t);
+        if(on){ var c=document.createElement('span'); c.setAttribute('style','flex-shrink:0;'); c.textContent='✓'; row.appendChild(c); }
+        row.addEventListener('click', function(){ pkChoose(v); });
+        box.appendChild(row);
+      });
+    }
+    function pkOpen(k){
+      var sel=id(PK_MAP[k]); if(!sel || sel.disabled) return;
+      /* 영업소는 검색칸에 남은 글자 때문에 목록이 잘려 있을 수 있다. 전부 되살려 놓고 연다. */
+      if(k==='Office'){
+        var oq=id('officeQ');
+        if(oq && oq.value){ oq.value=''; if(typeof officeRender==='function') officeRender(); }
+      }
+      PK.key=k; PK.sel=sel; PK.items=pkOptions(sel);
+      id('pkTitle').textContent = (k==='Brand'?'소속 브랜드':(k==='Region'?'지역':'영업소'))+' 선택';
+      var b=id('brand').value, r=id('region').value;
+      id('pkSub').textContent = (k==='Brand') ? ''
+        : (k==='Region') ? b
+        : [b, r, PK.items.length+'곳'].filter(Boolean).join(' · ');
+      /* 목록이 15곳을 넘을 때만 검색칸. 자동 초점은 주지 않는다 —
+         키보드가 바로 올라오면 정작 목록이 가려진다. */
+      var useQ = PK.items.length > 15;
+      id('pkQ').value='';
+      id('pkSearchWrap').style.display = useQ ? 'block' : 'none';
+      pkDraw();
+      id('pkList').scrollTop = 0;
+      id('pkSheet').style.display='block';
+      requestAnimationFrame(function(){
+        id('pkBackdrop').style.opacity='1';
+        id('pkPanel').style.transform='translateY(0)';
+      });
+    }
+    function pkClose(){
+      var sh=id('pkSheet'); if(!sh || sh.style.display==='none') return;
+      id('pkBackdrop').style.opacity='0';
+      id('pkPanel').style.transform='translateY(100%)';
+      setTimeout(function(){ sh.style.display='none'; }, 320);
+    }
+    function pkChoose(v){
+      var sel=PK.sel; if(!sel) return;
+      sel.value=v;
+      sel.dispatchEvent(new Event('change'));
+      pkSync();
+      pkClose();
+    }
+    ['Brand','Region','Office'].forEach(function(k){
+      var row=id('pkRow'+k);
+      if(row) row.addEventListener('click', function(){ pkOpen(k); });
+    });
+    if(id('pkClose'))    id('pkClose').addEventListener('click', pkClose);
+    if(id('pkBackdrop')) id('pkBackdrop').addEventListener('click', pkClose);
+    if(id('pkQ'))        id('pkQ').addEventListener('input', pkDraw);
+    pkSync();
+    /* 브랜드를 바꾸면 지역·영업소가 코드에서 조용히 초기화된다.
+       그 변화는 change 를 일으키지 않으므로 짧은 주기로 맞춰 준다. */
+    setInterval(pkSync, 300);
+
     if(id('refPick')) id('refPick').addEventListener('click', refOpen);
     if(id('refClose')) id('refClose').addEventListener('click', refClose);
     if(refBackdrop) refBackdrop.addEventListener('click', refClose);
