@@ -517,6 +517,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <button class="nav-item" data-view="members" data-title="회원 관리"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg><span>회원 관리</span></button>
       <button class="nav-item" data-view="promotions" data-title="프로모션 · 리워드"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 8.4 12 17l-8.6-8.6a4.6 4.6 0 1 1 6.5-6.5L12 3.4l2.1-1.5a4.6 4.6 0 1 1 6.5 6.5z"/></svg><span>프로모션 · 리워드</span></button>
       <button class="nav-item" data-view="services" data-title="시공 내역 관리"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0 5 5l-9.4 9.4a2 2 0 0 1-2.8 0l-2.2-2.2a2 2 0 0 1 0-2.8z"/></svg><span>시공 내역 관리</span></button>
+      <button class="nav-item" data-view="analytics" data-title="분석"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>분석</span></button>
       <button class="nav-item" data-view="offices" data-title="영업소 관리"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-6h4v6"/></svg><span>영업소 관리</span></button>
       <div class="grp">안내</div>
       <button class="nav-item" data-view="settings" data-title="공지사항·설정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v13H8l-4 4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg><span>공지사항·설정</span></button>
@@ -604,36 +605,6 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
       <!-- ===== 카마스터 회원 ===== -->
       <section class="view" id="view-members">
-        <!-- 회원을 보는 두 가지 관점. 메뉴를 늘리지 않고 탭으로 나눈다. -->
-        <div style="display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--line);">
-          <button class="mtab on" data-mtab="list" style="padding:11px 18px;border:none;background:none;font-family:inherit;font-size:13.5px;font-weight:800;color:var(--ink);cursor:pointer;border-bottom:2px solid var(--orange);margin-bottom:-1px;">회원 목록</button>
-          <button class="mtab" data-mtab="ref" style="padding:11px 18px;border:none;background:none;font-family:inherit;font-size:13.5px;font-weight:800;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;">추천 대리점</button>
-        </div>
-
-        <div id="mPaneRef" style="display:none;">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:15px;font-weight:800;color:var(--ink);">지부별 추천 현황</div>
-            <button class="btn btn-line" id="refReload" style="padding:9px 16px;font-size:12.5px;font-weight:700;">새로고침</button>
-          </div>
-          <div style="margin-top:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
-                      background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:11px 13px;">
-            <span style="font-size:12.5px;font-weight:800;color:var(--ink);">기간</span>
-            <input type="date" class="finp" id="refFrom" style="padding:8px 10px;font-size:12.5px;width:150px;">
-            <span style="color:var(--muted);font-size:12.5px;">~</span>
-            <input type="date" class="finp" id="refTo" style="padding:8px 10px;font-size:12.5px;width:150px;">
-            <button class="btn btn-primary" id="refApply" style="padding:8px 15px;font-size:12.5px;font-weight:800;">적용</button>
-            <button class="btn btn-soft" id="refAll" style="padding:8px 15px;font-size:12.5px;font-weight:800;">전체</button>
-            <span style="font-size:11.5px;color:var(--muted);">회원 가입일 기준</span>
-          </div>
-          <div id="refSummary" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7;"></div>
-          <div id="refTree" style="margin-top:12px;"></div>
-          <div id="refTopWrap" style="display:none;margin-top:22px;">
-            <div style="font-size:14px;font-weight:800;color:var(--ink);">대리점 순위</div>
-            <div style="margin-top:4px;font-size:12px;color:var(--muted);">선택한 기간에 카마스터를 많이 가입시킨 대리점 상위 5곳</div>
-            <div id="refTop" style="margin-top:10px;"></div>
-          </div>
-        </div>
-
         <div id="mPaneList">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -761,6 +732,68 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         </div>
       </section>
       <!-- ===== 영업소 관리 ===== -->
+      <section class="view" id="view-analytics">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:15px;font-weight:800;color:var(--ink);">지부별 성과</div>
+          <button class="btn btn-line" id="anReload" style="padding:9px 16px;font-size:12.5px;font-weight:700;">새로고침</button>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+                    background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:11px 13px;">
+          <span style="font-size:12.5px;font-weight:800;color:var(--ink);">기간</span>
+          <input type="date" class="finp" id="anFrom" style="padding:8px 10px;font-size:12.5px;width:150px;">
+          <span style="color:var(--muted);font-size:12.5px;">~</span>
+          <input type="date" class="finp" id="anTo" style="padding:8px 10px;font-size:12.5px;width:150px;">
+          <button class="btn btn-primary" id="anApply" style="padding:8px 15px;font-size:12.5px;font-weight:800;">적용</button>
+          <span style="font-size:11.5px;color:var(--muted);">가입일 · 시공일 기준</span>
+        </div>
+        <div id="anSummary" style="margin-top:10px;font-size:13px;color:#4A4A4E;line-height:1.7;"></div>
+        <div style="margin-top:6px;font-size:12px;color:var(--muted);">왼쪽 세 칸은 모객(추천 대리점의 지부 기준), 오른쪽 세 칸은 그 지부가 데려온 회원이 만든 시공</div>
+        <div id="anBranch" style="margin-top:12px;"></div>
+
+        <div style="margin-top:26px;font-size:15px;font-weight:800;color:var(--ink);">대리점 순위</div>
+        <div style="margin-top:4px;font-size:12px;color:var(--muted);">왼쪽은 모객, 오른쪽은 실행(시공점 기준)</div>
+        <div style="margin-top:12px;display:flex;gap:14px;flex-wrap:wrap;">
+          <div class="card" style="flex:1;min-width:280px;padding:16px 18px;">
+            <div style="font-size:13.5px;font-weight:800;color:var(--ink);">가입 많이 시킨 곳</div>
+            <div id="anTopRef" style="margin-top:10px;"></div>
+          </div>
+          <div class="card" style="flex:1;min-width:280px;padding:16px 18px;">
+            <div style="font-size:13.5px;font-weight:800;color:var(--ink);">연계 시공 많이 한 곳</div>
+            <div style="margin-top:3px;font-size:11.5px;color:var(--muted);">괄호는 그 기간 전체 보증서 중 카마스터를 연계한 비율</div>
+            <div id="anTopSvc" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:26px;font-size:15px;font-weight:800;color:var(--ink);">카마스터 활동</div>
+        <div id="anActive" style="margin-top:10px;"></div>
+
+<div id="mPaneRef">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:15px;font-weight:800;color:var(--ink);">지부별 추천 현황</div>
+            <button class="btn btn-line" id="refReload" style="padding:9px 16px;font-size:12.5px;font-weight:700;">새로고침</button>
+          </div>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+                      background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:11px 13px;">
+            <span style="font-size:12.5px;font-weight:800;color:var(--ink);">기간</span>
+            <input type="date" class="finp" id="refFrom" style="padding:8px 10px;font-size:12.5px;width:150px;">
+            <span style="color:var(--muted);font-size:12.5px;">~</span>
+            <input type="date" class="finp" id="refTo" style="padding:8px 10px;font-size:12.5px;width:150px;">
+            <button class="btn btn-primary" id="refApply" style="padding:8px 15px;font-size:12.5px;font-weight:800;">적용</button>
+            <button class="btn btn-soft" id="refAll" style="padding:8px 15px;font-size:12.5px;font-weight:800;">전체</button>
+            <span style="font-size:11.5px;color:var(--muted);">회원 가입일 기준</span>
+          </div>
+          <div id="refSummary" style="margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7;"></div>
+          <div id="refTree" style="margin-top:12px;"></div>
+          <div id="refTopWrap" style="display:none;margin-top:22px;">
+            <div style="font-size:14px;font-weight:800;color:var(--ink);">대리점 순위</div>
+            <div style="margin-top:4px;font-size:12px;color:var(--muted);">선택한 기간에 카마스터를 많이 가입시킨 대리점 상위 5곳</div>
+            <div id="refTop" style="margin-top:10px;"></div>
+          </div>
+        </div>
+
+
+      </section>
+
       <section class="view" id="view-offices">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -2083,11 +2116,151 @@ const VIEW_REFRESH = {
   members   : [renderMembers],
   promotions: [renderPromos, renderRewards],
   services  : [renderServices],
+  analytics : [renderAnalytics],
   offices   : [() => renderOffices(1)],
   settings  : [renderNotices, renderFaq, renderAdmins, renderNotify],
   sms       : [renderSms, renderSmsStatus],
   logs      : [() => renderLogs(1)]
 };
+/* ══════════ 분석 ══════════
+   모객(추천 대리점)과 실행(연계 시공)을 한 화면에서 견준다.
+
+   ▸ 지부의 뜻이 두 가지로 갈린다. 표에서는 '추천 대리점의 지부' 하나로 통일하고,
+     오른쪽 실행 칸도 그 지부가 데려온 회원이 만든 시공으로 센다.
+     그래야 '회원당 시공' 이 "데려온 사람들이 실제로 쓰는가" 라는 뜻이 된다.
+   ▸ '연계를 잘 넣는가' 는 시공점 기준이라 성격이 다르다. 대리점 순위에서 따로 본다. */
+var AN = { ref:null, svc:null };
+
+function anRange(){
+  var f=($('anFrom')&&$('anFrom').value)||'', t=($('anTo')&&$('anTo').value)||'';
+  return { from:f, to:t };
+}
+function anPctTxt(n, d){
+  if(d == null || !d) return '<span style="color:var(--muted);">—</span>';
+  var p = Math.round((n/d)*1000)/10;
+  var col = p >= 30 ? 'var(--ok)' : (p < 10 ? 'var(--err)' : '#4A4A4E');
+  return '<span style="color:'+col+';">('+p+'%)</span>';
+}
+async function renderAnalytics(){
+  var box=$('anBranch'); if(!box) return;
+  var r0=anRange();
+  if(!r0.from || !r0.to){
+    var t=new Date(), f=new Date(t.getFullYear(), t.getMonth(), t.getDate()-29);
+    var s=function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    if($('anFrom') && !r0.from) $('anFrom').value=s(f);
+    if($('anTo')   && !r0.to)   $('anTo').value=s(t);
+    r0=anRange();
+  }
+  box.innerHTML='<div style="padding:26px 0;text-align:center;color:var(--muted);font-size:13px;">불러오는 중…</div>';
+  try{
+    var q='?from='+encodeURIComponent(r0.from)+'&to='+encodeURIComponent(r0.to);
+    var res = await Promise.all([ admApi('/v1/admin/referrers'), admApi('/v1/admin/analytics'+q) ]);
+    AN.ref=res[0]||{}; AN.svc=res[1]||{};
+    anDraw();
+  }catch(e){
+    box.innerHTML='<div style="padding:26px 0;text-align:center;color:var(--muted);font-size:13px;">불러오지 못했습니다.</div>';
+  }
+}
+function anDraw(){
+  var box=$('anBranch'); if(!box || !AN.ref) return;
+  var p=anRange(), held=(AN.ref.branches)||{}, svc=AN.svc||{};
+  var byMember=svc.byMember||{}, byDealer=svc.byDealer||[];
+
+  var members=(AN.ref.items||[]).filter(function(x){ return refInPeriod(x.joined, p); });
+  var picked=members.filter(function(x){ return x.dealer_no && x.dealer; });
+
+  /* 지부(추천 대리점 기준)별로 모객과 실행을 함께 담는다 */
+  var tree={};
+  picked.forEach(function(x){
+    var b=x.branch||'none';
+    if(!tree[b]) tree[b]={ n:0, dealers:{}, svc:0, actives:0 };
+    tree[b].n++;
+    tree[b].dealers[String(x.dealer_no)]=1;
+    var s=Number(byMember[x.code]||0);
+    tree[b].svc+=s;
+    if(s>0) tree[b].actives++;
+  });
+  var keys=Object.keys(tree).sort(function(a,b){
+    if(a==='none') return 1; if(b==='none') return -1;
+    return tree[b].n-tree[a].n;
+  });
+
+  var totalSvc=Number(svc.linked||0), totalW=Number(svc.total||0);
+  var activeN=members.filter(function(x){ return Number(byMember[x.code]||0)>0; }).length;
+  if($('anSummary')){
+    $('anSummary').innerHTML =
+      '<b style="color:var(--ink);">'+esc(refPeriodLabel(p))+'</b> · '
+      + '가입 <b style="color:var(--ink);">'+members.length+'</b>명 · '
+      + '연계 시공 <b style="color:var(--ink);">'+totalSvc.toLocaleString()+'</b>건'
+      + (totalW ? ' <span style="color:var(--muted);">(전체 보증서 '+totalW.toLocaleString()+'건 중 '+(Math.round(totalSvc/totalW*1000)/10)+'%)</span>' : '')
+      + (svc.failed ? ' <span style="color:var(--err);">· 시공 자료를 불러오지 못했습니다</span>' : '');
+  }
+
+  var G='display:grid;grid-template-columns:1fr 88px 92px 84px 12px 96px 88px 88px;gap:10px;align-items:center;';
+  if(!keys.length){
+    box.innerHTML='<div style="padding:30px 0;text-align:center;color:var(--muted);font-size:13.5px;">이 기간에 추천 대리점을 고른 회원이 없습니다.</div>';
+  } else {
+    box.innerHTML =
+      '<div style="'+G+'padding:10px 16px;font-size:11.5px;font-weight:800;color:var(--muted);">'
+      + '<span>지부</span><span style="text-align:right;">보유 대리점</span><span style="text-align:right;">가입시킨 곳</span>'
+      + '<span style="text-align:right;">가입 회원</span><span></span>'
+      + '<span style="text-align:right;">시공한 회원</span><span style="text-align:right;">연계 시공</span>'
+      + '<span style="text-align:right;">회원당</span></div>'
+      + keys.map(function(b){
+          var t=tree[b], hold=held[b], dCount=Object.keys(t.dealers).length;
+          var per = t.n ? (Math.round(t.svc/t.n*100)/100) : 0;
+          var col = per >= 1 ? 'var(--ok)' : (per < 0.5 ? 'var(--err)' : 'var(--ink)');
+          return '<div style="'+G+'padding:13px 16px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;background:#fff;">'
+            + '<span style="font-size:13.5px;font-weight:800;color:var(--ink);">'+esc(refBranchName(b))+'</span>'
+            + '<span style="text-align:right;font-size:13px;color:var(--muted);font-weight:700;">'+(hold==null?'—':hold.toLocaleString())+'</span>'
+            + '<span style="text-align:right;font-size:13px;color:#4A4A4E;font-weight:700;">'+dCount+'</span>'
+            + '<span style="text-align:right;font-size:14px;font-weight:800;color:var(--ink);">'+t.n+'</span>'
+            + '<span></span>'
+            + '<span style="text-align:right;font-size:13px;color:#4A4A4E;font-weight:700;">'+t.actives+'</span>'
+            + '<span style="text-align:right;font-size:14px;font-weight:800;color:var(--orange);">'+t.svc+'</span>'
+            + '<span style="text-align:right;font-size:14px;font-weight:800;color:'+col+';">'+per.toFixed(2)+'</span>'
+            + '</div>';
+        }).join('');
+  }
+
+  /* 순위 — 모객 */
+  var byRefDealer={};
+  picked.forEach(function(x){
+    var k=String(x.dealer_no);
+    if(!byRefDealer[k]) byRefDealer[k]={ name:x.dealer, branch:x.branch||'none', n:0 };
+    byRefDealer[k].n++;
+  });
+  var topRef=Object.keys(byRefDealer).map(function(k){ return byRefDealer[k]; })
+    .sort(function(a,b){ return b.n-a.n || a.name.localeCompare(b.name); }).slice(0,5);
+  $('anTopRef').innerHTML = !topRef.length
+    ? '<div style="padding:14px 0;font-size:12.5px;color:var(--muted);">이 기간에 가입시킨 대리점이 없습니다.</div>'
+    : topRef.map(function(d,i){ return anRankRow(i, d.name, d.branch, d.n+'명', ''); }).join('');
+
+  /* 순위 — 실행 */
+  var topSvc=byDealer.slice().sort(function(a,b){ return b.linked-a.linked || String(a.name).localeCompare(String(b.name)); }).slice(0,5);
+  $('anTopSvc').innerHTML = !topSvc.length
+    ? '<div style="padding:14px 0;font-size:12.5px;color:var(--muted);">이 기간에 연계된 시공이 없습니다.</div>'
+    : topSvc.map(function(d,i){ return anRankRow(i, d.name||('#'+d.dno), d.branch, d.linked+'건', anPctTxt(d.linked, d.total)); }).join('');
+
+  /* 카마스터 활동 */
+  var rate = members.length ? Math.round(activeN/members.length*1000)/10 : 0;
+  $('anActive').innerHTML =
+    '<div style="border:1px solid var(--line);border-radius:12px;padding:16px 18px;background:#fff;font-size:13.5px;color:#4A4A4E;line-height:1.9;">'
+    + '가입 회원 <b style="color:var(--ink);">'+members.length+'</b>명 중 시공 1건 이상 '
+    + '<b style="color:var(--ink);">'+activeN+'</b>명 · 활동률 <b style="color:var(--orange);">'+rate+'%</b><br>'
+    + '<span style="color:var(--muted);">한 번도 시공을 넣지 않은 회원 '+(members.length-activeN)+'명</span>'
+    + '</div>';
+}
+function anRankRow(i, name, branch, val, extra){
+  return '<div style="display:grid;grid-template-columns:26px 1fr 130px 96px;gap:10px;align-items:center;'
+    + 'padding:10px 0;border-top:1px solid var(--line);">'
+    + '<span style="font-size:12.5px;font-weight:800;color:var(--muted);">'+(i+1)+'</span>'
+    + '<span style="font-size:13px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(name)+'</span>'
+    + '<span style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(refBranchName(branch))+'</span>'
+    + '<span style="text-align:right;font-size:13px;font-weight:800;color:var(--ink);">'+val+' '+extra+'</span>'
+    + '</div>';
+}
+
 function refreshView(v){
   const fns = VIEW_REFRESH[v];
   if(!fns) return;
@@ -2811,21 +2984,7 @@ $('apRegion').addEventListener('change', async function(){
 });
 $('apOffice').addEventListener('change', apValidate);
 
-/* ── 회원 관리 탭 (회원 목록 / 추천 대리점) ── */
-document.querySelectorAll('.mtab').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    var k=btn.getAttribute('data-mtab');
-    document.querySelectorAll('.mtab').forEach(function(b){
-      var on = (b === btn);
-      b.style.color = on ? 'var(--ink)' : 'var(--muted)';
-      b.style.borderBottom = on ? '2px solid var(--orange)' : '2px solid transparent';
-    });
-    $('mPaneList').style.display = (k==='list') ? 'block' : 'none';
-    $('mPaneRef').style.display  = (k==='ref')  ? 'block' : 'none';
-    /* 추천 대리점 탭은 열 때만 불러온다. 회원 목록을 볼 때 굳이 조회하지 않는다. */
-    if(k==='ref') renderReferrers();
-  });
-});
+/* 추천 대리점은 8/14 에 '분석' 메뉴로 옮겼다. 회원 관리에는 탭이 없다. */
 if($('refReload')) $('refReload').addEventListener('click', renderReferrers);
 
 /* ══════════ 추천 대리점 수정 (관리자) ══════════
@@ -2907,6 +3066,13 @@ $('rfUnknown').addEventListener('click', function(){
   if(!confirm("추천 대리점을 '모름'으로 되돌립니다. 계속할까요?")) return;
   rfSubmit({ op:'set-referrer', code:REF_CODE, referrer_unknown: 1 },
            "추천 대리점을 '모름'으로 바꿨습니다.");
+});
+
+/* ── 분석 기간 단추 ── */
+if($('anApply'))  $('anApply').addEventListener('click', renderAnalytics);
+if($('anReload')) $('anReload').addEventListener('click', renderAnalytics);
+['anFrom','anTo'].forEach(function(i){
+  if($(i)) $(i).addEventListener('change', renderAnalytics);
 });
 
 /* ── 추천 대리점 기간 단추 ── */
