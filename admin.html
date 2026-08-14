@@ -144,6 +144,9 @@ input::placeholder{color:#B4B4B8;}
 .kpi-brk .r .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .kpi-brk .r b{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
 .kpi-brk .r.zero b{color:#A9A9AE;}
+.th-sort{cursor:pointer;user-select:none;transition:color .12s;}
+.th-sort:hover{color:var(--ink);}
+.th-sort.on{color:var(--orange);}
 .donut{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#ECECEE;}
 .donut .in{width:84px;height:84px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .legend{display:flex;flex-direction:column;gap:12px;}
@@ -641,7 +644,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
         <div class="table" id="membersTable" style="margin-top:10px;">
           <div class="tr th" style="grid-template-columns:112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">
-            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span style="text-align:center;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
+            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span class="th-sort" id="thSvc" title="눌러서 시공 건수로 정렬" style="text-align:center;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
           </div>
           <div id="membersRows"></div>
         </div>
@@ -1684,7 +1687,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
    RAYNO 관리자 콘솔 · admin.html
    사이드바 내비로 화면 전환 (페이지 이동 없이 JS)
    ══════════════════════════════════════════════════════════ */
-const S = { view:'dashboard', rewardTab:'pending', selectedReward:null, warrantyPick:null, rewardPick:null, sendMode:'wait', extraPending:[] };
+const S = { view:'dashboard', rewardTab:'pending', selectedReward:null, warrantyPick:null, rewardPick:null, sendMode:'wait', extraPending:[], mSort:null };
 const $ = id => document.getElementById(id);
 let toastT; function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1900);}
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
@@ -2236,8 +2239,38 @@ function filteredMembers(){
     return true;
   });
 }
+/* 시공 칸 정렬.
+   누를 때마다 많은순 → 적은순 → 원래대로(가입일 최신순) 로 돈다.
+
+   ▸ 시공 건수를 못 읽은 회원(svc 가 null, 화면에 '?')은 숫자가 아니므로
+     많은순·적은순 어느 쪽이든 늘 맨 뒤로 보낸다. 0 으로 치면 '0건인 사람'과
+     '못 센 사람'이 섞여 잘못 읽힌다.
+   ▸ 건수가 같으면 가입일 최신순 — 그래야 매번 같은 차례로 보인다. */
+function sortMembers(rows){
+  if(!S.mSort) return rows;
+  var dir = (S.mSort === 'desc') ? -1 : 1;
+  return rows.slice().sort(function(a, b){
+    var av = (a.svc == null) ? null : Number(a.svc);
+    var bv = (b.svc == null) ? null : Number(b.svc);
+    if(av == null && bv == null) return String(b.joinRaw||'').localeCompare(String(a.joinRaw||''));
+    if(av == null) return 1;
+    if(bv == null) return -1;
+    if(av !== bv) return (av - bv) * dir;
+    return String(b.joinRaw||'').localeCompare(String(a.joinRaw||''));
+  });
+}
+function paintSvcHead(){
+  var el = $('thSvc'); if(!el) return;
+  el.className = 'th-sort' + (S.mSort ? ' on' : '');
+  el.textContent = '시공' + (S.mSort === 'desc' ? ' ▾' : (S.mSort === 'asc' ? ' ▴' : ''));
+  el.title = (S.mSort === 'desc') ? '많은순 — 눌러서 적은순으로'
+           : (S.mSort === 'asc')  ? '적은순 — 눌러서 원래대로'
+           : '눌러서 시공 건수 많은순으로';
+}
+
 function applyMemberFilters(){
-  var rows=filteredMembers();
+  var rows=sortMembers(filteredMembers());
+  paintSvcHead();
   var PER=20;   /* 한 화면에 보이는 회원 수 */
   var pages=Math.max(1, Math.ceil(rows.length/PER));
   if(!S.mPage || S.mPage>pages) S.mPage=1;
@@ -2322,6 +2355,11 @@ function applyMemberFilters(){
     pg.querySelectorAll('[data-pg]').forEach(function(el){ el.addEventListener('click', function(){ S.mPage=+el.dataset.pg; applyMemberFilters(); }); });
   }
 }
+if($('thSvc')) $('thSvc').addEventListener('click', function(){
+  S.mSort = (S.mSort === null) ? 'desc' : (S.mSort === 'desc' ? 'asc' : null);
+  S.mPage = 1;
+  applyMemberFilters();
+});
 ['fltOffice','fltRegion','fltStatus'].forEach(function(fid){ var el=$(fid); if(el) el.addEventListener('change', function(){ S.mPage=1; applyMemberFilters(); }); });
 /* 기간 옆 [조회] — 화면에 남아 있는 목록을 거르는 게 아니라 서버에서 다시 받아온다.
    (검색창 옆 돋보기 단추와 별개다. 예전에는 이쪽이 다시 불러오지 않았다) */
