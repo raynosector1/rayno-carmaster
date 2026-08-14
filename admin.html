@@ -147,14 +147,19 @@ input::placeholder{color:#B4B4B8;}
 /* ── 회원 목록 표 : 칸 구성을 여기 한 곳에서만 정한다 ──
    머리글·본문·뼈대가 모두 --mcols 를 쓰므로 화면 너비가 바뀌어도 축이 어긋나지 않는다.
    칸마다 style 로 폭이나 정렬을 따로 주지 말 것. */
-#membersTable{--mcols:120px 100px 120px 190px 100px 140px 160px 80px 120px 90px 80px;}
-#membersTable .tr{grid-template-columns:var(--mcols);column-gap:12px;min-width:1456px;align-items:center;}
+#membersTable{--mcols:120px 100px 120px 190px 100px 120px 150px 88px 120px 90px 80px;}
+#membersTable .tr{grid-template-columns:var(--mcols);column-gap:12px;min-width:1434px;align-items:center;}
 #membersTable .th,#membersTable .td{padding-left:18px;padding-right:18px;}
 #membersTable .tr>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 /* 시공(8) · 상태(10) · 수정(11) 만 가운데 */
 #membersTable .tr>*:nth-child(8),
 #membersTable .tr>*:nth-child(10),
 #membersTable .tr>*:nth-child(11){text-align:center;}
+/* 휴대전화번호(7) 는 오른쪽 정렬.
+   칸이 글자보다 넓으면 남는 폭이 오른쪽에 쌓여 그만큼 '시공'이 밀려 보인다.
+   오른쪽으로 붙이면 남는 폭이 왼쪽으로 가고,
+   전화 끝 → 시공 중심 → 가입일 시작 간격이 56 : 56 으로 정확히 같아진다. */
+#membersTable .tr>*:nth-child(7){text-align:right;}
 #membersTable .badge{vertical-align:middle;}
 
 .th-sort{cursor:pointer;user-select:none;transition:color .12s;}
