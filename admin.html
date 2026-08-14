@@ -144,6 +144,19 @@ input::placeholder{color:#B4B4B8;}
 .kpi-brk .r .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .kpi-brk .r b{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
 .kpi-brk .r.zero b{color:#A9A9AE;}
+/* ── 회원 목록 표 : 칸 구성을 여기 한 곳에서만 정한다 ──
+   머리글·본문·뼈대가 모두 --mcols 를 쓰므로 화면 너비가 바뀌어도 축이 어긋나지 않는다.
+   칸마다 style 로 폭이나 정렬을 따로 주지 말 것. */
+#membersTable{--mcols:120px 100px 120px 190px 100px 140px 160px 80px 120px 90px 80px;}
+#membersTable .tr{grid-template-columns:var(--mcols);column-gap:12px;min-width:1456px;align-items:center;}
+#membersTable .th,#membersTable .td{padding-left:18px;padding-right:18px;}
+#membersTable .tr>*{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+/* 시공(8) · 상태(10) · 수정(11) 만 가운데 */
+#membersTable .tr>*:nth-child(8),
+#membersTable .tr>*:nth-child(10),
+#membersTable .tr>*:nth-child(11){text-align:center;}
+#membersTable .badge{vertical-align:middle;}
+
 .th-sort{cursor:pointer;user-select:none;transition:color .12s;}
 .th-sort:hover{color:var(--ink);}
 .th-sort.on{color:var(--orange);}
@@ -643,8 +656,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
         <div id="mTodo" style="margin-top:10px;display:none;gap:8px;flex-wrap:wrap;"></div>
 
         <div class="table" id="membersTable" style="margin-top:10px;">
-          <div class="tr th" style="grid-template-columns:112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">
-            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span class="th-sort" id="thSvc" title="눌러서 시공 건수로 정렬" style="text-align:center;">시공</span><span style="text-align:center;">가입일</span><span>상태</span><span style="text-align:center;">수정</span>
+          <div class="tr th">
+            <span>카마스터코드</span><span>소속</span><span>지역</span><span>영업소</span><span>이름</span><span>아이디</span><span>휴대전화번호</span><span class="th-sort" id="thSvc" title="눌러서 시공 건수로 정렬">시공</span><span>가입일</span><span>상태</span><span>수정</span>
           </div>
           <div id="membersRows"></div>
         </div>
@@ -2197,7 +2210,9 @@ async function renderDashboard(){
 
 /* ── 회원 목록 ── */
 async function renderMembers(){
-  $('membersRows').innerHTML = skelRows(7, '112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px');
+  /* 뼈대도 같은 칸 구성을 써야 한다. 폭을 따로 적으면 자료가 들어올 때 표가 한 번 흔들린다. */
+  $('membersRows').innerHTML = ('<div class="tr td">'
+    + '<span class="skel" style="width:70%;"></span>'.repeat(11) + '</div>').repeat(7);
   var f=$('fltFrom'), t=$('fltTo');
   if(f && !f.value) f.value='2025-01-01';
   if(t && !t.value){ var d=new Date(); t.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -2325,7 +2340,7 @@ function applyMemberFilters(){
     return '<span class="badge b-off">정지</span>';
   };
   $('membersRows').innerHTML = !page.length ? EMPTY('조건에 맞는 회원이 없습니다') : page.map(function(m){
-    return '<div class="tr td" style="grid-template-columns:112px minmax(82px,0.85fr) minmax(96px,0.9fr) minmax(150px,1.3fr) minmax(86px,0.9fr) minmax(112px,1fr) 132px 64px 100px 128px 60px;min-width:1280px;">'+
+    return '<div class="tr td">'+
       '<span style="font-weight:700;">'+esc(m.code)+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.brand||'-')+'</span>'+
       '<span style="color:#5A5A5E;">'+esc(m.region||'-')+'</span>'+
@@ -2337,11 +2352,11 @@ function applyMemberFilters(){
         + (m.phone2Last4 ? ' <span class="badge b-off" style="font-size:10px;padding:1px 5px;" title="보조 연락처 등록됨">+'+esc(m.phone2Last4)+'</span>' : '')
         + '</span>'+
       /* 시공 건수 — 0 은 흐리게, 셀 수 없었으면 물음표 */
-      '<span class="num" style="text-align:center;font-weight:'+(m.svc>0?'800':'500')+';color:'+(m.svc>0?'var(--ink)':'#B4B4B8')+';">'
+      '<span class="num" style="font-weight:'+(m.svc>0?'800':'500')+';color:'+(m.svc>0?'var(--ink)':'#B4B4B8')+';">'
         + (m.svc==null ? '?' : m.svc.toLocaleString()) + '</span>'+
-      '<span class="num" style="text-align:center;color:#8A8A8E;">'+m.join+'</span>'+
+      '<span class="num" style="color:#8A8A8E;">'+m.join+'</span>'+
       '<span>'+badge(m.state)+(m.rejoin?' <span class="badge b-warn" style="font-size:10px;padding:2px 6px;" title="탈퇴 후 다시 가입한 회원입니다. 시공 실적은 초기화되어, 재가입 시점부터 새롭게 누적됩니다.">재가입</span>':'')+'</span>'+
-      '<span class="linklike" style="text-align:center;" data-code="'+esc(m.code)+'">상세</span></div>';
+      '<span class="linklike" data-code="'+esc(m.code)+'">상세</span></div>';
   }).join('');
   $('membersRows').querySelectorAll('.linklike').forEach(function(el){ el.addEventListener('click', function(){ openMember(el.dataset.code); }); });
   var pg=$('mPager');
