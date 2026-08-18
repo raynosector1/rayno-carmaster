@@ -693,11 +693,44 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             <div id="pgRows"></div>
           </div>
 
+          <div id="rwTools" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;
+                      background:#FAFAFB;border:1px solid var(--line);border-radius:11px;padding:11px 13px;">
+            <span style="font-size:12.5px;font-weight:800;color:var(--ink);">기간</span>
+            <input type="date" class="finp" id="rwFrom" style="padding:8px 10px;font-size:12.5px;width:150px;">
+            <span style="color:var(--muted);font-size:12.5px;">~</span>
+            <input type="date" class="finp" id="rwTo" style="padding:8px 10px;font-size:12.5px;width:150px;">
+            <button class="btn btn-primary" id="rwApply" style="padding:8px 15px;font-size:12.5px;font-weight:800;">적용</button>
+            <button class="btn btn-soft" id="rwAllPeriod" style="padding:8px 15px;font-size:12.5px;font-weight:800;">전체</button>
+            <select class="finp" id="rwKindF" style="padding:8px 30px 8px 11px;font-size:12.5px;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 11px center;">
+              <option value="">종류 전체</option>
+              <option value="welcome">웰컴기프트</option>
+              <option value="promotion">프로모션</option>
+              <option value="milestone">실적달성</option>
+              <option value="manual">수동지급</option>
+            </select>
+            <select class="finp" id="rwPer" style="padding:8px 30px 8px 11px;font-size:12.5px;appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 11px center;">
+              <option value="20">20개씩</option>
+              <option value="50">50개씩</option>
+              <option value="100">100개씩</option>
+            </select>
+            <button class="btn btn-soft" id="rwCopyAll" title="조건에 맞는 건의 휴대폰 번호를 줄바꿈으로 이어 붙여 복사합니다"
+                    style="padding:8px 15px;font-size:12.5px;font-weight:800;">번호 전체 복사</button>
+            <span style="font-size:12px;color:#4A4A4E;font-weight:700;">조건에 맞는 <b id="rwFiltCount" style="color:var(--ink);">0</b>건</span>
+            <span id="rwBulkTop" style="display:none;margin-left:auto;align-items:center;gap:9px;">
+              <button class="btn btn-line" id="bulkAllFiltered" title="기간을 지정하면 눌러서 조건에 맞는 것을 한 번에 처리할 수 있습니다"
+                      style="padding:8px 15px;font-size:12.5px;font-weight:800;opacity:.45;pointer-events:none;">조건 전체 지급 완료</button>
+              <span style="width:1px;height:20px;background:var(--line);"></span>
+              <span style="font-size:12.5px;color:#4A4A4E;font-weight:700;">선택 <b id="selCountTop" class="num" style="color:var(--ink);">0</b>건</span>
+              <button class="btn btn-primary" id="bulkApproveTop" style="padding:8px 15px;font-size:12.5px;font-weight:800;">선택 지급 완료 처리</button>
+            </span>
+          </div>
+
           <div id="rwWrap" style="display:none;">
             <div class="tr th" style="grid-template-columns:40px minmax(90px,0.9fr) 134px 108px 88px minmax(168px,1.7fr) minmax(118px,1.1fr) 96px 128px;min-width:1160px;">
               <span><span id="rwAll" title="이 쪽의 지급 대기 건을 모두 선택합니다" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span></span><span>카마스터</span><span>연락처</span><span>코드</span><span>종류</span><span>리워드</span><span>산정 사유</span><span>산정일</span><span></span>
             </div>
             <div id="rewardsRows"></div>
+            <div class="pg" id="rwPager" style="display:none;"></div>
           </div>
         </div>
 
@@ -3632,17 +3665,49 @@ function _rwKind(t){
 }
 
 /* ── 리워드 지급 ── */
+/* 산정일은 '2026.08.14' 처럼 점으로 오기도 하고 '-' 로 오기도 한다.
+   숫자만 뽑아 여덟 자리로 견주면 형태가 달라도 같은 기준으로 걸린다. */
+function _ymd8(v){ return String(v==null?'':v).replace(/[^0-9]/g,'').slice(0,8); }
+function rwInPeriod(d){
+  var f=_ymd8(($('rwFrom')||{}).value), t=_ymd8(($('rwTo')||{}).value);
+  if(!f && !t) return true;
+  var x=_ymd8(d);
+  if(!x) return false;              /* 날짜를 모르면 기간을 건 순간 빠진다 */
+  if(f && x < f) return false;
+  if(t && x > t) return false;
+  return true;
+}
+function rwPer(){ var v=Number((($('rwPer')||{}).value)||20); return (v===50||v===100) ? v : 20; }
+function rwKindOk(t){
+  var k=(($('rwKindF')||{}).value)||'';
+  if(!k) return true;
+  return String(t||'') === k;
+}
+
 async function renderRewards(){
   $('rewardsRows').innerHTML = skelRows(5, '40px minmax(90px,0.9fr) 134px 108px 88px minmax(168px,1.7fr) minmax(118px,1.1fr) 96px 128px');
   await sleep(600);
   const base = await loadRewards(S.rewardTab);
-  const rows = S.rewardTab==='pending' ? [...S.extraPending, ...base] : base;
+  S.rewardsAll = S.rewardTab==='pending' ? [...S.extraPending, ...base] : base;
+  rwDraw();
+}
+
+/* 받아 둔 목록을 기간·쪽수에 맞춰 다시 그린다. 서버에 다시 묻지 않는다. */
+function rwDraw(){
+  const all = S.rewardsAll || [];
+  const rows = all.filter(function(r){ return rwInPeriod(r.date) && rwKindOk(r.type); });
+  const per = rwPer();
+  const pages = Math.max(1, Math.ceil(rows.length / per));
+  if(!S.rwPage || S.rwPage > pages) S.rwPage = 1;
+  const page = rows.slice((S.rwPage-1)*per, S.rwPage*per);
   S.rewards = rows;
+  if($('rwFiltCount')) $('rwFiltCount').textContent = rows.length;
+  rwPaintAllBtn(rows.length);
   const done = S.rewardTab==='done';
-  $('rewardsRows').innerHTML = !rows.length ? EMPTY(S.rewardTab==='done'?'지급 완료 내역이 없습니다':'지급 전 리워드가 없습니다') : rows.map(r=>
+  $('rewardsRows').innerHTML = !page.length ? EMPTY(S.rewardTab==='done'?'지급 완료 내역이 없습니다':'지급 전 리워드가 없습니다') : page.map(r=>
     `<div class="tr td" style="grid-template-columns:40px minmax(90px,0.9fr) 134px 108px 88px minmax(168px,1.7fr) minmax(118px,1.1fr) 96px 128px;min-width:1160px;" data-id="${esc(r.id)}">
        <span>${done?'':'<span class="rchk" style="display:inline-flex;width:18px;height:18px;border:2px solid #D0D0D4;border-radius:5px;cursor:pointer;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;"></span>'}</span>
-       <span style="font-weight:700;">${esc(r.name)}</span><span style="color:#5A5A5E;letter-spacing:.2px;">${esc(_fmtPhone(r.phone))}</span><span style="color:#5A5A5E;">${esc(r.code)}</span>
+       <span style="font-weight:700;">${esc(r.name)}</span><span class="phCopy" data-ph="${esc(_digits(r.phone))}" title="눌러서 번호 복사" style="color:#5A5A5E;letter-spacing:.2px;cursor:pointer;text-decoration:underline;text-decoration-color:#DADADE;text-underline-offset:3px;">${esc(_fmtPhone(r.phone))}</span><span style="color:#5A5A5E;">${esc(r.code)}</span>
        <span><span class="badge ${esc(_rwKind(r.type).cls)}">${esc(_rwKind(r.type).label)}</span></span>
        <span><div>${esc(r.reward)}</div><div style="font-size:11px;color:${r.delivery==='coupon'?'var(--orange)':'var(--muted)'};margin-top:2px;">${r.delivery==='coupon'?'앱 쿠폰 발급':'비즈콘 발송'}</div></span><span style="color:#8A8A8E;">${esc(r.reason)}</span><span style="color:#8A8A8E;">${esc(r.date)}</span>
        <span>${done
@@ -3650,7 +3715,25 @@ async function renderRewards(){
           : '<div style="display:flex;flex-direction:column;gap:5px;"><button class="btn btn-primary btn-xs approveOne">지급 완료</button><button class="btn btn-xs cancelOne" style="padding:3px 8px;font-size:11px;border:1px solid var(--err);color:var(--err);background:#fff;">발급 취소</button></div>'}</span></div>`).join('');
   bindRewardRows();
   updateSel();
-  if(S.rewardTab==='pending') $('pendingCount').textContent = rows.length;
+  /* 탭 옆 숫자는 '지금 지급 대기가 몇 건인가' 이므로 기간과 무관한 전체 수를 쓴다. */
+  if(S.rewardTab==='pending') $('pendingCount').textContent = all.length;
+
+  var pgr=$('rwPager');
+  if(pgr){
+    if(pages <= 1){ pgr.style.display='none'; pgr.innerHTML=''; }
+    else {
+      pgr.style.display='';
+      var html='';
+      var s1=Math.max(1, S.rwPage-2), e1=Math.min(pages, s1+4); s1=Math.max(1, e1-4);
+      if(S.rwPage>1) html+='<span class="p" data-rwpg="'+(S.rwPage-1)+'">‹</span>';
+      for(var i=s1;i<=e1;i++) html+='<span class="p'+(i===S.rwPage?' on':'')+'" data-rwpg="'+i+'">'+i+'</span>';
+      if(S.rwPage<pages) html+='<span class="p" data-rwpg="'+(S.rwPage+1)+'">›</span>';
+      pgr.innerHTML=html;
+      pgr.querySelectorAll('[data-rwpg]').forEach(function(el){
+        el.addEventListener('click', function(){ S.rwPage=+el.dataset.rwpg; rwDraw(); });
+      });
+    }
+  }
 }
 function bindRewardRows(){
   /* 목록이 새로 그려지면 행은 전부 꺼진 상태다. 머리글도 같이 꺼 준다. */
@@ -3707,7 +3790,11 @@ function _chkPaint(el, on){
   if(on){ el.style.background='var(--ink)'; el.style.borderColor='var(--ink)'; el.textContent='✓'; }
   else  { el.style.background='#fff';       el.style.borderColor='#D0D0D4';   el.textContent='';  }
 }
-function updateSel(){ const n=$('rewardsRows').querySelectorAll('.rchk.on').length; $('selCount').textContent=n; }
+function updateSel(){
+  const n=$('rewardsRows').querySelectorAll('.rchk.on').length;
+  $('selCount').textContent=n;
+  if($('selCountTop')) $('selCountTop').textContent=n;
+}
 
 /* 머리글의 전체 선택. 지금 화면에 그려진 지급 대기 건을 한 번에 켜고 끈다. */
 $('rwAll').addEventListener('click', function(){
@@ -3739,6 +3826,10 @@ function pgTabApply(tab){
   $('pgWrap').style.display = prog ? '' : 'none';
   $('rwWrap').style.display = prog ? 'none' : '';
   $('rwBulk').style.display = (tab === 'pending') ? 'flex' : 'none';
+  /* 기간 필터는 지급 대기·완료 둘 다에 쓰고, 일괄 처리는 지급 대기에서만 쓴다 */
+  if($('rwTools'))   $('rwTools').style.display   = (tab === 'prog') ? 'none' : 'flex';
+  if($('rwBulkTop')) $('rwBulkTop').style.display = (tab === 'pending') ? 'flex' : 'none';
+  S.rwPage = 1;
   /* 지급 완료 쪽에는 행 체크박스 자체가 없으므로 머리글 것도 감춘다 */
   var _all = $('rwAll');
   if(_all){ _all.style.display = (tab === 'pending') ? 'inline-flex' : 'none'; _chkPaint(_all, false); }
@@ -3862,13 +3953,103 @@ async function pgShow(append){
     if(!append) $('pgRows').innerHTML = '';
   }
 }
-$('bulkApprove').addEventListener('click', async ()=>{
+/* 번호 복사.
+   비즈콘에 한 명씩 번호를 입력하는 방식이라, 화면을 보고 11자리를 손으로 치는
+   동작이 가장 잦다. 눌러서 붙여넣기로 바꾸면 오타도 함께 사라진다.
+   하이픈 없이 숫자만 복사한다 — 대부분의 입력칸이 숫자만 받는다. */
+function _digits(v){ return String(v==null?'':v).replace(/[^0-9]/g,''); }
+function _copyText(s){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(s).then(function(){ return true; }).catch(function(){ return _copyFallback(s); });
+  }
+  return Promise.resolve(_copyFallback(s));
+}
+function _copyFallback(s){
+  try{
+    var t=document.createElement('textarea');
+    t.value=s; t.setAttribute('readonly','');
+    t.style.position='fixed'; t.style.left='-9999px';
+    document.body.appendChild(t); t.select();
+    var ok=document.execCommand('copy');
+    document.body.removeChild(t);
+    return ok;
+  }catch(e){ return false; }
+}
+
+/* [조건 전체 지급 완료]
+   화면에 안 보이는 쪽까지 한 번에 처리하므로 안전장치를 셋 둔다.
+     ① 기간을 둘 다 지정해야만 눌린다 — 아무 조건 없이 전부 처리하는 사고를 막는다
+     ② 확인창에 기간·종류·건수를 그대로 다시 보여 준다
+     ③ 잘못 눌러도 '지급 완료' 탭에서 [지급 전으로] 로 되돌릴 수 있다 */
+function rwPaintAllBtn(n){
+  var b=$('bulkAllFiltered'); if(!b) return;
+  var f=(($('rwFrom')||{}).value)||'', t=(($('rwTo')||{}).value)||'';
+  var on = !!(f && t && n > 0 && S.rewardTab === 'pending');
+  b.textContent = on ? ('조건 전체 지급 완료 ' + n + '건') : '조건 전체 지급 완료';
+  b.style.opacity = on ? '1' : '.45';
+  b.style.pointerEvents = on ? 'auto' : 'none';
+  b.title = on ? '조건에 맞는 '+n+'건을 한 번에 지급 완료로 처리합니다'
+               : '기간을 지정하면 눌러서 조건에 맞는 것을 한 번에 처리할 수 있습니다';
+}
+async function bulkAllFilteredRun(){
+  var rows = S.rewards || [];
+  if(!rows.length){ toast('처리할 항목이 없습니다.'); return; }
+  var f=$('rwFrom').value, t=$('rwTo').value;
+  var kindSel=$('rwKindF'), kindTxt = (kindSel && kindSel.value) ? kindSel.options[kindSel.selectedIndex].text : '종류 전체';
+  if(!confirm('아래 조건에 맞는 리워드를 모두 지급 완료로 처리합니다.\n\n'
+      + '기간 : ' + f + ' ~ ' + t + '\n'
+      + '종류 : ' + kindTxt + '\n'
+      + '건수 : ' + rows.length + '건\n\n'
+      + '화면에 보이지 않는 쪽의 건도 함께 처리됩니다.\n비즈콘 발송이 끝난 건만 처리해 주세요.')) return;
+  var b=$('bulkAllFiltered'); var label=b.textContent;
+  b.style.pointerEvents='none'; b.textContent='처리 중…';
+  try{
+    var res = await approveRewards(rows.map(function(r){ return r.id; }));
+    if(!res || !res.ok) throw new Error('');
+    toast(rows.length+'건 지급 완료 처리했습니다.');
+  }catch(e){
+    toast('처리에 실패했습니다.');
+  }
+  b.textContent=label;
+  await renderRewards();
+  refreshPendingCount();
+}
+
+/* 위아래 두 단추가 같은 일을 한다. 목록이 길어 아래까지 내려가기 번거로워
+   위쪽에도 뒀을 뿐이므로, 동작은 반드시 한 함수에 두어야 한다. */
+async function bulkApproveRun(){
   const checked = Array.from($('rewardsRows').querySelectorAll('.rchk.on')).map(c=>c.closest('[data-id]'));
   if(!checked.length){ toast('처리할 항목을 선택해 주세요.'); return; }
   if(!confirm(checked.length+'건을 지급 완료로 처리하시겠습니까?\n\n비즈콘 발송이 끝난 건만 처리해 주세요.')) return;
   await approveRewards(checked.map(r=>r.dataset.id));
   checked.forEach(r=>{ r.style.transition='.2s'; r.style.opacity='0'; setTimeout(()=>{ r.remove(); refreshPendingCount(); updateSel(); },200); });
   toast(checked.length+'건 지급 완료 처리했습니다.');
+}
+$('bulkApprove').addEventListener('click', bulkApproveRun);
+if($('bulkApproveTop')) $('bulkApproveTop').addEventListener('click', bulkApproveRun);
+if($('rwApply')) $('rwApply').addEventListener('click', function(){ S.rwPage=1; rwDraw(); });
+if($('rwAllPeriod')) $('rwAllPeriod').addEventListener('click', function(){
+  $('rwFrom').value=''; $('rwTo').value=''; S.rwPage=1; rwDraw();
+});
+['rwFrom','rwTo','rwKindF','rwPer'].forEach(function(i){
+  if($(i)) $(i).addEventListener('change', function(){ S.rwPage=1; rwDraw(); });
+});
+if($('bulkAllFiltered')) $('bulkAllFiltered').addEventListener('click', bulkAllFilteredRun);
+if($('rwCopyAll')) $('rwCopyAll').addEventListener('click', async function(){
+  var rows = S.rewards || [];
+  var list = rows.map(function(r){ return _digits(r.phone); }).filter(Boolean);
+  if(!list.length){ toast('복사할 번호가 없습니다.'); return; }
+  var ok = await _copyText(list.join('\n'));
+  toast(ok ? (list.length + '개 번호를 복사했습니다. 붙여넣기 하세요.') : '복사에 실패했습니다.');
+});
+/* 행의 연락처는 목록이 다시 그려질 때마다 새로 만들어지므로 위임으로 받는다 */
+if($('rewardsRows')) $('rewardsRows').addEventListener('click', async function(e){
+  var el = e.target && e.target.closest ? e.target.closest('.phCopy') : null;
+  if(!el) return;
+  var ph = el.getAttribute('data-ph') || '';
+  if(!ph){ toast('번호가 없습니다.'); return; }
+  var ok = await _copyText(ph);
+  toast(ok ? (el.textContent + ' 복사했습니다.') : '복사에 실패했습니다.');
 });
 $('exportRewards').addEventListener('click', async ()=>{ try{ var rows=await loadRewards(S.rewardTab); var csv=_csv([['이름','연락처','코드','리워드','산정사유','산정일','지급일']].concat(rows.map(function(r){return [r.name,_phoneFmt(r.phone),r.code,r.reward,r.reason,r.date,r.sentDate||''];}))); _download('리워드_'+(S.rewardTab==='done'?'지급완료':'지급전')+'_'+_today()+'.csv', csv); admAudit('rewards', rows.length); toast('CSV 파일을 내려받았습니다.'); }catch(e){ toast('내보내기에 실패했습니다.'); } });
 
