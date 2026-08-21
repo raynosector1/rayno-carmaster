@@ -138,12 +138,6 @@ input::placeholder{color:#B4B4B8;}
 .chart .bar{width:100%;background:#FFD3BC;border-radius:6px 6px 0 0;}
 .chart .bar.hi{background:var(--orange);}
 .chart .mo{font-size:11px;color:#9A9A9E;font-weight:600;}
-.kpi-brk{display:flex;flex-direction:column;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);}
-.kpi-brk .r{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.kpi-brk .r .n{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#4A4A4E;}
-.kpi-brk .r .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.kpi-brk .r b{font-size:15px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;}
-.kpi-brk .r.zero b{color:#A9A9AE;}
 /* ── 회원 목록 표 : 칸 구성을 여기 한 곳에서만 정한다 ──
    머리글·본문·뼈대가 모두 --mcols 를 쓰므로 화면 너비가 바뀌어도 축이 어긋나지 않는다.
    칸마다 style 로 폭이나 정렬을 따로 주지 말 것. */
@@ -552,15 +546,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <!-- ===== 대시보드 ===== -->
       <section class="view active" id="view-dashboard">
         <div class="kpis">
-          <div class="kpi"><div class="l">총 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div>
-            <div class="kpi-brk">
-              <div class="r" id="kpiStOkRow"><span class="n"><span class="dot" style="background:var(--ok);"></span>정상</span><b id="kpiStOk">0</b></div>
-              <div class="r" id="kpiStWaitRow"><span class="n"><span class="dot" style="background:var(--orange);"></span>검토중</span><b id="kpiStWait">0</b></div>
-              <div class="r" id="kpiStRejRow"><span class="n"><span class="dot" style="background:var(--err);"></span>거절</span><b id="kpiStRej">0</b></div>
-              <div class="r" id="kpiStOffRow" style="display:none;"><span class="n"><span class="dot" style="background:#A9A9AE;"></span>정지</span><b id="kpiStOff">0</b></div>
-              <div class="r" id="kpiStOutRow" style="display:none;border-top:1px dashed var(--line);padding-top:9px;"><span class="n" style="color:#8A8A8E;"><span class="dot" style="background:#D4D4D8;"></span>탈퇴 <span style="font-weight:600;font-size:11.5px;color:#A9A9AE;">(총원 밖)</span></span><b id="kpiStOut" style="color:#8A8A8E;">0</b></div>
-            </div>
-          </div>
+          <div class="kpi"><div class="l">활동 중인 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div><div class="d flat" id="kpiTotalSub">—</div></div>
           <div class="kpi"><div class="l">이번 달 신규 가입</div><div class="v"><span id="kpiMonth">0</span><span> 명</span></div><div class="d flat" id="kpiMonthSub">—</div></div>
           <div class="kpi warn"><div class="l">지급 전 리워드</div><div class="v" style="color:var(--orange);"><span id="kpiPending">0</span><span style="color:#C89A82;"> 건</span></div><div class="d hot" id="kpiPendingSub">—</div></div>
           <div class="kpi"><div class="l">이번 달 시공</div><div class="v"><span id="kpiInstall">0</span><span> 건</span></div><div class="d flat" id="kpiInstallSub">—</div></div>
@@ -2448,7 +2434,7 @@ async function renderDashboard(){
      숫자만 있으면 '많은 건지 적은 건지' 알 수 없다. 견줄 값을 함께 적는다. */
   var alive2 = d.alive||[];
   var cs=function(st){ return alive2.filter(function(m){ return _memberState(m)===st; }).length; };
-  var okN=cs('정상'), waitN=cs('검토중'), rejN=cs('거절'), offN=cs('정지');
+  var okN=cs('정상'), waitN=cs('검토중'), rejN=cs('거절');
   var offiN=alive2.filter(function(m){ return m.office_approval==='pending'; }).length;
 
   var prev=new Date(now.getFullYear(), now.getMonth()-1, 1);
@@ -2456,24 +2442,12 @@ async function renderDashboard(){
   var prevCount=(d.all||[]).filter(function(m){ return _ts(m).slice(0,7)===pym; }).length;
   var diff=monthCount-prevCount;
 
-  /* 큰 숫자는 탈퇴를 뺀 명단 전부다. 이름이 '총 카마스터' 이므로
-     아래 분류(정상+검토중+거절+정지)를 더하면 이 값과 맞아야 한다.
-     전에는 '정상'만 세어, 큰 숫자와 '정상' 줄에 같은 값이 두 번 적혔고
-     검토중·거절이 어디에도 더해지지 않았다.
-     검토중인 사람도 명함 심사와 무관하게 현장에서 보증서를 발급하므로
-     '우리 카마스터 수'에서 빼면 실제보다 적게 말하는 숫자가 된다. */
-  setTxt('kpiTotal', alive2.length);
-  setTxt('kpiStOk', okN); setTxt('kpiStWait', waitN); setTxt('kpiStRej', rejN); setTxt('kpiStOff', offN);
-  [['kpiStOkRow',okN],['kpiStWaitRow',waitN],['kpiStRejRow',rejN]].forEach(function(p){
-    var e=$(p[0]); if(e) e.className = 'r' + (p[1] ? '' : ' zero');
-  });
-  /* 정지는 드물다. 없는 달에 빈 줄을 세워 두지 않는다. */
-  var offRow=$('kpiStOffRow'); if(offRow) offRow.style.display = offN ? '' : 'none';
-  /* 탈퇴자는 alive 에서 이미 빠져 있으므로 전체 - 명단 으로 센다.
-     총원에 더해지지 않는 값이라 점선 아래에 따로 두고, 있을 때만 보인다. */
-  var outN=Math.max(0, (d.all||[]).length - alive2.length);
-  setTxt('kpiStOut', outN);
-  var outRow=$('kpiStOutRow'); if(outRow) outRow.style.display = outN ? '' : 'none';
+  /* 큰 숫자는 '정상' 만 센다. 지금 실제로 활동 중인 사람 수다.
+     그래서 카드 이름도 '활동 중인 카마스터' 이고, 아래 분류는
+     '그 밖의 상태' 를 늘어놓는 자리가 된다.
+     큰 숫자 + 검토중 + 거절 + 정지 = 보조 줄의 '전체 N명' 과 맞는다. */
+  setTxt('kpiTotal', okN);
+  setTxt('kpiTotalSub', '전체 ' + alive2.length + '명 중');
   var monthLeft=(d.all||[]).filter(function(m){
     return _ts(m).slice(0,7)===ym && String(m.status||'')==='withdrawn'; }).length;
   var ms=$('kpiMonthSub');
