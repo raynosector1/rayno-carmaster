@@ -546,7 +546,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <!-- ===== 대시보드 ===== -->
       <section class="view active" id="view-dashboard">
         <div class="kpis">
-          <div class="kpi"><div class="l">활동 중인 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div><div class="d flat" id="kpiTotalSub">—</div></div>
+          <div class="kpi"><div class="l">활동 중인 카마스터</div><div class="v"><span id="kpiTotal">0</span><span> 명</span></div></div>
           <div class="kpi"><div class="l">이번 달 신규 가입</div><div class="v"><span id="kpiMonth">0</span><span> 명</span></div><div class="d flat" id="kpiMonthSub">—</div></div>
           <div class="kpi warn"><div class="l">지급 전 리워드</div><div class="v" style="color:var(--orange);"><span id="kpiPending">0</span><span style="color:#C89A82;"> 건</span></div><div class="d hot" id="kpiPendingSub">—</div></div>
           <div class="kpi"><div class="l">이번 달 시공</div><div class="v"><span id="kpiInstall">0</span><span> 건</span></div><div class="d flat" id="kpiInstallSub">—</div></div>
@@ -2447,7 +2447,6 @@ async function renderDashboard(){
      '그 밖의 상태' 를 늘어놓는 자리가 된다.
      큰 숫자 + 검토중 + 거절 + 정지 = 보조 줄의 '전체 N명' 과 맞는다. */
   setTxt('kpiTotal', okN);
-  setTxt('kpiTotalSub', '전체 ' + alive2.length + '명 중');
   var monthLeft=(d.all||[]).filter(function(m){
     return _ts(m).slice(0,7)===ym && String(m.status||'')==='withdrawn'; }).length;
   var ms=$('kpiMonthSub');
