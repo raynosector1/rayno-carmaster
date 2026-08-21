@@ -1878,6 +1878,26 @@ function _memberState(m){
   return '정상';
 }
 
+/* ── '영업소 확정 필요' 판정 — 여기 한 곳에서만 정한다 ──
+   영업소 확정을 기다리는 중이라도, 명함이 거절된 회원은 세지 않는다.
+   명함 거절은 '이 사람이 카마스터인지 확인되지 않았다'는 뜻이므로
+   그 사람의 영업소를 확정할 이유가 없기 때문이다.
+   (없는 영업소를 적어 넣은 가짜 가입자가 목록에 계속 남던 문제)
+
+   나중에 명함을 다시 내서 승인되면 자연히 다시 잡힌다.
+   사진이 흐려 거절됐던 진짜 카마스터가 여기에 해당한다.
+
+   목록용으로 가공한 객체(pending·state)와 서버가 준 원본
+   (office_approval·card_approval) 을 둘 다 받는다. */
+function _officeTodo(m){
+  if (!m) return false;
+  var waiting = (m.pending !== undefined) ? !!m.pending
+                                          : (m.office_approval === 'pending');
+  if (!waiting) return false;
+  if (m.state !== undefined) return m.state !== '거절';
+  return String(m.card_approval || 'approved') !== 'rejected';
+}
+
 function _stat(s){ return s==='verified'?'일반':(s==='withdrawn'?'탈퇴':((s==='suspended'||s==='banned')?'정지':'인증대기')); }
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
@@ -2435,7 +2455,7 @@ async function renderDashboard(){
   var alive2 = d.alive||[];
   var cs=function(st){ return alive2.filter(function(m){ return _memberState(m)===st; }).length; };
   var okN=cs('정상'), waitN=cs('검토중'), rejN=cs('거절');
-  var offiN=alive2.filter(function(m){ return m.office_approval==='pending'; }).length;
+  var offiN=alive2.filter(_officeTodo).length;
 
   var prev=new Date(now.getFullYear(), now.getMonth()-1, 1);
   var pym=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');
@@ -2512,7 +2532,7 @@ function filteredMembers(){
        찾아 들어가 완전 삭제해야 하므로 아주 없애지는 않는다. */
     if(m.state === '탈퇴' && fs !== '탈퇴') return false;
     if(fs === '__rejoin'){ if(!m.rejoin) return false; }
-    else if(fs === '__office'){ if(!m.pending) return false; }
+    else if(fs === '__office'){ if(!_officeTodo(m)) return false; }
     else if(fs && m.state!==fs) return false;
     if(from && m.joinRaw && m.joinRaw < from) return false;
     if(to && m.joinRaw && m.joinRaw > to) return false;
@@ -2584,7 +2604,7 @@ function applyMemberFilters(){
       t:'명함 확인 대기', c:'var(--orange)', bg:'#FFF6F0', bd:'#FFE0CC' },
     { v:'거절',     n:all.filter(function(m){return m.state==='거절';}).length,
       t:'명함 거절 · 재제출 안 함', c:'var(--err)', bg:'#FFF5F5', bd:'#FAD9D9' },
-    { v:'__office', n:all.filter(function(m){return m.pending;}).length,
+    { v:'__office', n:all.filter(_officeTodo).length,
       t:'영업소 확정 필요', c:'#5A5A5E', bg:'#F5F5F6', bd:'#E7E7E9' }
   ].filter(function(x){ return x.n>0; });
   var td=$('mTodo');
