@@ -940,6 +940,17 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
               <b>12자 이상</b>, 대문자·소문자·숫자·기호를 모두 넣어 주세요.<br>
               아이디나 서비스 이름(rayno, 카마스터 등)은 쓸 수 없습니다.
             </div>
+
+            <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--line);">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <div style="font-size:14px;font-weight:800;color:var(--ink);">2단계 인증</div>
+                <span id="mfaBadge" class="badge b-off">확인 중</span>
+              </div>
+              <div style="margin-top:5px;font-size:12px;color:var(--muted);line-height:1.6;">
+                비밀번호가 새어 나가도 휴대폰이 없으면 못 들어옵니다.
+              </div>
+              <div id="mfaBody" style="margin-top:13px;"></div>
+            </div>
           </div>
         </div>
 
@@ -1769,6 +1780,17 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
              style="margin-top:24px;width:100%;border:1.5px solid #E7E7E9;border-radius:13px;padding:15px 16px;font-size:15px;color:#111;outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .14s,box-shadow .14s;">
       <input id="admPw" type="password" autocomplete="current-password" placeholder="비밀번호"
              style="margin-top:10px;width:100%;border:1.5px solid #E7E7E9;border-radius:13px;padding:15px 16px;font-size:15px;color:#111;outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .14s,box-shadow .14s;">
+      <div id="admMfaWrap" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid #F1F1F3;">
+        <div style="font-size:13px;font-weight:800;color:#111;">인증 앱의 여섯 자리</div>
+        <div style="margin-top:5px;font-size:12px;color:#8A8A8E;line-height:1.6;">
+          휴대폰 인증 앱에 보이는 숫자를 넣어 주세요.<br>
+          앱을 쓸 수 없으면 백업 코드를 넣으셔도 됩니다.
+        </div>
+        <input id="admMfaCode" type="text" inputmode="numeric" autocomplete="one-time-code"
+               placeholder="000000"
+               style="margin-top:11px;width:100%;border:1.5px solid #E7E7E9;border-radius:13px;padding:15px 16px;font-size:19px;font-weight:800;letter-spacing:5px;text-align:center;color:#111;outline:none;box-sizing:border-box;font-family:inherit;">
+      </div>
+
       <div id="admLoginErr" style="display:none;margin-top:12px;font-size:13px;font-weight:600;color:#E23B3B;line-height:1.5;"></div>
 
       <button id="admLoginBtn"
@@ -1952,11 +1974,18 @@ function _stat(s){ return s==='verified'?'일반':(s==='withdrawn'?'탈퇴':((s=
 function _date(iso){ if(!iso)return '-'; var d=new Date(iso); return d.getFullYear()+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+String(d.getDate()).padStart(2,'0'); }
 function _ts(m){ return String((m&&(m.verified_at||m.created_at))||''); }
 
-async function admLogin(loginId, pw){
+async function admLogin(loginId, pw, code){
   try{
-    var d = await admApi('/v1/auth/login', { method:'POST', auth:false,
-      body:{ login_id: String(loginId||'').trim(), password: pw } });
-    if(!d || !d.ok) return { ok:false, message:(d && d.message) || '아이디 또는 비밀번호를 확인해 주세요.' };
+    var body = { login_id: String(loginId||'').trim(), password: pw };
+    if(code) body.mfa_code = String(code).trim();
+    var d = await admApi('/v1/auth/login', { method:'POST', auth:false, body:body });
+    if(!d) return { ok:false, message:'아이디 또는 비밀번호를 확인해 주세요.' };
+    /* 비밀번호는 맞았지만 인증 앱의 숫자가 더 필요한 경우.
+       이때 서버는 출입증을 주지 않는다. */
+    if(d.mfa_required){
+      return { ok:false, needMfa:true, message: d.message || '' };
+    }
+    if(!d.ok) return { ok:false, message: d.message || '아이디 또는 비밀번호를 확인해 주세요.' };
     if(!(d.user && d.user.is_admin)) return { ok:false, message:'관리자 권한이 없는 계정입니다.' };
     try{ sessionStorage.setItem('adm_token', d.token); }catch(e){}
     return { ok:true };
@@ -2189,7 +2218,7 @@ const VIEW_REFRESH = {
   services  : [renderServices],
   analytics : [renderAnalytics],
   offices   : [() => renderOffices(1)],
-  settings  : [renderNotices, renderFaq, renderAdmins, renderNotify, loadMyAccount],
+  settings  : [renderNotices, renderFaq, renderAdmins, renderNotify, loadMyAccount, loadMfa],
   sms       : [renderSms, renderSmsStatus],
   logs      : [() => renderLogs(1)]
 };
@@ -5337,6 +5366,161 @@ function pwPaint(){
   var el = $(id); if(el) el.addEventListener('input', pwPaint);
 });
 
+/* ── 2단계 인증 ──────────────────────────────────────────
+   등록은 세 걸음이다.
+     ① 씨앗값(글자)을 받아 인증 앱에 손으로 넣는다
+     ② 앱에 뜬 여섯 자리를 적어 서버가 확인한다
+     ③ 백업 코드 8개를 받아 인쇄하거나 적어 둔다
+   QR 코드를 쓰지 않는 이유는, 이 화면이 외부 스크립트를 못 불러오게
+   막혀 있어서다(CSP). 등록은 평생 한 번이라 손으로 넣어도 부담이 적다. */
+var MFA = { enabled:false, left:0, secret:'' };
+
+function mfaBadge(){
+  var b=$('mfaBadge'); if(!b) return;
+  b.className = 'badge ' + (MFA.enabled ? 'b-ok' : 'b-warn');
+  b.textContent = MFA.enabled ? '사용 중' : '꺼짐';
+}
+
+function mfaPaint(){
+  var box=$('mfaBody'); if(!box) return;
+  mfaBadge();
+  if(MFA.enabled){
+    box.innerHTML =
+      '<div style="padding:12px 14px;background:#EAF6EE;border-radius:10px;font-size:12.5px;color:#2E7D46;font-weight:700;">'
+    +   '2단계 인증이 켜져 있습니다. 남은 백업 코드 ' + MFA.left + '개'
+    + '</div>'
+    + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">'
+    +   '<button class="btn btn-line" id="mfaNewBackup" style="flex:1;min-width:130px;">백업 코드 다시 받기</button>'
+    +   '<button class="btn btn-soft" id="mfaOff" style="flex:1;min-width:130px;">끄기</button>'
+    + '</div>';
+    if($('mfaNewBackup')) $('mfaNewBackup').addEventListener('click', mfaAskBackup);
+    if($('mfaOff')) $('mfaOff').addEventListener('click', mfaAskOff);
+    return;
+  }
+  box.innerHTML =
+    '<button class="btn btn-primary" id="mfaStart" style="width:100%;padding:12px 0;font-size:13.5px;font-weight:800;">'
+  +   '2단계 인증 켜기'
+  + '</button>';
+  if($('mfaStart')) $('mfaStart').addEventListener('click', mfaStart);
+}
+
+/* 백업 코드는 딱 한 번만 보여 준다 */
+function mfaShowCodes(codes){
+  var box=$('mfaBody'); if(!box) return;
+  box.innerHTML =
+    '<div style="padding:14px;background:#111;border-radius:12px;">'
+  +   '<div style="font-size:12px;font-weight:800;color:#FF8A4A;letter-spacing:.4px;">백업 코드 ' + codes.length + '개</div>'
+  +   '<div style="margin-top:4px;font-size:11.5px;color:#B0B0B4;line-height:1.6;">'
+  +     '지금 인쇄하거나 적어 두세요. <b style="color:#fff;">이 화면을 벗어나면 다시 볼 수 없습니다.</b><br>'
+  +     '휴대폰을 잃었을 때 인증 앱 대신 넣으면 됩니다. 한 번 쓰면 사라집니다.'
+  +   '</div>'
+  +   '<div style="margin-top:11px;display:grid;grid-template-columns:1fr 1fr;gap:7px;">'
+  +   codes.map(function(c){
+        return '<div style="padding:8px 10px;background:#1D1D1F;border-radius:8px;font-size:13px;font-weight:800;'
+             + 'color:#fff;letter-spacing:1px;text-align:center;font-variant-numeric:tabular-nums;">' + esc(c) + '</div>';
+      }).join('')
+  +   '</div>'
+  + '</div>'
+  + '<div style="margin-top:9px;display:flex;gap:8px;">'
+  +   '<button class="btn btn-line" id="mfaCopyCodes" style="flex:1;">복사</button>'
+  +   '<button class="btn btn-soft" id="mfaDoneCodes" style="flex:1;">적어 뒀습니다</button>'
+  + '</div>';
+  if($('mfaCopyCodes')) $('mfaCopyCodes').addEventListener('click', function(){
+    try{ navigator.clipboard.writeText(codes.join('\n')); toast('백업 코드를 복사했습니다.'); }
+    catch(e){ toast('복사하지 못했습니다. 화면을 보고 적어 주세요.'); }
+  });
+  if($('mfaDoneCodes')) $('mfaDoneCodes').addEventListener('click', function(){ loadMfa(); });
+}
+
+async function mfaStart(){
+  try{
+    var r = await admApi('/v1/me/mfa', { method:'POST', body:{ op:'start' } });
+    if(!r || !r.ok) throw new Error((r&&r.message)||'시작하지 못했습니다.');
+    MFA.secret = r.secret || '';
+    var box=$('mfaBody');
+    box.innerHTML =
+      '<div style="font-size:12.5px;color:#4A4A4E;line-height:1.7;">'
+    +   '<b>① 휴대폰에 인증 앱을 설치하세요.</b><br>'
+    +   'Google Authenticator, Microsoft Authenticator 등 무엇이든 됩니다.'
+    + '</div>'
+    + '<div style="margin-top:12px;font-size:12.5px;color:#4A4A4E;line-height:1.7;">'
+    +   '<b>② 앱에서 \u0027직접 입력\u0027 을 고르고 아래 열쇠를 넣으세요.</b>'
+    + '</div>'
+    + '<div style="margin-top:8px;padding:12px 14px;background:#111;border-radius:10px;'
+    +   'font-size:13px;font-weight:800;color:#fff;letter-spacing:1.5px;word-break:break-all;line-height:1.6;">'
+    +   esc(MFA.secret)
+    + '</div>'
+    + '<button class="btn btn-line" id="mfaCopySecret" style="margin-top:8px;width:100%;">열쇠 복사</button>'
+    + '<div style="margin-top:16px;font-size:12.5px;color:#4A4A4E;line-height:1.7;">'
+    +   '<b>③ 앱에 뜬 여섯 자리를 넣어 주세요.</b>'
+    + '</div>'
+    + '<input id="mfaCode" type="text" inputmode="numeric" placeholder="000000" class="inp" '
+    +   'style="margin-top:8px;text-align:center;font-size:19px;font-weight:800;letter-spacing:5px;">'
+    + '<div id="mfaMsg" style="margin-top:8px;font-size:12.5px;color:var(--err);display:none;"></div>'
+    + '<div style="margin-top:11px;display:flex;gap:8px;">'
+    +   '<button class="btn btn-soft" id="mfaCancel" style="flex:1;">취소</button>'
+    +   '<button class="btn btn-primary" id="mfaConfirm" style="flex:1;font-weight:800;">확인하고 켜기</button>'
+    + '</div>';
+    if($('mfaCopySecret')) $('mfaCopySecret').addEventListener('click', function(){
+      try{ navigator.clipboard.writeText(MFA.secret); toast('열쇠를 복사했습니다.'); }catch(e){}
+    });
+    if($('mfaCancel')) $('mfaCancel').addEventListener('click', function(){ loadMfa(); });
+    if($('mfaConfirm')) $('mfaConfirm').addEventListener('click', mfaConfirm);
+    if($('mfaCode')) $('mfaCode').addEventListener('keydown', function(e){ if(e.key==='Enter') mfaConfirm(); });
+  }catch(e){ toast(String((e&&e.message)||'시작하지 못했습니다.')); }
+}
+
+async function mfaConfirm(){
+  var code=($('mfaCode')&&$('mfaCode').value||'').trim();
+  var m=$('mfaMsg');
+  try{
+    var r = await admApi('/v1/me/mfa', { method:'POST', body:{ op:'confirm', code:code } });
+    if(!r || !r.ok) throw new Error((r&&r.message)||'확인하지 못했습니다.');
+    MFA.enabled=true; MFA.left=(r.backup_codes||[]).length;
+    mfaBadge();
+    mfaShowCodes(r.backup_codes||[]);
+    toast('2단계 인증을 켰습니다.');
+  }catch(e){
+    if(m){ m.style.display=''; m.textContent=String((e&&e.message)||'확인하지 못했습니다.'); }
+  }
+}
+
+async function mfaAskBackup(){
+  var code = prompt('인증 앱의 여섯 자리를 넣어 주세요.\n(예전 백업 코드는 이 순간 못 쓰게 됩니다)');
+  if(code===null) return;
+  try{
+    var r = await admApi('/v1/me/mfa', { method:'POST', body:{ op:'backup', code:String(code).trim() } });
+    if(!r || !r.ok) throw new Error((r&&r.message)||'다시 받지 못했습니다.');
+    MFA.left=(r.backup_codes||[]).length;
+    mfaShowCodes(r.backup_codes||[]);
+    toast('백업 코드를 새로 만들었습니다.');
+  }catch(e){ toast(String((e&&e.message)||'다시 받지 못했습니다.')); }
+}
+
+async function mfaAskOff(){
+  if(!confirm('2단계 인증을 끄시겠습니까?\n비밀번호만으로 들어올 수 있게 됩니다.')) return;
+  var pw = prompt('확인을 위해 현재 비밀번호를 넣어 주세요.');
+  if(pw===null) return;
+  var code = prompt('인증 앱의 여섯 자리(또는 백업 코드)를 넣어 주세요.');
+  if(code===null) return;
+  try{
+    var r = await admApi('/v1/me/mfa', {
+      method:'POST', body:{ op:'disable', password:pw, code:String(code).trim() } });
+    if(!r || !r.ok) throw new Error((r&&r.message)||'끄지 못했습니다.');
+    toast('2단계 인증을 껐습니다.');
+    loadMfa();
+  }catch(e){ toast(String((e&&e.message)||'끄지 못했습니다.')); }
+}
+
+async function loadMfa(){
+  try{
+    var r = await admApi('/v1/me/mfa', { method:'POST', body:{ op:'status' } });
+    MFA.enabled = !!(r && r.enabled);
+    MFA.left = (r && r.backup_left) || 0;
+  }catch(e){ MFA.enabled=false; MFA.left=0; }
+  mfaPaint();
+}
+
 async function loadMyAccount(){
   try{
     var r = await admApi('/v1/auth/me');
@@ -6482,8 +6666,18 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
   async function doAdmLogin(){
     var email=($('admEmail').value||'').trim(), pw=$('admPw').value||'';
     if(!email||!pw){ admErr('이메일과 비밀번호를 입력해 주세요.'); return; }
+    var codeEl=$('admMfaCode');
+    var code=(codeEl && codeEl.value||'').trim();
     var btn=$('admLoginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
-    var r=await admLogin(email,pw); btn.disabled=false; btn.textContent='로그인';
+    var r=await admLogin(email,pw,code); btn.disabled=false; btn.textContent='로그인';
+    /* 인증 앱의 숫자가 필요하다고 하면 칸을 열고 거기서 멈춘다 */
+    if(r.needMfa){
+      var w=$('admMfaWrap');
+      if(w) w.style.display='block';
+      admErr(r.message || '');
+      if(codeEl){ codeEl.value=''; codeEl.focus(); }
+      return;
+    }
     if(r.ok){
       admErr('');
       /* 로그인 직후에도 '테스트 도구를 쓸 수 있는지'를 서버에서 받아 온다.
@@ -6503,6 +6697,7 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
   $('admLoginBtn').addEventListener('click', doAdmLogin);
   $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
+  if($('admMfaCode')) $('admMfaCode').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   if(admToken()){ verifyAdmin().then(function(ok){ if(ok){ hideOv(); initAdmin(); } else { try{ sessionStorage.removeItem('adm_token'); }catch(e){} showOv(); } }); }
   else showOv();
 })();
