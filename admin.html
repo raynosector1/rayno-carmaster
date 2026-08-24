@@ -1757,6 +1757,24 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 </div>
 <div class="toast" id="toast"></div>
 
+<div id="idleWarn" style="display:none;position:fixed;inset:0;z-index:190;background:rgba(14,16,19,.72);
+     align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:360px;background:#fff;border-radius:18px;padding:26px 24px;
+              box-shadow:0 24px 70px rgba(0,0,0,.4);text-align:center;">
+    <div style="font-size:17px;font-weight:800;color:#111;">잠시 후 로그아웃됩니다</div>
+    <div style="margin-top:8px;font-size:13px;color:#8A8A8E;line-height:1.6;">
+      한동안 아무 동작이 없어 자동으로 로그아웃합니다.<br>
+      계속 쓰시려면 아래를 눌러 주세요.
+    </div>
+    <div id="idleCount" style="margin-top:16px;font-size:34px;font-weight:800;color:#FF5A00;
+         letter-spacing:-1px;font-variant-numeric:tabular-nums;">2:00</div>
+    <button class="btn btn-primary" id="idleStay"
+            style="margin-top:18px;width:100%;padding:13px 0;font-size:14px;font-weight:800;">계속 사용하기</button>
+    <button class="btn btn-soft" id="idleOut"
+            style="margin-top:8px;width:100%;padding:11px 0;font-size:13px;">지금 로그아웃</button>
+  </div>
+</div>
+
 <div id="admLoginOverlay" style="display:none;position:fixed;inset:0;z-index:200;background:#0E1013;align-items:center;justify-content:center;padding:20px;overflow:auto;">
   <!-- 뒤에 은은하게 깔리는 빛 — 로고 쪽으로 시선이 모이게 -->
   <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;
@@ -1828,6 +1846,76 @@ function admSessionOut(){
   var ov=$('admLoginOverlay');
   if(ov){ ov.style.display='flex'; var e2=$('admLoginErr'); if(e2){ e2.textContent='로그인 유효시간이 만료되었습니다. 다시 로그인해 주세요.'; e2.style.display='block'; } }
 }
+
+/* ── 자리 비움 자동 로그아웃 ────────────────────────────────
+   자리를 비운 사이에 남이 이 화면을 만지는 것을 막는다.
+   시계가 아니라 '마지막으로 움직인 시각'을 기준으로 센다.
+   마우스·자판·화면 넘김이 있으면 그때마다 다시 처음부터 센다.
+
+   ※ 이것은 화면 쪽 장치다. 서버의 출입증은 3시간짜리 그대로다.
+      즉 '자리 비움'을 막는 것이지 '출입증 탈취'를 막는 것은 아니다.
+      그쪽은 2단계 인증과 3시간 만료가 맡는다. */
+var IDLE_MIN      = 30;   /* 이만큼 아무 동작이 없으면 로그아웃 */
+var IDLE_WARN_MIN = 2;    /* 끝나기 이만큼 전에 미리 알려 준다 */
+
+var idleLast = Date.now();
+var idleWarnOn = false;
+
+function idleTouch(){
+  idleLast = Date.now();
+  if(idleWarnOn) idleHide();
+}
+function idleHide(){
+  idleWarnOn = false;
+  var w = document.getElementById('idleWarn');
+  if(w) w.style.display = 'none';
+}
+function idleShow(msLeft){
+  var w = document.getElementById('idleWarn');
+  if(!w) return;
+  if(!idleWarnOn){ idleWarnOn = true; w.style.display = 'flex'; }
+  var s = Math.max(0, Math.ceil(msLeft / 1000));
+  var c = document.getElementById('idleCount');
+  if(c) c.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+function idleLogout(){
+  idleHide();
+  try{ sessionStorage.removeItem('adm_token'); }catch(e){}
+  var ov = document.getElementById('admLoginOverlay');
+  if(ov){
+    ov.style.display = 'flex';
+    var e2 = document.getElementById('admLoginErr');
+    if(e2){
+      e2.textContent = '한동안 사용하지 않아 자동으로 로그아웃되었습니다. 다시 로그인해 주세요.';
+      e2.style.display = 'block';
+    }
+    var mw = document.getElementById('admMfaWrap');
+    if(mw) mw.style.display = 'none';
+    var mc = document.getElementById('admMfaCode');
+    if(mc) mc.value = '';
+    var pw = document.getElementById('admPw');
+    if(pw) pw.value = '';
+  }
+}
+function idleTick(){
+  /* 로그인 화면이 떠 있으면 셀 이유가 없다 */
+  var ov = document.getElementById('admLoginOverlay');
+  if(ov && ov.style.display === 'flex'){ idleLast = Date.now(); return; }
+  var left = IDLE_MIN * 60000 - (Date.now() - idleLast);
+  if(left <= 0){ idleLogout(); return; }
+  if(left <= IDLE_WARN_MIN * 60000) idleShow(left);
+  else if(idleWarnOn) idleHide();
+}
+
+['mousedown','mousemove','keydown','wheel','touchstart','scroll','click']
+  .forEach(function(ev){
+    document.addEventListener(ev, idleTouch, { passive:true, capture:true });
+  });
+/* 다른 창을 보다가 돌아왔을 때도 바로 판정한다 */
+document.addEventListener('visibilitychange', function(){
+  if(!document.hidden) idleTick();
+});
+setInterval(idleTick, 1000);
 
 async function admApi(path, opt){
   opt = opt || {};
@@ -6685,6 +6773,7 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
          회원 상세의 '계정 완전 삭제' 위험 구역이 보이지 않았다.
          (새로고침해서 들어오면 아래 verifyAdmin() 을 타므로 보였다) */
       await verifyAdmin();
+      idleTouch();          /* 들어온 순간부터 다시 센다 */
       hideOv(); initAdmin();
     } else { admErr(r.message); }
   }
@@ -6694,6 +6783,8 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
     try{ sessionStorage.removeItem('adm_token'); }catch(e){}
     location.reload();
   });
+  if($('idleStay')) $('idleStay').addEventListener('click', function(){ idleTouch(); });
+  if($('idleOut'))  $('idleOut').addEventListener('click', function(){ idleLogout(); });
   $('admLoginBtn').addEventListener('click', doAdmLogin);
   $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
