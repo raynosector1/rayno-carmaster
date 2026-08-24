@@ -119,6 +119,11 @@ input::placeholder{color:#B4B4B8;}
   font-size:12.5px;font-weight:700;color:#B4B4BA;background:rgba(255,255,255,.05);
   border:1px solid rgba(255,255,255,.10);transition:.15s;}
 .sidebar .me .logout:hover{color:#fff;background:rgba(255,90,0,.20);border-color:rgba(255,90,0,.45);}
+/* 연장 단추 — 5분 이하로 남았을 때만 나타난다. 로그아웃과 헷갈리지 않게 주황 계열 */
+.sidebar .me .logout.extend{color:#FFB98F;background:rgba(255,90,0,.14);
+  border-color:rgba(255,90,0,.38);}
+.sidebar .me .logout.extend:hover{color:#fff;background:rgba(255,90,0,.30);border-color:rgba(255,90,0,.60);}
+.sidebar.mini .me .logout.extend{display:none !important;}
 
 /* 메인 */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;}
@@ -550,11 +555,12 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
           <div class="who">
             <div class="nmline">
               <div class="nm" id="meName">불러오는 중…</div>
-              <span class="idle" id="meIdle" title="아무 동작이 없으면 이 시간 뒤 자동으로 로그아웃됩니다">--:--</span>
+              <span class="idle" id="meIdle" title="로그인 후 남은 시간입니다. 0이 되면 자동으로 로그아웃됩니다">--:--</span>
             </div>
             <div class="ro" id="meRole">&nbsp;</div>
           </div>
         </div>
+        <button class="logout extend" id="sessExtend" type="button" style="display:none;">＋ 30분 연장</button>
         <button class="logout" id="btnLogout" type="button">로그아웃</button>
     </div>
   </aside>
@@ -1770,15 +1776,15 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
      align-items:center;justify-content:center;padding:20px;">
   <div style="width:100%;max-width:360px;background:#fff;border-radius:18px;padding:26px 24px;
               box-shadow:0 24px 70px rgba(0,0,0,.4);text-align:center;">
-    <div style="font-size:17px;font-weight:800;color:#111;">잠시 후 로그아웃됩니다</div>
-    <div style="margin-top:8px;font-size:13px;color:#8A8A8E;line-height:1.6;">
-      한동안 아무 동작이 없어 자동으로 로그아웃합니다.<br>
-      계속 쓰시려면 아래를 눌러 주세요.
+    <div style="font-size:17px;font-weight:800;color:#111;">곧 로그아웃됩니다</div>
+    <div id="idleNote" style="margin-top:8px;font-size:13px;color:#8A8A8E;line-height:1.6;">
+      하던 작업을 저장해 주세요.<br>
+      더 쓰시려면 아래에서 연장해 주세요.
     </div>
     <div id="idleCount" style="margin-top:16px;font-size:34px;font-weight:800;color:#FF5A00;
          letter-spacing:-1px;font-variant-numeric:tabular-nums;">2:00</div>
-    <button class="btn btn-primary" id="idleStay"
-            style="margin-top:18px;width:100%;padding:13px 0;font-size:14px;font-weight:800;">계속 사용하기</button>
+    <button class="btn btn-primary" id="idleStay" data-act="ext"
+            style="margin-top:18px;width:100%;padding:13px 0;font-size:14px;font-weight:800;">30분 연장</button>
     <button class="btn btn-soft" id="idleOut"
             style="margin-top:8px;width:100%;padding:11px 0;font-size:13px;">지금 로그아웃</button>
   </div>
@@ -1856,46 +1862,117 @@ function admSessionOut(){
   if(ov){ ov.style.display='flex'; var e2=$('admLoginErr'); if(e2){ e2.textContent='로그인 유효시간이 만료되었습니다. 다시 로그인해 주세요.'; e2.style.display='block'; } }
 }
 
-/* ── 자리 비움 자동 로그아웃 ────────────────────────────────
-   자리를 비운 사이에 남이 이 화면을 만지는 것을 막는다.
-   시계가 아니라 '마지막으로 움직인 시각'을 기준으로 센다.
-   마우스·자판·화면 넘김이 있으면 그때마다 다시 처음부터 센다.
+/* ── 로그인 시간 만료 자동 로그아웃 ──────────────────────────
+   로그인한 순간부터 30분. 계속 만지고 있어도 시간은 줄어든다.
+   ('자리 비움' 방식이면 마우스만 움직여도 영영 끝나지 않는다)
+
+   시작 시각은 출입증(JWT) 안의 iat 를 그대로 읽는다.
+   새로고침해도, 다른 탭에서 들어와도 같은 값이라 흔들리지 않는다.
+
+   5분 남으면 연장 단추가 나타난다. 다만 늘릴 수 있는 한도는
+   출입증 자체의 수명(3시간)이다. 무한정 늘어나면 30분으로 자른 뜻이 없다.
 
    ※ 이것은 화면 쪽 장치다. 서버의 출입증은 3시간짜리 그대로다.
-      즉 '자리 비움'을 막는 것이지 '출입증 탈취'를 막는 것은 아니다.
-      그쪽은 2단계 인증과 3시간 만료가 맡는다. */
-var IDLE_MIN      = 30;   /* 이만큼 아무 동작이 없으면 로그아웃 */
-var IDLE_WARN_MIN = 2;    /* 끝나기 이만큼 전에 미리 알려 준다 */
+      '출입증 탈취'는 2단계 인증과 3시간 만료가 맡는다. */
+var SESSION_MIN        = 30;   /* 로그인 후 이만큼 지나면 로그아웃 */
+var SESSION_WARN_MIN   = 2;    /* 끝나기 이만큼 전에 알림 창을 띄운다 */
+var SESSION_EXTEND_MIN = 5;    /* 이만큼 남으면 연장 단추가 나타난다 */
 
-var idleLast = Date.now();
-var idleWarnOn = false;
+var sessWarnOn = false;
 
-function idleTouch(){
-  idleLast = Date.now();
-  if(idleWarnOn) idleHide();
+/* 출입증 안의 시각을 꺼내 본다. 못 읽으면 null */
+function sessClaim(key){
+  try{
+    var t = admToken();
+    if(!t) return null;
+    var p = t.split('.')[1];
+    if(!p) return null;
+    p = p.replace(/-/g,'+').replace(/_/g,'/');
+    while(p.length % 4) p += '=';
+    var o = JSON.parse(atob(p));
+    return (typeof o[key] === 'number') ? o[key] * 1000 : null;
+  }catch(e){ return null; }
 }
-function idleHide(){
-  idleWarnOn = false;
+function sessStartAt(){ return sessClaim('iat'); }   /* 로그인한 시각 */
+function sessExpAt(){   return sessClaim('exp'); }   /* 출입증이 죽는 시각 */
+
+/* 연장을 누른 시각. 출입증보다 예전 것이면 버린다(재로그인하면 저절로 무효) */
+function sessExtAt(){
+  try{
+    var v = Number(sessionStorage.getItem('adm_sess_ext') || 0);
+    var iat = sessStartAt();
+    if(!v || !iat || v < iat) return 0;
+    return v;
+  }catch(e){ return 0; }
+}
+function sessClearExt(){ try{ sessionStorage.removeItem('adm_sess_ext'); }catch(e){} }
+
+/* 세는 기준 시각 — 연장했으면 그때부터 다시 30분 */
+function sessBaseAt(){
+  var iat = sessStartAt();
+  if(!iat) return null;
+  return Math.max(iat, sessExtAt());
+}
+/* 남은 시간. 출입증 수명을 넘길 수는 없다 */
+function sessLeft(){
+  var base = sessBaseAt();
+  if(base === null) return null;
+  var left = SESSION_MIN * 60000 - (Date.now() - base);
+  var exp = sessExpAt();
+  if(exp) left = Math.min(left, exp - Date.now());
+  return left;
+}
+/* 연장할 수 있는가 — 출입증 수명이 넉넉히 남았을 때만 */
+function sessCanExtend(){
+  var exp = sessExpAt();
+  if(!exp) return false;
+  return (exp - Date.now()) > SESSION_EXTEND_MIN * 60000;
+}
+function sessExtendNow(){
+  if(!sessCanExtend()) return;
+  try{ sessionStorage.setItem('adm_sess_ext', String(Date.now())); }catch(e){}
+  sessHide();
+  sessTick();
+  toast('로그인 시간을 ' + SESSION_MIN + '분 연장했습니다.');
+}
+
+function sessHide(){
+  sessWarnOn = false;
   var w = document.getElementById('idleWarn');
   if(w) w.style.display = 'none';
 }
-function idleShow(msLeft){
+function sessShow(msLeft){
   var w = document.getElementById('idleWarn');
   if(!w) return;
-  if(!idleWarnOn){ idleWarnOn = true; w.style.display = 'flex'; }
+  if(!sessWarnOn){ sessWarnOn = true; w.style.display = 'flex'; }
   var s = Math.max(0, Math.ceil(msLeft / 1000));
   var c = document.getElementById('idleCount');
   if(c) c.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+
+  /* 연장이 되는 상황인지에 따라 단추 글자와 안내가 달라진다 */
+  var can = sessCanExtend();
+  var b = document.getElementById('idleStay');
+  if(b){
+    b.textContent = can ? (SESSION_MIN + '분 연장') : '알겠습니다';
+    b.setAttribute('data-act', can ? 'ext' : 'close');
+  }
+  var n = document.getElementById('idleNote');
+  if(n){
+    n.innerHTML = can
+      ? '하던 작업을 저장해 주세요.<br>더 쓰시려면 아래에서 연장해 주세요.'
+      : '하던 작업을 저장해 주세요.<br>더 쓰시려면 다시 로그인해야 합니다.';
+  }
 }
-function idleLogout(){
-  idleHide();
+function sessLogout(){
+  sessHide();
+  sessClearExt();
   try{ sessionStorage.removeItem('adm_token'); }catch(e){}
   var ov = document.getElementById('admLoginOverlay');
   if(ov){
     ov.style.display = 'flex';
     var e2 = document.getElementById('admLoginErr');
     if(e2){
-      e2.textContent = '한동안 사용하지 않아 자동으로 로그아웃되었습니다. 다시 로그인해 주세요.';
+      e2.textContent = '로그인 후 ' + SESSION_MIN + '분이 지나 자동으로 로그아웃되었습니다. 다시 로그인해 주세요.';
       e2.style.display = 'block';
     }
     var mw = document.getElementById('admMfaWrap');
@@ -1906,40 +1983,42 @@ function idleLogout(){
     if(pw) pw.value = '';
   }
 }
-/* 사이드바 이름 옆에 남은 시간을 적는다 */
-function idlePaintSide(msLeft){
+/* 사이드바 이름 옆 남은 시간과 연장 단추 */
+function sessPaintSide(msLeft){
   var el = document.getElementById('meIdle');
-  if(!el) return;
-  var s = Math.max(0, Math.ceil(msLeft / 1000));
-  el.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
-  /* 곧 끝날 때만 색이 바뀐다 — 평소에는 조용히 있게 */
-  el.className = 'idle' + (msLeft <= IDLE_WARN_MIN * 60000 ? ' warn' : '');
+  if(el){
+    var s = Math.max(0, Math.ceil(msLeft / 1000));
+    el.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+    /* 곧 끝날 때만 색이 바뀐다 — 평소에는 조용히 있게 */
+    el.className = 'idle' + (msLeft <= SESSION_WARN_MIN * 60000 ? ' warn' : '');
+  }
+  var b = document.getElementById('sessExtend');
+  /* msLeft > 0 조건이 있어야 로그아웃되는 순간에 단추가 한 번 깜박이지 않는다 */
+  if(b) b.style.display =
+    (msLeft > 0 && msLeft <= SESSION_EXTEND_MIN * 60000 && sessCanExtend()) ? 'block' : 'none';
 }
 
-function idleTick(){
+function sessTick(){
   /* 로그인 화면이 떠 있으면 셀 이유가 없다 */
   var ov = document.getElementById('admLoginOverlay');
   if(ov && ov.style.display === 'flex'){
-    idleLast = Date.now();
-    idlePaintSide(IDLE_MIN * 60000);
+    sessPaintSide(SESSION_MIN * 60000);
     return;
   }
-  var left = IDLE_MIN * 60000 - (Date.now() - idleLast);
-  idlePaintSide(left);
-  if(left <= 0){ idleLogout(); return; }
-  if(left <= IDLE_WARN_MIN * 60000) idleShow(left);
-  else if(idleWarnOn) idleHide();
+  var left = sessLeft();
+  /* 출입증이 없거나 못 읽으면 판정하지 않는다. 멀쩡한 화면을 끊지 않기 위함 */
+  if(left === null) return;
+  sessPaintSide(left);
+  if(left <= 0){ sessLogout(); return; }
+  if(left <= SESSION_WARN_MIN * 60000) sessShow(left);
+  else if(sessWarnOn) sessHide();
 }
 
-['mousedown','mousemove','keydown','wheel','touchstart','scroll','click']
-  .forEach(function(ev){
-    document.addEventListener(ev, idleTouch, { passive:true, capture:true });
-  });
 /* 다른 창을 보다가 돌아왔을 때도 바로 판정한다 */
 document.addEventListener('visibilitychange', function(){
-  if(!document.hidden) idleTick();
+  if(!document.hidden) sessTick();
 });
-setInterval(idleTick, 1000);
+setInterval(sessTick, 1000);
 
 async function admApi(path, opt){
   opt = opt || {};
@@ -6408,6 +6487,23 @@ function slBadge(st){
   return '<span class="badge b-warn">대기</span>';
 }
 
+/* 묶음 번호에서 무슨 알림인지 읽어 낸다.
+   자동 발송은 서버가 'auto-<종류>-<날짜>' 로 묶음 번호를 만든다.
+   대량 발송은 무작위 번호라 여기에 안 걸리고 '직접 발송'으로 나온다. */
+var SL_KIND = {
+  signup:      '가입 안내',
+  approve:     '명함 승인',
+  reject:      '명함 거절',
+  adminSignup: '관리자 · 새 가입',
+  adminNight:  '관리자 · 밤사이',
+  notify:      '관리자 알림'
+};
+function slKind(batch){
+  var m = String(batch||'').match(/^auto-(.+)-\d{4}-\d{2}-\d{2}$/);
+  if(!m) return '직접 발송';
+  return SL_KIND[m[1]] || m[1];
+}
+
 async function slLoad(){
   var box=$('slRows');
   try{
@@ -6420,15 +6516,16 @@ async function slLoad(){
         +'font-size:12.5px;color:var(--muted);text-align:center;">아직 발송한 기록이 없습니다.</div>';
       return;
     }
-    var cols='grid-template-columns:minmax(130px,1.2fr) 66px minmax(110px,1fr) minmax(110px,1fr) minmax(110px,1fr) 76px;';
+    var cols='grid-template-columns:minmax(118px,1fr) minmax(112px,1.1fr) 58px minmax(76px,.8fr) minmax(76px,.8fr) minmax(90px,.9fr) 70px;';
     box.innerHTML='<div class="table" style="border:1px solid var(--line);">'
-      + '<div class="tr th" style="'+cols+'"><span>발송 시각</span><span>유형</span>'
+      + '<div class="tr th" style="'+cols+'"><span>발송 시각</span><span>종류</span><span>유형</span>'
       + '<span style="text-align:right;">전체</span><span style="text-align:right;">접수</span>'
       + '<span style="text-align:right;">실패</span><span></span></div>'
       + rows.map(function(x){
           var fail=Number(x.failed||0), wait=Number(x.queued||0);
           return '<div class="tr td" style="'+cols+'">'
             + '<span>'+esc(x.at_kst||'-')+'</span>'
+            + '<span style="font-weight:700;color:var(--ink);">'+esc(slKind(x.batch_id))+'</span>'
             + '<span>'+esc(x.msg_type||'-')+'</span>'
             + '<span style="text-align:right;font-weight:700;">'+Number(x.n||0).toLocaleString()+'</span>'
             + '<span style="text-align:right;color:var(--ok);font-weight:700;">'+Number(x.sent||0).toLocaleString()+'</span>'
@@ -6797,7 +6894,8 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
          회원 상세의 '계정 완전 삭제' 위험 구역이 보이지 않았다.
          (새로고침해서 들어오면 아래 verifyAdmin() 을 타므로 보였다) */
       await verifyAdmin();
-      idleTouch();          /* 들어온 순간부터 다시 센다 */
+      sessClearExt();       /* 새로 로그인했으니 예전 연장 기록은 버린다 */
+      sessTick();           /* 들어온 순간부터 남은 시간을 보여 준다 */
       hideOv(); initAdmin();
     } else { admErr(r.message); }
   }
@@ -6807,8 +6905,11 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
     try{ sessionStorage.removeItem('adm_token'); }catch(e){}
     location.reload();
   });
-  if($('idleStay')) $('idleStay').addEventListener('click', function(){ idleTouch(); });
-  if($('idleOut'))  $('idleOut').addEventListener('click', function(){ idleLogout(); });
+  if($('idleStay')) $('idleStay').addEventListener('click', function(){
+    if(this.getAttribute('data-act') === 'ext') sessExtendNow(); else sessHide();
+  });
+  if($('idleOut'))  $('idleOut').addEventListener('click', function(){ sessLogout(); });
+  if($('sessExtend')) $('sessExtend').addEventListener('click', sessExtendNow);
   $('admLoginBtn').addEventListener('click', doAdmLogin);
   $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
