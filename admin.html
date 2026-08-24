@@ -6535,9 +6535,6 @@ async function slLoad(){
             + '</div>';
         }).join('')
       + '</div>';
-    box.querySelectorAll('[data-batch]').forEach(function(el){
-      el.addEventListener('click', function(){ slDetailLoad(el.getAttribute('data-batch')); });
-    });
   }catch(e){
     box.innerHTML='<div style="font-size:12.5px;color:var(--err);font-weight:700;">'
       + esc((e&&e.message)||'이력을 읽지 못했습니다.')+'</div>';
@@ -6547,14 +6544,29 @@ async function slLoad(){
 async function slDetailLoad(batch){
   var box=$('slDetail');
   box.style.display='';
+
+  /* 2026-08-24: 목록이 길면 이 상자가 화면 밖 한참 아래에 그려져
+     '눌러도 아무 반응이 없는' 것처럼 보였다. 두 가지로 고친다 —
+     ① 누른 줄에 색을 입혀 무엇을 보고 있는지 알게 한다
+     ② 이 상자가 보이는 자리로 화면을 옮겨 준다 */
+  var rowsBox=$('slRows');
+  if(rowsBox){
+    rowsBox.querySelectorAll('[data-batch]').forEach(function(el){
+      var tr = el.closest ? el.closest('.tr') : null;
+      if(tr) tr.style.background = (el.getAttribute('data-batch')===batch) ? '#FFF4EC' : '';
+    });
+  }
+
   box.innerHTML='<div style="font-size:12.5px;color:var(--muted);">불러오는 중…</div>';
+  try{ box.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(e){}
   try{
     var r=await admApi('/v1/admin/sms/log?batch='+encodeURIComponent(batch));
     if(!r || !r.ok) throw new Error((r && r.message) || '내역을 읽지 못했습니다.');
     var rows=r.items||[];
     var cols='grid-template-columns:88px 66px 78px 88px minmax(110px,1fr) minmax(110px,1fr);';
     box.innerHTML='<div style="font-size:12.5px;font-weight:800;color:var(--ink);margin-bottom:9px;">'
-      + '건별 내역 <span style="color:var(--muted);font-weight:600;">('+rows.length.toLocaleString()+'건)</span></div>'
+      + '건별 내역 · '+esc(slKind(batch))
+      + ' <span style="color:var(--muted);font-weight:600;">('+rows.length.toLocaleString()+'건)</span></div>'
       + '<div class="table" style="border:1px solid var(--line);">'
       + '<div class="tr th" style="'+cols+'"><span>연락처</span><span>유형</span><span>상태</span>'
       + '<span>결과코드</span><span>접수 시각</span><span>결과 시각</span></div>'
@@ -6579,6 +6591,13 @@ async function slDetailLoad(batch){
 }
 
 $('slRefresh').addEventListener('click', slLoad);
+/* [보기] 는 목록을 다시 그릴 때마다 새로 만들어지므로,
+   줄마다 붙이지 않고 바깥 상자에 한 번만 붙인다(이벤트 위임). */
+$('slRows').addEventListener('click', function(e){
+  var el = e.target && e.target.closest ? e.target.closest('[data-batch]') : null;
+  if(!el) return;
+  slDetailLoad(el.getAttribute('data-batch'));
+});
 $('ooRefresh').addEventListener('click', ooLoad);
 
 $('ooCheck').addEventListener('click', async function(){
