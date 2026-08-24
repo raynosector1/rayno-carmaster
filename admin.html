@@ -124,6 +124,8 @@ input::placeholder{color:#B4B4B8;}
   border-color:rgba(255,90,0,.38);}
 .sidebar .me .logout.extend:hover{color:#fff;background:rgba(255,90,0,.30);border-color:rgba(255,90,0,.60);}
 .sidebar.mini .me .logout.extend{display:none !important;}
+/* 로그인 화면 — 잘못 찾아온 회원을 회원 사이트로 보내는 단추 */
+#goMemberSite:hover{color:#fff;background:rgba(255,90,0,.30);border-color:rgba(255,90,0,.65);}
 
 /* 메인 */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;}
@@ -1832,6 +1834,28 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <div style="margin-top:18px;padding-top:16px;border-top:1px solid #F1F1F3;font-size:11.5px;color:#A6A6AC;line-height:1.7;text-align:center;">
         허가된 관리자만 이용할 수 있습니다.<br>접속과 변경 내역은 모두 기록됩니다.
       </div>
+    </div>
+
+    <!-- 잘못 찾아온 회원·대리점을 위한 안내 (2026-08-24 추가)
+         /admin 은 추측하기 쉬운 주소라 회원분들이 종종 들어오신다.
+         여기서 길을 못 찾으면 아이디를 넣어보다 잠기고, 그대로 CS 로 이어진다.
+         ※ 아이디가 회원 것인지 아닌지는 절대 알려 주지 않는다.
+            서버가 아이디 존재 여부를 감추고 있는데 화면이 흘리면 그 장치가 무의미해진다.
+            그래서 '누가 왔는지'와 무관하게 늘 같은 문구만 보여 준다. -->
+    <div style="margin-top:18px;padding:16px 18px;border-radius:14px;
+                background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10);text-align:center;">
+      <div style="font-size:12.5px;font-weight:700;color:#B4B4BA;line-height:1.6;">
+        카마스터 회원이신가요?
+      </div>
+      <div style="margin-top:4px;font-size:11.5px;color:#7A7A82;line-height:1.6;">
+        여기는 레이노 직원용 관리자 화면입니다.<br>
+        회원 로그인은 아래에서 해 주세요.
+      </div>
+      <a id="goMemberSite" href="login.html"
+         style="display:block;margin-top:13px;padding:12px 0;border-radius:999px;
+                background:rgba(255,90,0,.16);border:1px solid rgba(255,90,0,.42);
+                color:#FFB98F;font-size:13.5px;font-weight:800;
+                text-decoration:none;font-family:inherit;transition:.15s;">회원 로그인으로 가기</a>
     </div>
 
     <div style="margin-top:20px;text-align:center;font-size:11.5px;color:#6A6A72;">
