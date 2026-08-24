@@ -64,6 +64,7 @@ input::placeholder{color:#B4B4B8;}
 .sidebar.mini .nav-item svg{width:19px;height:19px;}
 .sidebar.mini .me{padding:14px 10px 16px;}
 .sidebar.mini .me .who{display:none;}
+.sidebar.mini .me .row{align-items:center;}
 .sidebar.mini .me .row{justify-content:center;}
 .sidebar.mini .me .av{width:40px;height:40px;}
 .sidebar.mini .me .logout{margin-top:10px;height:38px;padding:0;font-size:0;
@@ -101,10 +102,15 @@ input::placeholder{color:#B4B4B8;}
   border-radius:0 3px 3px 0;background:var(--orange);}
 
 .sidebar .me{padding:14px 16px 16px;border-top:1px solid rgba(255,255,255,.07);}
-.sidebar .me .row{display:flex;align-items:center;gap:11px;}
+.sidebar .me .row{display:flex;align-items:flex-start;gap:11px;}
+.sidebar .me .nmline{display:flex;align-items:center;gap:8px;height:38px;}
+.sidebar .me .idle{flex-shrink:0;font-size:11.5px;font-weight:700;color:#7A7A80;
+  font-variant-numeric:tabular-nums;letter-spacing:.2px;}
+.sidebar .me .idle.warn{color:#FF8A4A;}
 .sidebar .me .av{width:38px;height:38px;border-radius:12px;background:linear-gradient(140deg,#FF7A2E,#FF5A00);
   color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
 .sidebar .me .who{flex:1;min-width:0;}
+.sidebar .me .nm{flex:1;min-width:0;}
 .sidebar .me .nm{font-size:13.5px;font-weight:700;color:#fff;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .sidebar .me .ro{font-size:11.5px;color:#7A7A80;margin-top:2px;
@@ -542,7 +548,10 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <div class="row">
           <div class="av" id="meAv">·</div>
           <div class="who">
-            <div class="nm" id="meName">불러오는 중…</div>
+            <div class="nmline">
+              <div class="nm" id="meName">불러오는 중…</div>
+              <span class="idle" id="meIdle" title="아무 동작이 없으면 이 시간 뒤 자동으로 로그아웃됩니다">--:--</span>
+            </div>
             <div class="ro" id="meRole">&nbsp;</div>
           </div>
         </div>
@@ -1897,11 +1906,26 @@ function idleLogout(){
     if(pw) pw.value = '';
   }
 }
+/* 사이드바 이름 옆에 남은 시간을 적는다 */
+function idlePaintSide(msLeft){
+  var el = document.getElementById('meIdle');
+  if(!el) return;
+  var s = Math.max(0, Math.ceil(msLeft / 1000));
+  el.textContent = Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+  /* 곧 끝날 때만 색이 바뀐다 — 평소에는 조용히 있게 */
+  el.className = 'idle' + (msLeft <= IDLE_WARN_MIN * 60000 ? ' warn' : '');
+}
+
 function idleTick(){
   /* 로그인 화면이 떠 있으면 셀 이유가 없다 */
   var ov = document.getElementById('admLoginOverlay');
-  if(ov && ov.style.display === 'flex'){ idleLast = Date.now(); return; }
+  if(ov && ov.style.display === 'flex'){
+    idleLast = Date.now();
+    idlePaintSide(IDLE_MIN * 60000);
+    return;
+  }
   var left = IDLE_MIN * 60000 - (Date.now() - idleLast);
+  idlePaintSide(left);
   if(left <= 0){ idleLogout(); return; }
   if(left <= IDLE_WARN_MIN * 60000) idleShow(left);
   else if(idleWarnOn) idleHide();
