@@ -1826,7 +1826,15 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <div style="font-size:20px;font-weight:800;color:#111;letter-spacing:-.5px;">관리자 콘솔</div>
       <div style="margin-top:7px;font-size:13.5px;color:#8A8A8E;line-height:1.6;">관리자 계정으로 로그인해 주세요.</div>
 
-      <input id="admEmail" type="email" autocomplete="username" placeholder="관리자 이메일"
+      <!-- 첫 칸은 '아이디'다. 서버가 받는 값도 login_id 이고 이메일이 아니다.
+           2026-09-01 까지 '관리자 이메일'로 안내하고 있어 새 관리자마다 헷갈렸다.
+           ※ id 는 admEmail 그대로 둔다. 이름만 옛것이고, 바꾸면 이 값을 쓰는
+             곳을 전부 함께 고쳐야 해서 얻는 것에 비해 손댈 데가 늘어난다.
+           ※ autocapitalize/autocorrect 를 끈 이유 — 아이디는 소문자·숫자·밑줄만
+             쓸 수 있는데, 휴대폰 자판이 첫 글자를 대문자로 바꿔 놓으면 그대로 실패한다. -->
+      <input id="admEmail" type="text" autocomplete="username"
+             autocapitalize="off" autocorrect="off" spellcheck="false"
+             placeholder="관리자 아이디"
              style="margin-top:24px;width:100%;border:1.5px solid #E7E7E9;border-radius:13px;padding:15px 16px;font-size:15px;color:#111;outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .14s,box-shadow .14s;">
       <input id="admPw" type="password" autocomplete="current-password" placeholder="비밀번호"
              style="margin-top:10px;width:100%;border:1.5px solid #E7E7E9;border-radius:13px;padding:15px 16px;font-size:15px;color:#111;outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .14s,box-shadow .14s;">
@@ -7001,12 +7009,12 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
   function admErr(m){ var e=$('admLoginErr'); if(e){ e.textContent=m||''; e.style.display=m?'block':'none'; } }
   async function doAdmLogin(){
-    var email=($('admEmail').value||'').trim(), pw=$('admPw').value||'';
-    if(!email||!pw){ admErr('이메일과 비밀번호를 입력해 주세요.'); return; }
+    var loginId=($('admEmail').value||'').trim(), pw=$('admPw').value||'';
+    if(!loginId||!pw){ admErr('아이디와 비밀번호를 입력해 주세요.'); return; }
     var codeEl=$('admMfaCode');
     var code=(codeEl && codeEl.value||'').trim();
     var btn=$('admLoginBtn'); btn.disabled=true; btn.textContent='로그인 중...';
-    var r=await admLogin(email,pw,code); btn.disabled=false; btn.textContent='로그인';
+    var r=await admLogin(loginId,pw,code); btn.disabled=false; btn.textContent='로그인';
     /* 인증 앱의 숫자가 필요하다고 하면 칸을 열고 거기서 멈춘다 */
     if(r.needMfa){
       var w=$('admMfaWrap');
