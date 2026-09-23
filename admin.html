@@ -888,13 +888,21 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
                 </div>
                 <input type="file" id="bnFile" accept="image/png,image/jpeg,image/webp" style="display:none;">
                 <button class="btn btn-soft" id="bnPick" style="margin-top:8px;width:100%;">이미지 선택</button>
-                <div id="bnHint" style="margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6;"></div>
+                <div id="bnHint" style="margin-top:6px;font-size:12px;color:var(--muted);line-height:1.6;word-break:keep-all;"></div>
               </div>
               <div style="flex:1;min-width:240px;">
                 <div class="flabel">관리용 이름</div>
                 <input class="finp" id="bnTitle" maxlength="50" placeholder="예) 9월 신제품 안내">
-                <div class="flabel" style="margin-top:12px;">누르면 이동할 링크 (선택)</div>
-                <input class="finp" id="bnLink" maxlength="500" placeholder="https://">
+                <div class="flabel" style="margin-top:12px;">누르면 이동할 곳</div>
+                <div style="display:flex;gap:8px;">
+                  <select class="finp" id="bnLinkType" style="width:180px;flex-shrink:0;background:#fff;">
+                    <option value="">이동 안 함</option>
+                    <option value="url">웹 주소</option>
+                    <option value="app:reward">앱 안 · 리워드</option>
+                    <option value="app:record">앱 안 · 시공 리포트</option>
+                  </select>
+                  <input class="finp" id="bnLink" maxlength="500" placeholder="https://" style="flex:1;min-width:0;display:none;">
+                </div>
                 <div class="flabel" style="margin-top:12px;">노출 기간 (비우면 계속 · 종료일 당일까지 보임)</div>
                 <div style="display:flex;align-items:center;gap:8px;">
                   <input class="finp" type="date" id="bnStart" style="flex:1;min-width:0;">
@@ -5452,7 +5460,11 @@ async function loadNotices(){ return loadNoticeKind('notice'); }
 var BANNERS = [], BN_TODAY = '', BN_MAX = 10;
 var bnEditId = null;     /* null = 새로 등록 · 문자열 = 수정 중인 배너 id */
 var bnImage  = '';       /* 이번에 새로 고른 이미지(data URL). 비어 있으면 이미지는 그대로 */
-var BN_HINT  = '1280×720(16:9) 권장 · PNG·JPG·WEBP · 올릴 때 자동으로 줄여 저장합니다.';
+var BN_HINT  = '1280×720(16:9) 권장 · 자동으로 줄여 저장';
+/* 앱 안 화면 — 서버 BANNER_APP_LINKS · 회원 앱 BN_APP 과 같은 값이어야 한다 */
+var BN_APP   = { 'app:reward':'앱 안 · 리워드', 'app:record':'앱 안 · 시공 리포트' };
+function bnLinkText(link){ return !link ? '이동 안 함' : (BN_APP[link] || link); }
+function bnLinkUi(){ $('bnLink').style.display = ($('bnLinkType').value === 'url') ? 'block' : 'none'; }
 
 function bnImgUrl(b){ return API + '/v1/banners/img?id=' + encodeURIComponent(b.id) + '&v=' + encodeURIComponent(b.v || ''); }
 function bnMd(d){ var p = String(d || '').split('-'); return p.length === 3 ? (Number(p[1]) + '/' + Number(p[2])) : ''; }
@@ -5483,7 +5495,7 @@ async function renderBanners(){
       + '<img src="' + esc(bnImgUrl(b)) + '" alt="" style="width:112px;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:#F2F2F4;flex-shrink:0;">'
       + '<div style="flex:1;min-width:0;">'
       +   '<div style="font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (i + 1) + '. ' + esc(b.title) + '</div>'
-      +   '<div style="font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (b.link ? esc(b.link) : '링크 없음') + ' · ' + esc(bnPeriod(b)) + '</div>'
+      +   '<div style="font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(bnLinkText(b.link)) + ' · ' + esc(bnPeriod(b)) + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'
       +   bnState(b)
@@ -5501,7 +5513,10 @@ function bnOpen(b){
   bnEditId = b ? b.id : null; bnImage = '';
   $('bnEditTitle').textContent = b ? '배너 수정' : '배너 등록';
   $('bnTitle').value = b ? (b.title || '') : '';
-  $('bnLink').value  = b ? (b.link  || '') : '';
+  var lk = b ? (b.link || '') : '';
+  $('bnLinkType').value = !lk ? '' : (BN_APP[lk] ? lk : 'url');
+  $('bnLink').value     = (lk && !BN_APP[lk]) ? lk : '';
+  bnLinkUi();
   $('bnStart').value = b ? (b.start || '') : '';
   $('bnEnd').value   = b ? (b.end   || '') : '';
   $('bnFile').value  = '';
@@ -5520,6 +5535,7 @@ $('bnNew').addEventListener('click', function(){
   bnOpen(null);
 });
 $('bnCancel').addEventListener('click', bnClose);
+$('bnLinkType').addEventListener('change', function(){ bnLinkUi(); if(this.value === 'url') $('bnLink').focus(); });
 $('bnPick').addEventListener('click', function(){ $('bnFile').click(); });
 
 $('bnFile').addEventListener('change', function(){
@@ -5580,11 +5596,12 @@ $('bnFile').addEventListener('change', function(){
 });
 
 $('bnSave').addEventListener('click', async function(){
-  var title = $('bnTitle').value.trim(), link = $('bnLink').value.trim();
+  var title = $('bnTitle').value.trim(), ltype = $('bnLinkType').value;
+  var link = (ltype === 'url') ? $('bnLink').value.trim() : ltype;   /* 앱 안이면 'app:reward' 같은 값 */
   var st = $('bnStart').value, en = $('bnEnd').value, msg = $('bnMsg');
   if(!title){ msg.textContent = '관리용 이름을 입력해 주세요.'; $('bnTitle').focus(); return; }
   if(!bnEditId && !bnImage){ msg.textContent = '배너 이미지를 선택해 주세요.'; return; }
-  if(link && !/^https?:\/\//i.test(link)){ msg.textContent = '링크는 https:// 로 시작하는 전체 주소로 입력해 주세요.'; $('bnLink').focus(); return; }
+  if(ltype === 'url' && !/^https?:\/\//i.test(link)){ msg.textContent = '웹 주소는 https:// 로 시작하는 전체 주소로 입력해 주세요.'; $('bnLink').focus(); return; }
   if(st && en && st > en){ msg.textContent = '노출 종료일이 시작일보다 빠릅니다.'; return; }
   msg.textContent = '';
 

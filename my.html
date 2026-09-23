@@ -1861,8 +1861,12 @@ const S = { name:'', code:'', org:'' };
      · 자동 넘김은 손을 대는 동안, 다른 탭을 보는 동안, 앱이 뒤로 가 있는 동안 멈춘다
      · 0개면 구역을 통째로 감추고, 1개면 넘기지도 점을 보이지도 않는다
      · 링크는 http·https 만 연다(서버도 한 번 거르지만 여기서도 확인). 다른 사이트는 새 창
+     · app:reward · app:record 는 앱 안의 그 탭을 연다(BN_APP). 승인 전 회원이면
+       그 탭이 원래 보여 주는 잠금 안내가 그대로 뜬다 — 여기서 따로 막지 않는다
      · 불러오기가 실패해도 홈의 다른 부분에 영향이 없게 조용히 감춘다 */
   var BN_MS = 4000;
+  /* 앱 안 화면 — 서버 BANNER_APP_LINKS 와 같은 값이어야 한다 */
+  var BN_APP = { 'app:reward':'reward', 'app:record':'record' };
   function bannerRun(track, dots, n){
     var idx = 0, timer = null, touching = false, wasShown = true, st = null;
     function cur(){ return Math.round(track.scrollLeft / Math.max(1, track.clientWidth)); }
@@ -1909,8 +1913,16 @@ const S = { name:'', code:'', org:'' };
         track.innerHTML = ''; dots.innerHTML = '';
         items.forEach(function(b, i){
           var link = String(b.link || ''), ok = /^https?:\/\//i.test(link);
+          var tab = Object.prototype.hasOwnProperty.call(BN_APP, link) ? BN_APP[link] : '';
           var el = document.createElement(ok ? 'a' : 'div');
           el.className = 'bn-slide';
+          if(tab){
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
+            el.style.cursor = 'pointer';
+            el.addEventListener('click', function(){ show(tab); });
+            el.addEventListener('keydown', function(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); show(tab); } });
+          }
           if(ok){
             el.href = link;
             var same = false;
