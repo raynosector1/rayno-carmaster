@@ -1878,6 +1878,12 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
     <!-- 입력 카드 -->
     <div style="background:#fff;border-radius:22px;padding:34px 30px 30px;box-shadow:0 24px 70px rgba(0,0,0,.5);">
+      <!-- 대리점 사장님이 딜러십인 줄 알고 들어오시는 일이 있어, 카드 맨 위에 눈에 띄게 둔다 (2026-09-29) -->
+      <a id="dealerHint" href="https://www.raynofilm.co.kr/dealership/login/"
+         style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-8px 0 22px; padding:11px 14px;border-radius:12px;background:#FFF4EC;border:1px solid #FFD2B8;text-decoration:none;">
+        <span style="font-size:12.5px;line-height:1.5;color:#7A3A12;text-align:left;"><b style="color:#E04E00;">레이노 대리점이신가요?</b><br>대리점 코드는 딜러십에서 로그인해 주세요.</span>
+        <span style="flex-shrink:0;font-size:12.5px;font-weight:800;color:#E04E00;white-space:nowrap;">딜러십 로그인 →</span>
+      </a>
       <div style="font-size:20px;font-weight:800;color:#111;letter-spacing:-.5px;">관리자 콘솔</div>
       <div style="margin-top:7px;font-size:13.5px;color:#8A8A8E;line-height:1.6;">관리자 계정으로 로그인해 주세요.</div>
 
@@ -1939,6 +1945,28 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
     <div style="margin-top:20px;text-align:center;font-size:11.5px;color:#6A6A72;">
       주식회사 레이노섹터1 &nbsp;·&nbsp; 고객센터 1588-8695
     </div>
+  </div>
+</div>
+
+<!-- ══ 길을 잘못 찾아온 분 안내 팝업 (2026-09-29) ══
+     대리점 사장님이 딜러십 로그인인 줄 알고 대리점 코드(예: ADG0035)를 넣다가
+     잠기는 일이 있어 만들었다. 두 경우에 뜬다.
+       ① 대문자가 섞인 아이디로 실패 — 카마스터 아이디는 소문자만 쓰므로
+          대문자가 있으면 카마스터 계정일 수 없다(대리점 코드 모양). 첫 실패에 바로 뜬다.
+       ② 그 밖의 실패가 3번째가 될 때.
+     ※ 입력한 글자 모양과 횟수만 보고 판단한다. 아이디가 실제로 있는지는 드러나지 않는다.
+     ※ 잠금 기준(8번)은 숫자로 알려 주지 않는다 — 무작위로 두드리는 쪽을 돕지 않으려고. -->
+<div id="wrongDoor" role="dialog" aria-modal="true" aria-labelledby="wdTitle"
+     style="display:none;position:fixed;inset:0;z-index:400;background:rgba(10,10,12,.58);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:360px;background:#fff;border-radius:22px;padding:28px 24px 20px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.45);">
+    <div id="wdTitle" style="font-size:18px;font-weight:800;color:#111;letter-spacing:-.4px;line-height:1.4;"></div>
+    <div id="wdBody" style="margin-top:10px;font-size:13.5px;color:#6A6A6E;line-height:1.7;word-break:keep-all;"></div>
+    <a id="wdDealer" href="https://www.raynofilm.co.kr/dealership/login/"
+       style="display:block;margin-top:20px;padding:15px 0;border-radius:999px;background:#FF5A00;color:#fff;font-size:15px;font-weight:800;text-decoration:none;font-family:inherit;">대리점 딜러십 로그인으로 가기</a>
+    <a id="wdMember" href="login.html"
+       style="display:block;margin-top:8px;padding:14px 0;border-radius:999px;background:#F2F2F4;color:#111;font-size:14px;font-weight:800;text-decoration:none;font-family:inherit;">카마스터 회원 로그인으로 가기</a>
+    <button id="wdClose" type="button"
+            style="margin-top:6px;width:100%;padding:12px 0;border:none;background:none;color:#8A8A8E;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;">다시 입력하기</button>
   </div>
 </div>
 <script>
@@ -7267,6 +7295,43 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
   var ov=$('admLoginOverlay'); if(!ov){ initAdmin(); return; }
   function showOv(){ ov.style.display='flex'; } function hideOv(){ ov.style.display='none'; }
   function admErr(m){ var e=$('admLoginErr'); if(e){ e.textContent=m||''; e.style.display=m?'block':'none'; } }
+
+  /* ── 길을 잘못 찾아온 분 안내 (2026-09-29) — 마크업 주석 참고 ── */
+  var WD_AFTER = 3, wdFails = 0;
+  var WD_TEXT = {
+    code:   ['대리점 코드로 로그인하셨나요?',
+             '여기는 레이노 카마스터 관리자 화면입니다.<br>대리점 코드는 딜러십 로그인에서 사용하실 수 있어요.'],
+    many:   ['혹시 다른 곳에 로그인하려고 하셨나요?',
+             '여기는 레이노 직원용 카마스터 관리자 화면입니다.<br>계속 틀리면 잠시 로그인이 막힐 수 있어요.'],
+    member: ['관리자 계정이 아닙니다',
+             '카마스터 회원 계정은<br>회원 로그인에서 이용해 주세요.']
+  };
+  function wdShow(kind){
+    var t = WD_TEXT[kind] || WD_TEXT.many;
+    $('wdTitle').textContent = t[0];
+    $('wdBody').innerHTML = t[1];                       /* 위에 적어 둔 고정 문구만 넣는다 */
+    /* 회원이 제 계정으로 들어온 경우엔 딜러십 대신 회원 로그인을 앞세운다 */
+    var dl = $('wdDealer'), mb = $('wdMember');
+    dl.style.display = (kind === 'member') ? 'none' : 'block';
+    mb.style.background = (kind === 'member') ? '#FF5A00' : '#F2F2F4';
+    mb.style.color      = (kind === 'member') ? '#fff'    : '#111';
+    $('wrongDoor').style.display = 'flex';
+    try{ ((kind === 'member') ? mb : dl).focus(); }catch(e){}
+  }
+  function wdHide(){ $('wrongDoor').style.display = 'none'; try{ $('admEmail').focus(); }catch(e){} }
+  function wdOnFail(loginId, msg){
+    msg = String(msg || '');
+    if(/네트워크 오류/.test(msg)) return;                 /* 통신이 끊긴 건 잘못 찾아온 게 아니다 */
+    if(/관리자 권한이 없는/.test(msg)){ wdShow('member'); return; }
+    wdFails++;
+    if(/[A-Z]/.test(loginId)){ wdShow('code'); return; }
+    if(wdFails === WD_AFTER) wdShow('many');
+  }
+  $('wdClose').addEventListener('click', wdHide);
+  $('wrongDoor').addEventListener('click', function(e){ if(e.target === this) wdHide(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && $('wrongDoor').style.display === 'flex') wdHide();
+  });
   async function doAdmLogin(){
     var loginId=($('admEmail').value||'').trim(), pw=$('admPw').value||'';
     if(!loginId||!pw){ admErr('아이디와 비밀번호를 입력해 주세요.'); return; }
@@ -7292,7 +7357,11 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
       sessClearExt();       /* 새로 로그인했으니 예전 연장 기록은 버린다 */
       sessTick();           /* 들어온 순간부터 남은 시간을 보여 준다 */
       hideOv(); initAdmin();
-    } else { admErr(r.message); }
+    } else {
+      admErr(r.message);
+      /* 인증 앱 숫자 단계에서 틀린 건 관리자 본인이므로 세지 않는다 */
+      if(!code) wdOnFail(loginId, r.message);
+    }
   }
   var _lo = $('btnLogout');
   if(_lo) _lo.addEventListener('click', function(){
