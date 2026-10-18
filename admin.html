@@ -1420,7 +1420,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <div class="flabel">리워드 종류</div>
       <select class="finp" id="rwType" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 15px center;">
         <option value="" disabled selected>리워드 선택</option>
-        <option>주유상품권 5,000원</option>
+        <option>CU 모바일 금액권 5,000원</option>
         <option>유리막 코팅 무료 쿠폰</option>
         <option value="etc">기타 (직접 입력)</option>
       </select>
@@ -1493,8 +1493,8 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
       <div class="flabel">리워드</div>
       <select class="finp" id="pmReward" style="appearance:none;-webkit-appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23111%27 stroke-width=%272%27%3E%3Cpath d=%27M6 9l6 6 6-6%27/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 15px center;">
         <option value="" disabled selected>혜택 선택</option>
-        <option>주유상품권 5,000원</option>
-        <option>주유상품권 30,000원</option>
+        <option>CU 모바일 금액권 5,000원</option>
+        <option>CU 모바일 금액권 30,000원</option>
         <option>유리막 코팅 무료 쿠폰</option>
         <option value="etc">기타 (직접 입력)</option>
       </select>
@@ -1513,7 +1513,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 
       <div style="margin-top:14px;">
         <div class="flabel">안내 문구</div>
-        <input class="finp" id="pmSubText" placeholder="예: 명함 확인이 끝나면 주유 혜택을 드려요." maxlength="60">
+        <input class="finp" id="pmSubText" placeholder="예: 명함 확인이 끝나면 CU 모바일 금액권을 드려요." maxlength="60">
       </div>
 
       <div style="margin-top:14px;">
@@ -4869,7 +4869,7 @@ function pmPreview(){
   $('pvTitle').textContent = signup ? '웰컴 기프트' : name;
   /* 첫 화면(index.html)이 쓰는 기본 문구와 같아야 미리보기가 실제와 맞는다.
      웰컴기프트는 명함 확인이 끝난 뒤 정해진 지급일에 나간다. */
-  $('pvSub').textContent = sub || (signup ? '명함 확인이 끝나면 주유 혜택을 드려요.' : '조건을 채우면 리워드가 지급됩니다.');
+  $('pvSub').textContent = sub || (signup ? '명함 확인이 끝나면 CU 모바일 금액권을 드려요.' : '조건을 채우면 리워드가 지급됩니다.');
 
   var wrap = $('pvImgWrap');
   wrap.innerHTML = pmImage
