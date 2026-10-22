@@ -463,7 +463,7 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
 .info-list .r{display:flex;justify-content:space-between;font-size:13.5px;}
 .info-list .r .k{color:var(--muted);} .info-list .r .v{font-weight:600;}
 
-.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:12px 20px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:60;}
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;font-weight:600;padding:12px 20px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;z-index:450;}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
 .pk{font-size:11.5px;color:var(--muted);font-weight:600;}
@@ -1969,6 +1969,27 @@ html{color-scheme:light;}   /* 브라우저가 어두운 테마여도 스크롤�
             style="margin-top:6px;width:100%;padding:12px 0;border:none;background:none;color:#8A8A8E;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;">다시 입력하기</button>
   </div>
 </div>
+<!-- ══ 2단계 인증 강제 설정 화면 (2026-10-22) ══
+     관리자는 2단계 인증을 켜야만 관리자 화면에 들어올 수 있다.
+     아직 안 켠 관리자가 아이디·비밀번호로 로그인하면, 관리자 화면 대신 이 화면이 뜬다.
+     서버도 같은 규칙으로 막는다(안 켠 관리자는 /v1/admin/ 아래 어떤 요청도 거절).
+     이 화면은 안내일 뿐이고, 실제로 막는 건 서버다. -->
+<div id="admMfaGate" role="dialog" aria-modal="true" aria-labelledby="mfaGateTitle"
+     style="display:none;position:fixed;inset:0;z-index:210;background:#0E1013;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto;">
+  <div style="position:relative;width:100%;max-width:420px;margin:auto 0;">
+    <div style="background:#fff;border-radius:22px;padding:30px 28px 24px;box-shadow:0 24px 70px rgba(0,0,0,.5);">
+      <div style="display:inline-block;padding:5px 10px;border-radius:999px;background:#FFF4EC;color:#E04E00;font-size:11.5px;font-weight:800;letter-spacing:.3px;">보안 설정 필요</div>
+      <div id="mfaGateTitle" style="margin-top:14px;font-size:20px;font-weight:800;color:#111;letter-spacing:-.5px;line-height:1.4;">2단계 인증이 설정되어 있지 않습니다</div>
+      <div style="margin-top:8px;font-size:13.5px;color:#6A6A6E;line-height:1.7;word-break:keep-all;">
+        관리자 화면은 2단계 인증을 켠 뒤에 이용할 수 있습니다.<br>
+        휴대폰 인증 앱으로 2분 정도면 끝납니다.
+      </div>
+      <div id="mfaGateBody" style="margin-top:20px;"></div>
+      <button id="mfaGateOut" type="button"
+              style="margin-top:12px;width:100%;padding:11px 0;border:none;background:none;color:#8A8A8E;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">로그아웃</button>
+    </div>
+  </div>
+</div>
 <script>
 /* ══════════════════════════════════════════════════════════
    RAYNO 관리자 콘솔 · admin.html
@@ -1988,6 +2009,7 @@ function admToken(){ try{ return sessionStorage.getItem('adm_token')||''; }catch
 
 function admSessionOut(){
   try{ sessionStorage.removeItem('adm_token'); }catch(e){}
+  mfaGateHide();
   var ov=$('admLoginOverlay');
   if(ov){ ov.style.display='flex'; var e2=$('admLoginErr'); if(e2){ e2.textContent='로그인 유효시간이 만료되었습니다. 다시 로그인해 주세요.'; e2.style.display='block'; } }
 }
@@ -2095,6 +2117,7 @@ function sessShow(msLeft){
 }
 function sessLogout(){
   sessHide();
+  mfaGateHide();
   sessClearExt();
   try{ sessionStorage.removeItem('adm_token'); }catch(e){}
   var ov = document.getElementById('admLoginOverlay');
@@ -2129,6 +2152,12 @@ function sessPaintSide(msLeft){
 }
 
 function sessTick(){
+  /* 2단계 인증 설정 중에는 경고 창을 띄우지 않고, 시간이 다 되면 로그아웃만 한다 */
+  if(MFA_GATE){
+    var gl = sessLeft();
+    if(gl !== null && gl <= 0) sessLogout();
+    return;
+  }
   /* 로그인 화면이 떠 있으면 셀 이유가 없다 */
   var ov = document.getElementById('admLoginOverlay');
   if(ov && ov.style.display === 'flex'){
@@ -2163,6 +2192,10 @@ async function admApi(path, opt){
     });
   }catch(e){ return { ok:false, message:'서버 연결에 실패했습니다.' }; }
   var d=null; try{ d = await r.json(); }catch(e){}
+  if(opt.auth !== false && d && d.code === 'mfa_setup_required'){
+    mfaGateShow();
+    throw new Error('mfa setup required');
+  }
   if(opt.auth !== false && d && d.ok === false && /로그인|권한/.test(d.message||'')){
     admSessionOut();
     throw new Error('session expired');
@@ -2309,7 +2342,8 @@ async function admLogin(loginId, pw, code){
     if(!d.ok) return { ok:false, message: d.message || '아이디 또는 비밀번호를 확인해 주세요.' };
     if(!(d.user && d.user.is_admin)) return { ok:false, message:'관리자 권한이 없는 계정입니다.' };
     try{ sessionStorage.setItem('adm_token', d.token); }catch(e){}
-    return { ok:true };
+    /* 2단계 인증을 아직 안 켠 관리자 — 관리자 화면 대신 설정 화면으로 보낸다 */
+    return { ok:true, mfaSetup: !!d.mfa_setup };
   }catch(e){ return { ok:false, message:'네트워크 오류가 발생했습니다.' }; }
 }
 /* 사이드바 아래쪽 내 정보 */
@@ -5968,7 +6002,41 @@ function pwPaint(){
      ③ 백업 코드 8개를 받아 인쇄하거나 적어 둔다
    QR 코드를 쓰지 않는 이유는, 이 화면이 외부 스크립트를 못 불러오게
    막혀 있어서다(CSP). 등록은 평생 한 번이라 손으로 넣어도 부담이 적다. */
-var MFA = { enabled:false, left:0, secret:'' };
+var MFA = { enabled:false, left:0, secret:'', box:'' };
+
+/* ── 강제 설정 화면 ──
+   MFA_GATE 가 켜져 있는 동안 아래 등록 단계(mfaStart → mfaConfirm → mfaShowCodes)는
+   설정 메뉴 대신 이 화면(mfaGateBody)에 그려진다. 등록이 끝나면 관리자 화면을 연다. */
+var MFA_GATE = false;
+function mfaBox(){ return $(MFA.box || 'mfaBody'); }
+function mfaGateShow(){
+  if(MFA_GATE) return;                    /* 이미 떠 있으면 입력 중인 것을 지우지 않는다 */
+  MFA_GATE = true; MFA.box = 'mfaGateBody';
+  var ov=$('admLoginOverlay'); if(ov) ov.style.display='none';
+  var g=$('admMfaGate'); if(g) g.style.display='flex';
+  mfaGateIntro();
+}
+function mfaGateHide(){
+  MFA_GATE = false; MFA.box = '';
+  var g=$('admMfaGate'); if(g) g.style.display='none';
+}
+function mfaGateIntro(){
+  var box=$('mfaGateBody'); if(!box) return;
+  box.innerHTML =
+    '<button class="btn btn-primary" id="mfaGateGo" style="width:100%;padding:14px 0;font-size:14.5px;font-weight:800;">'
+  +   '2단계 인증 설정 시작'
+  + '</button>';
+  if($('mfaGateGo')) $('mfaGateGo').addEventListener('click', mfaStart);
+}
+async function mfaGateDone(){
+  mfaGateHide();
+  var ok = await verifyAdmin();
+  if(!ok){ admSessionOut(); return; }
+  sessClearExt();
+  sessTick();
+  initAdmin();
+  toast('2단계 인증을 켰습니다. 다음 로그인부터 인증 앱 숫자가 필요합니다.');
+}
 
 function mfaBadge(){
   var b=$('mfaBadge'); if(!b) return;
@@ -5984,12 +6052,11 @@ function mfaPaint(){
       '<div style="padding:12px 14px;background:#EAF6EE;border-radius:10px;font-size:12.5px;color:#2E7D46;font-weight:700;">'
     +   '2단계 인증이 켜져 있습니다. 남은 백업 코드 ' + MFA.left + '개'
     + '</div>'
-    + '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">'
-    +   '<button class="btn btn-line" id="mfaNewBackup" style="flex:1;min-width:130px;">백업 코드 다시 받기</button>'
-    +   '<button class="btn btn-soft" id="mfaOff" style="flex:1;min-width:130px;">끄기</button>'
+    + '<button class="btn btn-line" id="mfaNewBackup" style="margin-top:10px;width:100%;">백업 코드 다시 받기</button>'
+    + '<div style="margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.6;">'
+    +   '관리자 계정은 2단계 인증을 끌 수 없습니다. 휴대폰을 바꾸셨다면 담당자에게 초기화를 요청해 주세요.'
     + '</div>';
     if($('mfaNewBackup')) $('mfaNewBackup').addEventListener('click', mfaAskBackup);
-    if($('mfaOff')) $('mfaOff').addEventListener('click', mfaAskOff);
     return;
   }
   box.innerHTML =
@@ -6001,7 +6068,7 @@ function mfaPaint(){
 
 /* 백업 코드는 딱 한 번만 보여 준다 */
 function mfaShowCodes(codes){
-  var box=$('mfaBody'); if(!box) return;
+  var box=mfaBox(); if(!box) return;
   box.innerHTML =
     '<div style="padding:14px;background:#111;border-radius:12px;">'
   +   '<div style="font-size:12px;font-weight:800;color:#FF8A4A;letter-spacing:.4px;">백업 코드 ' + codes.length + '개</div>'
@@ -6018,13 +6085,17 @@ function mfaShowCodes(codes){
   + '</div>'
   + '<div style="margin-top:9px;display:flex;gap:8px;">'
   +   '<button class="btn btn-line" id="mfaCopyCodes" style="flex:1;">복사</button>'
-  +   '<button class="btn btn-soft" id="mfaDoneCodes" style="flex:1;">적어 뒀습니다</button>'
+  +   '<button class="btn ' + (MFA_GATE ? 'btn-primary' : 'btn-soft') + '" id="mfaDoneCodes" style="flex:1;">'
+  +     (MFA_GATE ? '적어 뒀습니다 · 시작하기' : '적어 뒀습니다')
+  +   '</button>'
   + '</div>';
   if($('mfaCopyCodes')) $('mfaCopyCodes').addEventListener('click', function(){
     try{ navigator.clipboard.writeText(codes.join('\n')); toast('백업 코드를 복사했습니다.'); }
     catch(e){ toast('복사하지 못했습니다. 화면을 보고 적어 주세요.'); }
   });
-  if($('mfaDoneCodes')) $('mfaDoneCodes').addEventListener('click', function(){ loadMfa(); });
+  if($('mfaDoneCodes')) $('mfaDoneCodes').addEventListener('click', function(){
+    if(MFA_GATE) mfaGateDone(); else loadMfa();
+  });
 }
 
 async function mfaStart(){
@@ -6032,7 +6103,7 @@ async function mfaStart(){
     var r = await admApi('/v1/me/mfa', { method:'POST', body:{ op:'start' } });
     if(!r || !r.ok) throw new Error((r&&r.message)||'시작하지 못했습니다.');
     MFA.secret = r.secret || '';
-    var box=$('mfaBody');
+    var box=mfaBox(); if(!box) return;
     box.innerHTML =
       '<div style="font-size:12.5px;color:#4A4A4E;line-height:1.7;">'
     +   '<b>① 휴대폰에 인증 앱을 설치하세요.</b><br>'
@@ -6049,7 +6120,7 @@ async function mfaStart(){
     + '<div style="margin-top:16px;font-size:12.5px;color:#4A4A4E;line-height:1.7;">'
     +   '<b>③ 앱에 뜬 여섯 자리를 넣어 주세요.</b>'
     + '</div>'
-    + '<input id="mfaCode" type="text" inputmode="numeric" placeholder="000000" class="inp" '
+    + '<input id="mfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" class="finp" '
     +   'style="margin-top:8px;text-align:center;font-size:19px;font-weight:800;letter-spacing:5px;">'
     + '<div id="mfaMsg" style="margin-top:8px;font-size:12.5px;color:var(--err);display:none;"></div>'
     + '<div style="margin-top:11px;display:flex;gap:8px;">'
@@ -6059,7 +6130,9 @@ async function mfaStart(){
     if($('mfaCopySecret')) $('mfaCopySecret').addEventListener('click', function(){
       try{ navigator.clipboard.writeText(MFA.secret); toast('열쇠를 복사했습니다.'); }catch(e){}
     });
-    if($('mfaCancel')) $('mfaCancel').addEventListener('click', function(){ loadMfa(); });
+    if($('mfaCancel')) $('mfaCancel').addEventListener('click', function(){
+      if(MFA_GATE) mfaGateIntro(); else loadMfa();
+    });
     if($('mfaConfirm')) $('mfaConfirm').addEventListener('click', mfaConfirm);
     if($('mfaCode')) $('mfaCode').addEventListener('keydown', function(e){ if(e.key==='Enter') mfaConfirm(); });
   }catch(e){ toast(String((e&&e.message)||'시작하지 못했습니다.')); }
@@ -6090,21 +6163,6 @@ async function mfaAskBackup(){
     mfaShowCodes(r.backup_codes||[]);
     toast('백업 코드를 새로 만들었습니다.');
   }catch(e){ toast(String((e&&e.message)||'다시 받지 못했습니다.')); }
-}
-
-async function mfaAskOff(){
-  if(!confirm('2단계 인증을 끄시겠습니까?\n비밀번호만으로 들어올 수 있게 됩니다.')) return;
-  var pw = prompt('확인을 위해 현재 비밀번호를 넣어 주세요.');
-  if(pw===null) return;
-  var code = prompt('인증 앱의 여섯 자리(또는 백업 코드)를 넣어 주세요.');
-  if(code===null) return;
-  try{
-    var r = await admApi('/v1/me/mfa', {
-      method:'POST', body:{ op:'disable', password:pw, code:String(code).trim() } });
-    if(!r || !r.ok) throw new Error((r&&r.message)||'끄지 못했습니다.');
-    toast('2단계 인증을 껐습니다.');
-    loadMfa();
-  }catch(e){ toast(String((e&&e.message)||'끄지 못했습니다.')); }
 }
 
 async function loadMfa(){
@@ -7349,6 +7407,7 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
     }
     if(r.ok){
       admErr('');
+      if(r.mfaSetup){ mfaGateShow(); return; }
       /* 로그인 직후에도 '테스트 도구를 쓸 수 있는지'를 서버에서 받아 온다.
          이 한 줄이 빠져 있어서, 이 화면에서 방금 로그인한 세션에서는
          회원 상세의 '계정 완전 삭제' 위험 구역이 보이지 않았다.
@@ -7378,7 +7437,11 @@ function initAdmin(){ try{ pgTabApply('pending'); renderDashboard(); renderMembe
   $('admPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
   $('admEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') $('admPw').focus(); });
   if($('admMfaCode')) $('admMfaCode').addEventListener('keydown', function(e){ if(e.key==='Enter') doAdmLogin(); });
-  if(admToken()){ verifyAdmin().then(function(ok){ if(ok){ hideOv(); initAdmin(); } else { try{ sessionStorage.removeItem('adm_token'); }catch(e){} showOv(); } }); }
+  if($('mfaGateOut')) $('mfaGateOut').addEventListener('click', function(){
+    try{ sessionStorage.removeItem('adm_token'); }catch(e){}
+    location.reload();
+  });
+  if(admToken()){ verifyAdmin().then(function(ok){ if(ok){ hideOv(); initAdmin(); } else if(!MFA_GATE){ try{ sessionStorage.removeItem('adm_token'); }catch(e){} showOv(); } }); }
   else showOv();
 })();
 </script>
