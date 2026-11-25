@@ -211,7 +211,13 @@ button:focus-visible,[tabindex]:focus-visible,a:focus-visible{outline:2.5px soli
       : '<div style=\"width:36px;height:36px;border-radius:50%;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;\">\u2713</div>';
     var pill = up ? '<span style=\"font-size:10px;font-weight:800;color:#FF5A00;background:rgba(255,90,0,0.12);padding:2px 7px;border-radius:999px;\">COMING SOON</span>' : '';
     var title = esc(p.name || '프로모션');
-    var reward = esc(p.reward || '');
+    /* 2026-11-25: 관리자 미리보기처럼 '혜택 이름 · 금액' 으로 보인다.
+       이름에 이미 같은 금액이 적혀 있으면(예: '주유상품권 5,000원') 두 번 붙이지 않는다. */
+    var amt = Number(p.amount) || 0;
+    var amtTxt = amt > 0 ? amt.toLocaleString('ko-KR') + '원' : '';
+    var rwTxt = String(p.reward || '');
+    if(amtTxt && rwTxt.indexOf(amtTxt) < 0) rwTxt = rwTxt ? (rwTxt + ' · ' + amtTxt) : amtTxt;
+    var reward = esc(rwTxt);
     var rewardLine = reward ? '<div style=\"font-size:16px;font-weight:800;color:#FF5A00;margin-top:3px;letter-spacing:-0.3px;\">'+reward+'</div>' : '';
     return '<div style=\"display:flex;align-items:flex-start;gap:13px;padding:16px 0;border-top:1px solid #EFEFF1;\">'+badge+
       '<div style=\"flex:1;min-width:0;\">'+
